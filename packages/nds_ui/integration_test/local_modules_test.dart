@@ -181,8 +181,18 @@ Future<void> waitFor(WidgetTester tester, Finder finder) async {
       final text = error.evaluate().isEmpty
           ? 'no displayed error'
           : tester.widget<Text>(error).data;
+      final navigation = tester.widget<NavigationBar>(
+        find.byType(NavigationBar),
+      );
+      final labels = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((widget) => widget.data)
+          .whereType<String>()
+          .take(32)
+          .join(' | ');
       throw StateError(
-        'Native module UI did not reach its expected state: $text',
+        'Native module UI did not reach $finder: $text; '
+        'page=${navigation.selectedIndex}; visible labels: $labels',
       );
     }
     await tester.pump(const Duration(milliseconds: 100));

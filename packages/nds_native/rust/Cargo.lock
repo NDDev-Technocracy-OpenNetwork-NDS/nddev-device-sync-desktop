@@ -3780,7 +3780,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-accounts"
 version = "0.0.1-alpha.24"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts?rev=6f6c551cd6026aac33840d139ac1e51e6e0b89a2#6f6c551cd6026aac33840d139ac1e51e6e0b89a2"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts?rev=4768ef1d806492746b5433c309ed153b08d21128#4768ef1d806492746b5433c309ed153b08d21128"
 dependencies = [
  "android-native-keyring-store",
  "apple-native-keyring-store",
@@ -3850,7 +3850,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-agent"
 version = "0.0.1-alpha.8"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent?rev=3bcff547b1c2b9702772ef287f11a74d22c358f0#3bcff547b1c2b9702772ef287f11a74d22c358f0"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent?rev=fbfe92fe3a217c0cdc6e30268f59bf49abecbb1e#fbfe92fe3a217c0cdc6e30268f59bf49abecbb1e"
 dependencies = [
  "base16ct",
  "nddev-device-sync-adapter-io",
@@ -3887,7 +3887,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-clipboard"
 version = "0.0.1-alpha.7"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-clipboard?rev=7209d1aa5e86d3a3952fd178a721cf38b3e8dd7a#7209d1aa5e86d3a3952fd178a721cf38b3e8dd7a"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-clipboard?rev=2ae574ecd46abd40975f7fe9912a302f09e57b94#2ae574ecd46abd40975f7fe9912a302f09e57b94"
 dependencies = [
  "arboard",
  "jni 0.21.1",
@@ -3917,7 +3917,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-gds"
 version = "0.0.1-alpha.6"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds?rev=0b9d54de93445cbc5665ae549b94fb503b962f37#0b9d54de93445cbc5665ae549b94fb503b962f37"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds?rev=1374ed5e897a4103f52913771c571e553a2bf471#1374ed5e897a4103f52913771c571e553a2bf471"
 dependencies = [
  "gix",
  "gloo-timers 0.4.0",
@@ -3955,7 +3955,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-organizations"
 version = "0.0.1-alpha.1"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations?rev=d16706d02d4df2a16ac25359f58b823db7cd9d0e#d16706d02d4df2a16ac25359f58b823db7cd9d0e"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations?rev=cce0a1211068d683fbea044589ea0a00abf86f16#cce0a1211068d683fbea044589ea0a00abf86f16"
 dependencies = [
  "nddev-device-sync-accounts",
  "nddev-device-sync-domain",
@@ -4005,7 +4005,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-telemetry"
 version = "0.0.1-alpha.11"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability?rev=2526e5f7a6926e5bb8957dfb7edcb63209fa1ca4#2526e5f7a6926e5bb8957dfb7edcb63209fa1ca4"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability?rev=32f21f8a8f9c313bee9dcd1769c042133b5520da#32f21f8a8f9c313bee9dcd1769c042133b5520da"
 dependencies = [
  "android_log-sys",
  "chrono",
@@ -4042,7 +4042,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-vault"
 version = "0.0.1-alpha.11"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault?rev=eb3d1cf6cb8d4f6a1f4b876b89a2870511ae7571#eb3d1cf6cb8d4f6a1f4b876b89a2870511ae7571"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault?rev=7a44d8a7ca7aed6d5a8ef97ccc006a58f2a605cb#7a44d8a7ca7aed6d5a8ef97ccc006a58f2a605cb"
 dependencies = [
  "base16ct",
  "base64 0.23.1",

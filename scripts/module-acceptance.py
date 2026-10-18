@@ -8,9 +8,11 @@ import shutil
 import signal
 import socket
 import subprocess
+import sys
 import tempfile
 import time
 from integration_runner import integration_runner
+from native_worker import package_linux_worker, deliver_linux_worker
 from contextlib import ExitStack
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -24,6 +26,9 @@ from urllib.parse import urlparse
 if fixture_identity.get('status') != 'running' or any(urlparse(fixture_identity[key]).scheme != 'http' or urlparse(fixture_identity[key]).hostname != '127.0.0.1' for key in ['base_url','mailpit_url']):
     raise SystemExit('An explicitly owned running loopback identity fixture is required')
 root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(root / 'packages/nds_native/tool'))
+from prepare_native import build_environment
+os.environ.update(build_environment())
 helper = root / 'integration_test/fixture_identity.dart'
 if helper.exists(): raise SystemExit('Refuse to overwrite existing fixture helper')
 target = root / 'integration_test/local_modules_generated_test.dart'
@@ -48,7 +53,9 @@ with tempfile.TemporaryDirectory(prefix='nds-ui-providers.', dir='/tmp') as dire
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     runner = ExitStack()
     try:
-        runner.enter_context(integration_runner(root, development_http=True))
+        staging = fixture / 'worker'
+        digest = package_linux_worker(root, staging)
+        runner.enter_context(integration_runner(root, development_http=True, worker_digest=digest))
         deadline = time.monotonic() + 10
         while True:
             try:
@@ -79,24 +86,34 @@ with tempfile.TemporaryDirectory(prefix='nds-ui-providers.', dir='/tmp') as dire
         shutil.copyfile(root / 'packages/nds_ui/integration_test/local_modules_test.dart', target)
         shutil.copyfile(root / 'packages/nds_ui/integration_test/driver.dart', driver)
         with log.open('w') as output:
-            command = ['flutter','drive','--target='+str(target),'--driver='+str(driver),
+            defines = [
+                '--dart-define=NDS_TEST_SERVER='+fixture_identity['base_url'],
+                '--dart-define=NDS_TEST_MAILPIT='+fixture_identity['mailpit_url'],
+                '--dart-define=NDS_TEST_OWNER='+fixture_identity['owner_email'],
+                '--dart-define=NDS_TEST_REPOSITORY='+str(repository),
+                '--dart-define=NDS_TEST_RDS_UNAVAILABLE='+str(shutil.which('rds') is None).lower()]
+            bundle = root / 'build/linux/x64/debug/bundle'
+            build = ['flutter','build','linux','--debug','--no-pub',
+                     '--target='+str(target),*defines]
+            drive = ['flutter','drive','--target='+str(target),'--driver='+str(driver),
                        '-d','linux','--no-pub','--verbose',
-                       '--dart-define=NDS_TEST_SERVER='+fixture_identity['base_url'],
-                       '--dart-define=NDS_TEST_MAILPIT='+fixture_identity['mailpit_url'],
-                       '--dart-define=NDS_TEST_OWNER='+fixture_identity['owner_email'],
-                       '--dart-define=NDS_TEST_REPOSITORY='+str(repository),
-                       '--dart-define=NDS_TEST_RDS_UNAVAILABLE='+str(shutil.which('rds') is None).lower()]
-            process = subprocess.Popen(command, cwd=root, env=environment, stdout=output,
-                                       stderr=subprocess.STDOUT, start_new_session=True)
-            try:
-                status = process.wait(timeout=900)
-            except (subprocess.TimeoutExpired, KeyboardInterrupt):
-                os.killpg(process.pid, signal.SIGTERM)
-                try: process.wait(timeout=10)
-                except subprocess.TimeoutExpired:
-                    os.killpg(process.pid, signal.SIGKILL)
-                    process.wait()
-                raise
+                       '--use-application-binary='+str(bundle / 'nddev_device_sync_desktop'),*defines]
+            for command in [build, drive]:
+                process = subprocess.Popen(command, cwd=root, env=environment, stdout=output,
+                                           stderr=subprocess.STDOUT, start_new_session=True)
+                try:
+                    status = process.wait(timeout=900)
+                except (subprocess.TimeoutExpired, KeyboardInterrupt):
+                    os.killpg(process.pid, signal.SIGTERM)
+                    try: process.wait(timeout=10)
+                    except subprocess.TimeoutExpired:
+                        os.killpg(process.pid, signal.SIGKILL)
+                        process.wait()
+                    raise
+                if status != 0:
+                    break
+                if command is build:
+                    deliver_linux_worker(staging, bundle, digest)
         if status == 0:
             subprocess.run(['python3', str(root / 'scripts/check-native-events.py'), str(log)], check=True, timeout=10)
         print(f'Actual native module UI acceptance exit={status}; private log: {log}')

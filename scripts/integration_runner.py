@@ -33,7 +33,7 @@ def native_source_commit(app: Path):
     return commit
 
 @contextmanager
-def integration_runner(app: Path, *, development_http=False):
+def integration_runner(app: Path, *, development_http=False, worker_digest=None):
     spec, lock = app / 'pubspec.yaml', app / 'pubspec.lock'
     original, original_lock = spec.read_bytes(), lock.read_bytes()
     source = original.decode()
@@ -43,6 +43,10 @@ def integration_runner(app: Path, *, development_http=False):
         raise RuntimeError('Expected one development-dependency section')
     source = source.replace('dev_dependencies:\n', 'dev_dependencies:\n  integration_test:\n    sdk: flutter\n')
     source += '\nhooks:\n  user_defines:\n    nds_native:\n'
+    if worker_digest is not None:
+        if not re.fullmatch('[a-f0-9]{64}', worker_digest):
+            raise RuntimeError('An immutable worker digest is required')
+        source += f'      gds_worker_sha256: "{worker_digest}"\n'
     if development_http:
         source += '      development_http: true\n'
     # The same explicit, receipt-checked cache contract as scripts/build.py.

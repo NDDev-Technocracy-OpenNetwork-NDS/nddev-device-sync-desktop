@@ -229,7 +229,10 @@ class _CompanyState extends State<CompanyScreen> {
                 'invitation_unavailable' => l.companyInvitationUnavailable,
                 'authorization_denied' => l.companyDenied,
                 'invalid_input' || 'invalid_request' => l.companyInvalid,
-                'busy' || 'server_busy' || 'rate_limited' => l.operationBusy,
+                'busy' ||
+                'server_busy' ||
+                'rate_limited' ||
+                'online_verification_required' => l.operationBusy,
                 'transport_unavailable' ||
                 'request_timeout' ||
                 'dependency_unavailable' => l.networkError,

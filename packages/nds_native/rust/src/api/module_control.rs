@@ -382,6 +382,9 @@ impl NdsClient {
         }
     }
     pub async fn device_modules(&self) -> Result<Vec<DeviceModuleView>, ClientError> {
+        observe("agent", "module.readiness.read", self.read_device_modules()).await
+    }
+    async fn read_device_modules(&self) -> Result<Vec<DeviceModuleView>, ClientError> {
         let vault = self.vault().await.map_err(vault_error)?;
         let identity = self.shared_identity();
         let fence = identity.local_use_fence().await?;

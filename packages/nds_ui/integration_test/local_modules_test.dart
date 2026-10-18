@@ -29,29 +29,29 @@ void main() {
     expect(Uri.parse(server).host, '127.0.0.1');
     expect(owner.endsWith('.invalid'), isTrue);
     await tester.enterText(find.byKey(const Key('server-address')), server);
-    await tester.tap(find.byKey(const Key('connect')));
+    await tapVisible(tester, find.byKey(const Key('connect')));
     await identity.waitFor(tester, find.byKey(const Key('email')));
     await tester.enterText(find.byKey(const Key('email')), owner);
     final prior = await identity.localMessageIds(mailbox);
-    await tester.tap(find.byKey(const Key('send-code')));
+    await tapVisible(tester, find.byKey(const Key('send-code')));
     await identity.waitFor(tester, find.byKey(const Key('otp')));
     await tester.enterText(
       find.byKey(const Key('otp')),
       await identity.readLocalCode(mailbox, owner, prior),
     );
-    await tester.tap(find.byKey(const Key('verify')));
+    await tapVisible(tester, find.byKey(const Key('verify')));
     await identity.waitFor(tester, find.byKey(const Key('logout')));
-    await tester.tap(find.text('Local modules'));
+    await tapVisible(tester, find.text('Local modules'));
     await tester.pumpAndSettle();
     await waitFor(tester, find.byKey(const Key('module-selector')));
-    await tester.tap(find.byKey(const Key('read-system-info')));
+    await tapVisible(tester, find.byKey(const Key('read-system-info')));
     await waitFor(tester, find.byKey(const Key('module-error')));
     expect(
       tester.widget<Text>(find.byKey(const Key('module-error'))).data,
       'Enable this module to use its features.',
     );
     await configure(tester, enabled: true, permissions: []);
-    await tester.tap(find.byKey(const Key('read-system-info')));
+    await tapVisible(tester, find.byKey(const Key('read-system-info')));
     await waitFor(tester, find.byKey(const Key('module-error')));
     expect(
       tester.widget<Text>(find.byKey(const Key('module-error'))).data,
@@ -63,7 +63,7 @@ void main() {
       permissions: ['read_only', 'local_network'],
     );
     await tester.ensureVisible(find.byKey(const Key('read-system-info')));
-    await tester.tap(find.byKey(const Key('read-system-info')));
+    await tapVisible(tester, find.byKey(const Key('read-system-info')));
     await waitFor(tester, find.text('CPU usage:'));
     expect(find.byKey(const Key('module-error')), findsNothing);
 
@@ -73,9 +73,9 @@ void main() {
       enabled: true,
       permissions: ['clipboard', 'local_network'],
     );
-    await tester.tap(find.text('Refresh'));
+    await tapVisible(tester, find.text('Refresh'));
     await waitFor(tester, find.byTooltip('Read text'));
-    await tester.tap(find.byTooltip('Read text'));
+    await tapVisible(tester, find.byTooltip('Read text'));
     await waitFor(tester, find.text('Text preview, up to 16 KiB.'));
     const content = 'NDS isolated archive: Русский / English';
     expect(
@@ -92,7 +92,7 @@ void main() {
       enabled: true,
       permissions: ['read_only', 'process_execution'],
     );
-    await tester.tap(find.text('Diagnostics'));
+    await tapVisible(tester, find.text('Diagnostics'));
     await waitFor(tester, find.text('Errors:'));
     expect(find.byKey(const Key('module-error')), findsNothing);
 
@@ -102,7 +102,7 @@ void main() {
       enabled: true,
       permissions: ['read_only', 'process_execution'],
     );
-    await tester.tap(find.text('Update plan'));
+    await tapVisible(tester, find.text('Update plan'));
     await waitFor(tester, find.textContaining('Channel:'));
     expect(find.byKey(const Key('module-error')), findsNothing);
 
@@ -118,7 +118,7 @@ void main() {
       find.byKey(const Key('repository-path')),
       repository,
     );
-    await tester.tap(find.text('Refresh'));
+    await tapVisible(tester, find.text('Refresh'));
     await waitFor(tester, find.text('Result:'));
     expect(find.byKey(const Key('module-error')), findsNothing);
 
@@ -134,7 +134,7 @@ void main() {
     await choose(tester, 'System information');
     await configure(tester, enabled: false, permissions: []);
     await tester.ensureVisible(find.byKey(const Key('read-system-info')));
-    await tester.tap(find.byKey(const Key('read-system-info')));
+    await tapVisible(tester, find.byKey(const Key('read-system-info')));
     await waitFor(tester, find.byKey(const Key('module-error')));
     expect(
       tester.widget<Text>(find.byKey(const Key('module-error'))).data,
@@ -159,9 +159,9 @@ void main() {
 
 Future<void> choose(WidgetTester tester, String label) async {
   await tester.ensureVisible(find.byKey(const Key('module-selector')));
-  await tester.tap(find.byKey(const Key('module-selector')));
+  await tapVisible(tester, find.byKey(const Key('module-selector')));
   await tester.pumpAndSettle();
-  await tester.tap(find.text(label).last);
+  await tapVisible(tester, find.text(label).last);
   await tester.pumpAndSettle();
 }
 
@@ -209,7 +209,7 @@ Future<void> configure(
   final toggle = find.byKey(const Key('module-enabled'));
   await tester.ensureVisible(toggle);
   if (tester.widget<SwitchListTile>(toggle).value != enabled) {
-    await tester.tap(toggle);
+    await tapVisible(tester, toggle);
     await tester.pumpAndSettle();
   }
   for (final checkbox in find.byType(CheckboxListTile).evaluate().toList()) {
@@ -221,13 +221,21 @@ Future<void> configure(
     final target = find.byKey(widget.key!);
     if (widget.value != permissions.contains(name)) {
       await tester.ensureVisible(target);
-      await tester.tap(target);
+      await tapVisible(tester, target);
       await tester.pumpAndSettle();
     }
   }
   final save = find.byKey(const Key('module-settings-save'));
   await tester.ensureVisible(save);
-  await tester.tap(save);
+  await tapVisible(tester, save);
   await waitFor(tester, find.byKey(const Key('module-settings-saved')));
+  await tester.pumpAndSettle();
+}
+
+Future<void> tapVisible(WidgetTester tester, Finder finder) async {
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  expect(finder.hitTestable(), findsOneWidget);
+  await tester.tap(finder);
   await tester.pumpAndSettle();
 }

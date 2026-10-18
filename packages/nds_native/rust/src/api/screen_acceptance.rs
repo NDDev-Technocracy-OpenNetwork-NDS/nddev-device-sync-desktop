@@ -25,6 +25,20 @@ fn publish(root: &Path, name: &str, value: Value) {
     std::fs::rename(temporary, root.join(name)).unwrap();
 }
 async fn prepare(client: &NdsClient) {
+    // Enrollment starts the ordinary replica owner. Wait for its real protected
+    // key provisioning before attempting encrypted module settings.
+    for attempt in 0..20 {
+        match client.vault_snapshot().await {
+            Ok(view) if view.unlocked => break,
+            Ok(_) | Err(nddev_device_sync_vault::view::VaultError::Busy) if attempt < 19 => {
+                tokio::time::sleep(Duration::from_millis(400)).await;
+            }
+            other => {
+                eprintln!("NDS_SCREEN_VAULT_NOT_READY error={}", other.err().map_or("key_unavailable".to_owned(), |e| e.code()));
+                panic!("actual protected Vault did not become ready");
+            }
+        }
+    }
     for attempt in 0..8 {
         let granted = async {
             client.reconcile().await?;

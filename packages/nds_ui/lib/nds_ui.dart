@@ -525,7 +525,10 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     'authentication_failed' || 'authorization_denied' => l.authError,
     'device_revoked' => l.deviceRevokedHelp,
     'challenge_expired' => l.expiredError,
-    'rate_limited' || 'server_busy' || 'busy' => l.rateError,
+    'rate_limited' ||
+    'server_busy' ||
+    'busy' ||
+    'online_verification_required' => l.rateError,
     'cancelled' => l.cancelledError,
     'invalid_response' => l.responseError,
     'browser_unavailable' => l.launchError,

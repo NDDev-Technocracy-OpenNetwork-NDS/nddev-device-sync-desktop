@@ -72,6 +72,7 @@ class _ModuleSettingsState extends State<ModuleSettings> {
   late Set<String> _permissions;
   bool _saving = false;
   bool _saved = false;
+  bool _awaitingBasis = false;
   String? _error;
 
   void _restore() {
@@ -98,10 +99,31 @@ class _ModuleSettingsState extends State<ModuleSettings> {
           _basis.pendingId != widget.module.pendingId ||
           _basis.conflicted != widget.module.conflicted) &&
       !_sameSetting(_basis, widget.module);
+  void _adoptSavedBasis() {
+    final current = widget.module;
+    if (_awaitingBasis &&
+        !current.conflicted &&
+        (current.revision != _basis.revision ||
+            current.pendingId != _basis.pendingId) &&
+        current.enabled == _enabled &&
+        setEquals(current.permissions.toSet(), _permissions)) {
+      _restore();
+      _awaitingBasis = false;
+    }
+  }
+
   @override
   void didUpdateWidget(covariant ModuleSettings oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.module.id != widget.module.id || !_changed || _saved) {
+    if (!identical(oldWidget.client, widget.client) ||
+        oldWidget.module.id != widget.module.id) {
+      _awaitingBasis = false;
+      _saved = false;
+      _error = null;
+      _restore();
+    } else if (_awaitingBasis) {
+      _adoptSavedBasis();
+    } else if (!_changed || _saved) {
       _restore();
     } else if (_sameSetting(_basis, widget.module)) {
       // Acknowledgement of the same displayed values preserves the user's draft.
@@ -127,7 +149,11 @@ class _ModuleSettingsState extends State<ModuleSettings> {
         pendingId: module.pendingId,
       );
       if (mounted && identical(client, widget.client)) {
-        setState(() => _saved = true);
+        setState(() {
+          _saved = true;
+          _awaitingBasis = true;
+          _adoptSavedBasis();
+        });
       }
       await widget.onSaved();
     } catch (error) {
@@ -140,7 +166,12 @@ class _ModuleSettingsState extends State<ModuleSettings> {
         setState(() => _error = code);
       }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) {
+        setState(() {
+          _adoptSavedBasis();
+          _saving = false;
+        });
+      }
     }
   }
 
@@ -162,7 +193,11 @@ class _ModuleSettingsState extends State<ModuleSettings> {
           key: const Key('module-enabled'),
           title: Text(l.moduleEnabled),
           value: _enabled,
-          onChanged: _saving || module.conflicted || !module.supported
+          onChanged:
+              _saving ||
+                  _awaitingBasis ||
+                  module.conflicted ||
+                  !module.supported
               ? null
               : (value) => setState(() {
                   _enabled = value;
@@ -175,7 +210,7 @@ class _ModuleSettingsState extends State<ModuleSettings> {
             key: Key('module-permission-$permission'),
             title: Text(modulePermissionLabel(l, permission)),
             value: _permissions.contains(permission),
-            onChanged: _saving || module.conflicted
+            onChanged: _saving || _awaitingBasis || module.conflicted
                 ? null
                 : (value) => setState(() {
                     if (value == true) {
@@ -188,7 +223,12 @@ class _ModuleSettingsState extends State<ModuleSettings> {
           ),
         FilledButton(
           key: const Key('module-settings-save'),
-          onPressed: _saving || _stale || !changed || module.conflicted
+          onPressed:
+              _saving ||
+                  _awaitingBasis ||
+                  _stale ||
+                  !changed ||
+                  module.conflicted
               ? null
               : _save,
           child: Text(l.moduleSave),
@@ -201,6 +241,7 @@ class _ModuleSettingsState extends State<ModuleSettings> {
                 : () => setState(() {
                     _restore();
                     _saved = false;
+                    _awaitingBasis = false;
                   }),
             child: Text(l.moduleReloadDraft),
           ),

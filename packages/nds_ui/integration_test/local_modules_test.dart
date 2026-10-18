@@ -229,6 +229,15 @@ Future<void> configure(
   await tester.ensureVisible(save);
   await tapVisible(tester, save);
   await waitFor(tester, find.byKey(const Key('module-settings-saved')));
+  await waitFor(
+    tester,
+    find.byWidgetPredicate(
+      (widget) =>
+          widget is SwitchListTile &&
+          widget.key == const Key('module-enabled') &&
+          widget.onChanged != null,
+    ),
+  );
   await tester.pumpAndSettle();
 }
 

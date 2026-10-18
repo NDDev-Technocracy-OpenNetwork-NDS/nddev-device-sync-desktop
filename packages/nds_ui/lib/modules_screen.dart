@@ -36,7 +36,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
   List<native.DeviceModuleView> _modules = [];
   String? _scope;
   bool _metadataError = false;
-  bool _refreshing = false;
+  Future<void>? _metadataRead;
   String _selected = 'sysinfo';
   Object? _result;
   String? _error;
@@ -109,18 +109,27 @@ class _ModulesScreenState extends State<ModulesScreen> {
       _modules = [];
       _result = null;
       _error = null;
-      _refreshing = false;
+      _metadataRead = null;
       _discover();
     } else if (!_busy && _metadataError) {
       _refreshModules();
     }
   }
 
-  Future<void> _refreshModules() async {
+  Future<void> _refreshModules() {
+    if (_metadataRead case final reading?) return reading;
+    late final Future<void> owned;
+    owned = _readModules().whenComplete(() {
+      if (identical(_metadataRead, owned)) _metadataRead = null;
+    });
+    _metadataRead = owned;
+    return owned;
+  }
+
+  Future<void> _readModules() async {
     final client = widget.client;
     final epoch = _epoch;
-    if (client == null || _refreshing) return;
-    _refreshing = true;
+    if (client == null) return;
     try {
       final modules = await client.deviceModules();
       if (mounted && epoch == _epoch && identical(client, widget.client)) {
@@ -132,8 +141,6 @@ class _ModulesScreenState extends State<ModulesScreen> {
     } catch (error) {
       if (error is native.ClientError) error.dispose();
       if (mounted && epoch == _epoch) setState(() => _metadataError = true);
-    } finally {
-      if (mounted && epoch == _epoch) _refreshing = false;
     }
   }
 
@@ -580,6 +587,9 @@ class _ModulesScreenState extends State<ModulesScreen> {
                       client: widget.client!,
                       module: current,
                       onSaved: () async {
+                        // A read begun before this edit must finish first. The
+                        // following read then observes the durable new basis.
+                        await _metadataRead;
                         if (!mounted ||
                             !identical(client, widget.client) ||
                             scope != _scope) {

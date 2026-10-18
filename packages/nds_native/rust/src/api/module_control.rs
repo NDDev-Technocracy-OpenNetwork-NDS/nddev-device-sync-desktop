@@ -196,6 +196,33 @@ fn shared_permissions(module: &str) -> Option<BTreeSet<Permission>> {
         _ => None,
     }
 }
+fn capabilities(descriptor: &ModuleDescriptor) -> (bool, bool, BTreeSet<Permission>) {
+    let native = super::modules::supports_local_agent()
+        && platform().is_some_and(|p| descriptor.platforms.contains(&p));
+    let mut required = if native {
+        descriptor.permissions.clone()
+    } else {
+        BTreeSet::new()
+    };
+    let shared = shared_permissions(descriptor.id.as_str());
+    if let Some(extra) = &shared {
+        required.extend(extra);
+    }
+    (native, native || shared.is_some(), required)
+}
+
+fn edit_basis_matches(
+    current: &nddev_device_sync_vault::ModuleSetting,
+    revision: u64,
+    pending: Option<&str>,
+) -> bool {
+    !current.conflicted
+        && ((current.revision == revision && current.pending_id.as_deref() == pending)
+            || (current.revision > revision
+                && current.pending_id.is_none()
+                && pending.is_some()
+                && current.operation_id.as_deref() == pending))
+}
 fn platform() -> Option<Platform> {
     if cfg!(target_arch = "wasm32") {
         Some(Platform::Web)
@@ -408,18 +435,8 @@ impl NdsClient {
             if changed {
                 self.module_changed(id).await;
             }
-            let native_supported = super::modules::supports_local_agent()
-                && platform().is_some_and(|p| descriptor.platforms.contains(&p));
-            let mut required = if native_supported {
-                descriptor.permissions.clone()
-            } else {
-                BTreeSet::new()
-            };
+            let (native_supported, supported, required) = capabilities(descriptor);
             let shared = shared_permissions(id);
-            if let Some(extra) = &shared {
-                required.extend(extra);
-            }
-            let supported = native_supported || shared.is_some();
             let native_observation = native.iter().find(|v| v.id == id);
             let shared_observation = self
                 .module_control
@@ -487,25 +504,22 @@ impl NdsClient {
         revision: u64,
         pending_id: Option<String>,
     ) -> Result<(), ClientError> {
-        let telemetry_module = descriptor(&module)?.id.as_str().to_owned();
+        let definition = descriptor(&module)?;
+        let telemetry_module = definition.id.as_str().to_owned();
         super::identity::observe_operation(
             &telemetry_module,
             "module.configuration.changed",
             async {
                 let context = self.shared_identity().local_use_lifetime();
-                let views = self.device_modules().await?;
-                let view = views
-                    .iter()
-                    .find(|view| view.id == module)
-                    .ok_or(ClientError::InvalidInput)?;
-                if enabled && !view.supported {
+                let fence = self
+                    .shared_identity()
+                    .local_use_fence_from(&context)
+                    .await?;
+                let (_, supported, required) = capabilities(&definition);
+                if enabled && !supported {
                     return Err(ClientError::Server("module_unsupported".into()));
                 }
-                if permissions.len() > view.required_permissions.len()
-                    || permissions
-                        .iter()
-                        .any(|value| !view.required_permissions.contains(value))
-                {
+                if permissions.len() > required.len() {
                     return Err(ClientError::InvalidInput);
                 }
                 let parsed = permissions
@@ -515,29 +529,34 @@ impl NdsClient {
                             .map_err(|_| ClientError::InvalidInput)
                     })
                     .collect::<Result<BTreeSet<Permission>, _>>()?;
-                if parsed.len() != permissions.len() {
+                if parsed.len() != permissions.len() || !parsed.is_subset(&required) {
                     return Err(ClientError::InvalidInput);
                 }
                 let vault = self.vault().await.map_err(vault_error)?;
+                let current = vault
+                    .module_configuration(&module)
+                    .await
+                    .map_err(vault_error)?;
+                if current.conflicted {
+                    return Err(ClientError::Server("module_configuration_conflict".into()));
+                }
                 let configuration = Configuration {
                     enabled,
                     permissions: parsed,
                 };
-                if view.revision != revision || view.pending_id != pending_id {
+                if !edit_basis_matches(&current, revision, pending_id.as_deref()) {
                     return Err(ClientError::Server("module_configuration_changed".into()));
                 }
-                if view.enabled == enabled
-                    && view.permissions.iter().collect::<BTreeSet<_>>()
-                        == permissions.iter().collect::<BTreeSet<_>>()
-                {
+                self.shared_identity().validate_local_use(&fence).await?;
+                if current.configuration == configuration {
                     return Ok(());
                 }
 
                 let mutation = vault
                     .set_module_configuration_attempt(
                         module.clone(),
-                        revision,
-                        pending_id,
+                        current.revision,
+                        current.pending_id,
                         configuration.clone(),
                     )
                     .await
@@ -602,6 +621,26 @@ pub(crate) fn observe<T>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn edit_basis_follows_only_its_own_acknowledgement() {
+        let mut current = nddev_device_sync_vault::ModuleSetting {
+            revision: 7,
+            operation_id: Some("original".into()),
+            ..Default::default()
+        };
+        assert!(edit_basis_matches(&current, 6, Some("original")));
+        assert!(edit_basis_matches(&current, 7, None));
+        assert!(!edit_basis_matches(&current, 6, None));
+        assert!(!edit_basis_matches(&current, 6, Some("other")));
+        // Equal values from a different edit cannot revive an earlier draft.
+        current.operation_id = Some("replacement".into());
+        assert!(!edit_basis_matches(&current, 6, Some("original")));
+        current.pending_id = Some("replacement".into());
+        assert!(!edit_basis_matches(&current, 7, None));
+        assert!(edit_basis_matches(&current, 7, Some("replacement")));
+        current.conflicted = true;
+        assert!(!edit_basis_matches(&current, 7, Some("replacement")));
+    }
     #[test]
     fn acknowledgement_preserves_lifetime_but_an_identical_new_edit_cannot_revive_it() {
         let control = ModuleControl::default();

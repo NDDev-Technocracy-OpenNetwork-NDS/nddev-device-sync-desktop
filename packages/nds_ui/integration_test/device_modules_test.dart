@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:nds_native/nds_native.dart' as native;
@@ -11,6 +12,7 @@ import 'fixture_identity.dart' as identity;
 import 'local_modules_test.dart' as controls;
 
 const text = 'NDS Android module permission proof';
+const capturedText = 'NDS Android native capture proof';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -114,10 +116,28 @@ void main() {
       final value = await settled(client.clipboardSnapshot);
       expect(value.present, isTrue);
       expect(value.serverSeq, greaterThan(BigInt.zero));
-      expect(value.bytes, text.length);
+      final expectedText = phase == 'persist' ? text : capturedText;
+      expect(value.bytes, expectedText.length);
       expect(native.supportsNativeClipboardRead(), isTrue);
       await settled(() => client.clipboardCopy());
+      // These platform-channel calls use the actual Android clipboard. Only a
+      // Boolean comparison is asserted, so unexpected contents never enter logs.
+      expect(
+        (await Clipboard.getData('text/plain'))?.text == expectedText,
+        isTrue,
+      );
+      await denied(
+        client,
+        'clipboard_private',
+        operation: client.clipboardPublishNative,
+      );
+      await Clipboard.setData(const ClipboardData(text: capturedText));
       await settled(client.clipboardPublishNative);
+      await drained(client);
+      expect(
+        (await settled(client.clipboardSnapshot)).bytes,
+        capturedText.length,
+      );
       final observed = (await settled(client.deviceModules))
           .singleWhere((module) => module.id == 'clipboard');
       expect(observed.readiness, 'ready');
@@ -164,9 +184,13 @@ Future<T> settled<T>(Future<T> Function() work) async {
   }
 }
 
-Future<void> denied(native.NdsClient client, String expected) async {
+Future<void> denied(
+  native.NdsClient client,
+  String expected, {
+  Future<String> Function()? operation,
+}) async {
   try {
-    await settled(() => client.clipboardPublishText(text: text));
+    await settled(operation ?? () => client.clipboardPublishText(text: text));
     fail('The module action should have been refused');
   } on native.ClientError catch (error) {
     expect(error.code(), expected);

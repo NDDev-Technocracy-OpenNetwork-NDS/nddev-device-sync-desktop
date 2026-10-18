@@ -120,6 +120,7 @@ void main() {
     );
     await tapVisible(tester, find.text('Refresh'));
     await waitFor(tester, find.text('Result:'));
+    await waitFor(tester, find.text('Available'));
     expect(find.byKey(const Key('module-error')), findsNothing);
 
     if (const bool.fromEnvironment('NDS_TEST_RDS_UNAVAILABLE')) {

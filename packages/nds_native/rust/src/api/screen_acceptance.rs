@@ -27,6 +27,7 @@ fn publish(root: &Path, name: &str, value: Value) {
 async fn prepare(client: &NdsClient) {
     for attempt in 0..8 {
         let granted = async {
+            client.reconcile().await?;
             let module = client
                 .device_modules()
                 .await?
@@ -49,7 +50,10 @@ async fn prepare(client: &NdsClient) {
             Err(ClientError::Busy) if attempt < 7 => {
                 tokio::time::sleep(Duration::from_millis(400)).await
             }
-            Err(error) => panic!("actual RDS module consent failed: {}", error.code()),
+            Err(error) => {
+                eprintln!("NDS_SCREEN_CONSENT_REFUSED code={}", error.code());
+                panic!("actual RDS module consent failed: {}", error.code());
+            }
         }
     }
     for attempt in 0..8 {

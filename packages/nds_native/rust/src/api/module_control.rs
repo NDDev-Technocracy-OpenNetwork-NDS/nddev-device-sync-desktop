@@ -445,14 +445,6 @@ impl NdsClient {
                 .unwrap_or_else(|e| e.into_inner())
                 .get(id)
                 .and_then(|slot| slot.observation.clone());
-            let observation = if changed {
-                None
-            } else {
-                [native_observation, shared_observation.as_ref()]
-                    .into_iter()
-                    .flatten()
-                    .max_by_key(|value| value.observed_at_ms)
-            };
             let installed = if shared.is_some() {
                 Some(true)
             } else if native_supported {
@@ -460,15 +452,49 @@ impl NdsClient {
             } else {
                 Some(false)
             };
+            // Permissions belong to the adapter actually used. A working local
+            // Git worker does not require the browser catalog's credential grant.
+            let admitted = [
+                (
+                    native_supported,
+                    native_observation.is_none_or(|v| v.configured),
+                    &descriptor.permissions,
+                    if changed { None } else { native_observation },
+                ),
+                (
+                    shared.is_some(),
+                    true,
+                    shared.as_ref().unwrap_or(&required),
+                    if changed {
+                        None
+                    } else {
+                        shared_observation.as_ref()
+                    },
+                ),
+            ]
+            .into_iter()
+            .filter(|(supported, installed, required, _)| {
+                setting
+                    .configuration
+                    .admit(*supported, *installed, required)
+                    .is_ok()
+            })
+            .max_by_key(|(_, _, _, value)| value.and_then(|v| v.observed_at_ms));
+            let observation = admitted.and_then(|(_, _, _, value)| value);
             let readiness = if setting.conflicted {
                 "conflicted".into()
             } else {
-                tag(setting.configuration.readiness(
-                    supported,
-                    installed.unwrap_or(true),
-                    &required,
-                    observation,
-                ))?
+                tag(match admitted {
+                    Some((supported, installed, required, value)) => setting
+                        .configuration
+                        .readiness(supported, installed, required, value),
+                    None => setting.configuration.readiness(
+                        supported,
+                        installed.unwrap_or(true),
+                        &required,
+                        None,
+                    ),
+                })?
             };
             result.push(DeviceModuleView {
                 id: id.into(),

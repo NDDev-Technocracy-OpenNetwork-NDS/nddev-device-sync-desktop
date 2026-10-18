@@ -11,7 +11,17 @@ void main() {
   testWidgets('actual local modules and isolated native clipboard archive', (
     tester,
   ) async {
+    final frameworkHandler = FlutterError.onError;
     await runNdsApp();
+    final diagnosticHandler = FlutterError.onError;
+    FlutterError.onError = (details) {
+      diagnosticHandler?.call(details);
+      frameworkHandler?.call(details);
+    };
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      FlutterError.onError = frameworkHandler;
+    });
     await tester.pumpAndSettle();
     const server = String.fromEnvironment('NDS_TEST_SERVER');
     const mailbox = String.fromEnvironment('NDS_TEST_MAILPIT');

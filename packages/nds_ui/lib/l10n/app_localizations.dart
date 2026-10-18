@@ -2111,6 +2111,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load devices. Refresh to check access and connection.'**
   String get screenTargetsFailed;
+
+  /// No description provided for @moduleManagementHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable modules and choose their NDS permissions for this device. System or browser consent is still required when a feature uses it.'**
+  String get moduleManagementHelp;
+
+  /// No description provided for @moduleEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Module enabled'**
+  String get moduleEnabled;
+
+  /// No description provided for @modulePermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'NDS permissions'**
+  String get modulePermissions;
+
+  /// No description provided for @moduleSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save module settings'**
+  String get moduleSave;
+
+  /// No description provided for @moduleSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings saved on this device; synchronization continues separately.'**
+  String get moduleSaved;
+
+  /// No description provided for @moduleDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable this module to use its features.'**
+  String get moduleDisabled;
+
+  /// No description provided for @modulePermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the required NDS permissions before using this feature.'**
+  String get modulePermissionRequired;
+
+  /// No description provided for @moduleConfigurationConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Module settings conflict. No permission is granted until the conflict is resolved.'**
+  String get moduleConfigurationConflict;
+
+  /// No description provided for @moduleDeviceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in and register this device to manage modules.'**
+  String get moduleDeviceRequired;
+
+  /// No description provided for @moduleNotInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'The required local tool is not installed or has not been found.'**
+  String get moduleNotInstalled;
+
+  /// No description provided for @moduleInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Available on this device'**
+  String get moduleInstalled;
+
+  /// No description provided for @moduleInstallationUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Availability has not been checked'**
+  String get moduleInstallationUnknown;
+
+  /// No description provided for @moduleMetadataError.
+  ///
+  /// In en, this message translates to:
+  /// **'Module settings could not be refreshed. The last operation result is unchanged.'**
+  String get moduleMetadataError;
+
+  /// No description provided for @permissionReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Read local information'**
+  String get permissionReadOnly;
+
+  /// No description provided for @permissionCredentialStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Use protected credential references'**
+  String get permissionCredentialStore;
+
+  /// No description provided for @permissionProcessExecution.
+  ///
+  /// In en, this message translates to:
+  /// **'Run the declared local tool'**
+  String get permissionProcessExecution;
+
+  /// No description provided for @permissionLocalNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Communicate with the declared service'**
+  String get permissionLocalNetwork;
+
+  /// No description provided for @permissionUserService.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the current user service'**
+  String get permissionUserService;
+
+  /// No description provided for @permissionClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Use clipboard features'**
+  String get permissionClipboard;
+
+  /// No description provided for @moduleSettingsChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Module settings changed. Refresh the form before saving your choice.'**
+  String get moduleSettingsChanged;
+
+  /// No description provided for @moduleReloadDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload settings'**
+  String get moduleReloadDraft;
 }
 
 class _AppLocalizationsDelegate

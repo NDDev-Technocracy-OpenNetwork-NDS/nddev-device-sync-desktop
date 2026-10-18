@@ -49,26 +49,12 @@ void main() {
           await tester.pumpWidget(
             RepaintBoundary(key: key, child: const NdsApp()),
           );
-          // FFI completion needs real event-loop time, outside Flutter's fake clock.
-          if (native.supportsLocalAgent()) {
-            var ready = false;
-            for (var attempt = 0; attempt < 100; attempt++) {
-              await tester.runAsync(
-                () => Future<void>.delayed(const Duration(milliseconds: 20)),
-              );
-              await tester.pump(const Duration(milliseconds: 20));
-              ready = find
-                  .byKey(const Key('module-selector'), skipOffstage: false)
-                  .evaluate()
-                  .isNotEmpty;
-              if (ready) break;
-            }
-            expect(
-              ready,
-              isTrue,
-              reason: 'Actual native module discovery must complete',
-            );
-          }
+          // The anonymous shell must not discover private module adapters.
+          // Positive enrolled-module interaction uses the owned backend fixture.
+          expect(
+            find.byKey(const Key('module-selector'), skipOffstage: false),
+            findsNothing,
+          );
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
           expect(find.byKey(const Key('connect')), findsOneWidget);
@@ -96,17 +82,23 @@ void main() {
             key,
             '$locale-${compact ? 'compact' : 'desktop'}-connect',
           );
-          if (native.supportsLocalAgent()) {
-            await tester.tap(find.byIcon(Icons.devices));
-            await tester.pumpAndSettle();
-            expect(tester.takeException(), isNull);
-            expect(find.byKey(const Key('module-selector')), findsOneWidget);
-            await capture(
-              tester,
-              key,
-              '$locale-${compact ? 'compact' : 'desktop'}-modules',
-            );
-          }
+          await tester.tap(find.byIcon(Icons.devices));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expect(find.byKey(const Key('module-selector')), findsNothing);
+          expect(
+            find.text(
+              locale == 'ru'
+                  ? 'Войдите и зарегистрируйте это устройство для управления модулями.'
+                  : 'Sign in and register this device to manage modules.',
+            ),
+            findsOneWidget,
+          );
+          await capture(
+            tester,
+            key,
+            '$locale-${compact ? 'compact' : 'desktop'}-modules',
+          );
           await tester.pumpWidget(const SizedBox());
           await tester.pump();
         },

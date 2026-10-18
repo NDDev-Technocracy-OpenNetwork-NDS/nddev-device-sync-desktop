@@ -26,6 +26,7 @@ use zeroize::Zeroizing;
 pub struct NdsClient {
     inner: Arc<IdentityClient>,
     pub(crate) catalog: Mutex<super::catalog::CatalogState>,
+    pub(crate) module_control: Arc<super::module_control::ModuleControl>,
     vault: tokio::sync::Mutex<Option<Arc<VaultClient>>>,
     replica: Mutex<Option<Replica>>,
     replica_control: tokio::sync::Mutex<()>,
@@ -74,6 +75,7 @@ impl NdsClient {
         Ok(Self {
             inner: Arc::new(IdentityClient::new(&endpoint)?),
             catalog: Mutex::default(),
+            module_control: Arc::default(),
             vault: tokio::sync::Mutex::new(None),
             replica: Mutex::default(),
             replica_control: tokio::sync::Mutex::default(),
@@ -201,6 +203,7 @@ impl NdsClient {
         Ok(view)
     }
     pub async fn logout(&self) -> Result<View, ClientError> {
+        self.module_control.stop();
         self.cancel_screen();
         self.invalidate_catalog();
         self.delivery
@@ -311,6 +314,7 @@ impl NdsClient {
         }
     }
     async fn reset_replica_session(&self) {
+        self.module_control.stop();
         self.cancel_screen();
         self.invalidate_catalog();
         self.stop_replica().await;
@@ -330,6 +334,7 @@ impl NdsClient {
             {
                 return;
             }
+            self.module_control.stop();
             self.cancel_screen();
             self.invalidate_catalog();
             self.delivery
@@ -684,7 +689,7 @@ impl NdsClient {
         self.wake_replica();
         Ok(result)
     }
-    fn wake_replica(&self) {
+    pub(crate) fn wake_replica(&self) {
         if self.active.load(Ordering::Relaxed)
             && let Some(replica) = &*self
                 .replica
@@ -696,18 +701,31 @@ impl NdsClient {
     }
     pub async fn clipboard_snapshot(
         &self,
-    ) -> Result<nddev_device_sync_vault::view::ClipboardView, VaultError> {
-        Ok(self
+    ) -> Result<nddev_device_sync_vault::view::ClipboardView, ClientError> {
+        let guard = self
+            .module_access("clipboard", super::module_control::Adapter::Shared)
+            .await?;
+        let value = self
             .vault()
-            .await?
+            .await
+            .map_err(super::module_control::vault_error)?
             .clipboard()
-            .await?
-            .map_or_else(Default::default, |(metadata, _)| metadata))
+            .await
+            .map_err(super::module_control::vault_error)?;
+        guard.validate().await?;
+        Ok(value.map_or_else(Default::default, |(metadata, _)| metadata))
     }
-    pub async fn clipboard_publish_text(&self, text: String) -> Result<String, VaultError> {
+    pub async fn clipboard_publish_text(&self, text: String) -> Result<String, ClientError> {
         let text = Zeroizing::new(text);
-        let result = observe("clipboard.publish", async {
-            self.vault().await?.share_clipboard(text).await
+        let result = super::module_control::observe("clipboard", "clipboard.publish", async {
+            self.module_access("clipboard", super::module_control::Adapter::Shared)
+                .await?;
+            self.vault()
+                .await
+                .map_err(super::module_control::vault_error)?
+                .share_clipboard(text)
+                .await
+                .map_err(super::module_control::vault_error)
         })
         .await?;
         self.wake_replica();
@@ -718,34 +736,43 @@ impl NdsClient {
         agent: &super::modules::LocalAgent,
         entry: u64,
         mime: String,
-    ) -> Result<String, VaultError> {
+    ) -> Result<String, ClientError> {
         if !matches!(
             mime.as_str(),
             "text/plain" | "text/plain;charset=utf-8" | "text/plain;charset=UTF-8"
         ) {
-            return Err(VaultError::Invalid);
+            return Err(ClientError::InvalidInput);
         }
-        let result = observe("clipboard.archive.publish", async {
-            let bytes = Zeroizing::new(
-                agent
-                    .clipboard_content(entry, mime)
+        let result =
+            super::module_control::observe("clipboard", "clipboard.archive.publish", async {
+                let guard = self
+                    .module_access("clipboard", super::module_control::Adapter::Shared)
+                    .await?;
+                let bytes = Zeroizing::new(agent.clipboard_content(self, entry, mime).await?);
+                if bytes.len() > 8192 {
+                    return Err(ClientError::InvalidInput);
+                }
+                let text = Zeroizing::new(
+                    String::from_utf8(bytes.to_vec()).map_err(|_| ClientError::InvalidResponse)?,
+                );
+                guard.validate().await?;
+                self.vault()
                     .await
-                    .map_err(|_| VaultError::Unavailable)?,
-            );
-            if bytes.len() > 8192 {
-                return Err(VaultError::Invalid);
-            }
-            let text =
-                Zeroizing::new(String::from_utf8(bytes.to_vec()).map_err(|_| VaultError::Invalid)?);
-            self.vault().await?.share_clipboard(text).await
-        })
-        .await?;
+                    .map_err(super::module_control::vault_error)?
+                    .share_clipboard(text)
+                    .await
+                    .map_err(super::module_control::vault_error)
+            })
+            .await?;
         self.wake_replica();
         Ok(result)
     }
     pub async fn clipboard_publish_native(&self) -> Result<String, ClientError> {
         #[cfg(target_os = "android")]
         {
+            let guard = self
+                .module_access("clipboard", super::module_control::Adapter::Shared)
+                .await?;
             if !self.active.load(Ordering::Relaxed) {
                 return Err(ClientError::Busy);
             }
@@ -755,6 +782,7 @@ impl NdsClient {
                 .read()
                 .await
                 .map_err(|error| ClientError::Server(error.to_string()))?;
+            guard.validate().await?;
             let vault = self
                 .vault()
                 .await
@@ -812,16 +840,29 @@ impl NdsClient {
                 .map_err(clipboard_error)
         }
     }
-    pub async fn clipboard_copy(&self, ticket: Option<String>) -> Result<(), VaultError> {
+    pub async fn clipboard_copy(&self, ticket: Option<String>) -> Result<(), ClientError> {
         let reserved = ClipboardReservation(ticket);
-        observe("clipboard.copy", async {
+        super::module_control::observe("clipboard", "clipboard.copy", async {
+            let guard = self
+                .module_access("clipboard", super::module_control::Adapter::Shared)
+                .await?;
             let (_, text) = self
                 .vault()
-                .await?
+                .await
+                .map_err(super::module_control::vault_error)?
                 .clipboard()
-                .await?
-                .ok_or(VaultError::Invalid)?;
-            self.write_clipboard(text, false, &reserved).await
+                .await
+                .map_err(super::module_control::vault_error)?
+                .ok_or(ClientError::InvalidInput)?;
+            guard.validate().await?;
+            let result = self.write_clipboard(text, false, &reserved).await;
+            guard.observe(&result.as_ref().map(|_| ()).map_err(|error| match error {
+                VaultError::Busy => nddev_device_sync_domain::modules::ModuleError::Busy,
+                VaultError::Cancelled => nddev_device_sync_domain::modules::ModuleError::Cancelled,
+                VaultError::Invalid => nddev_device_sync_domain::modules::ModuleError::InvalidInput,
+                _ => nddev_device_sync_domain::modules::ModuleError::Unavailable,
+            }));
+            result.map_err(super::module_control::vault_error)
         })
         .await
     }
@@ -1009,6 +1050,7 @@ impl NdsClient {
     }
     #[cfg_attr(feature = "flutter", frb(sync))]
     pub fn cancel(&self) {
+        self.module_control.stop();
         self.cancel_work(true);
     }
     fn cancel_work(&self, clear_sign_in: bool) -> Option<runtime::Task> {
@@ -1221,7 +1263,7 @@ fn observe<T>(
 // One terminal caller event and process span; transport owners retain their I/O spans.
 #[cfg_attr(feature = "flutter", frb(ignore))]
 pub(crate) fn observe_operation<T, E>(
-    module: &'static str,
+    module: &str,
     event: &'static str,
     work: impl std::future::Future<Output = Result<T, E>>,
     unavailable: E,
@@ -1254,7 +1296,7 @@ pub(crate) fn observe_cleanup<T, E>(
 }
 
 async fn observe_in_span<T, E>(
-    module: &'static str,
+    module: &str,
     event: &'static str,
     work: impl std::future::Future<Output = Result<T, E>>,
     span: tracing::Span,

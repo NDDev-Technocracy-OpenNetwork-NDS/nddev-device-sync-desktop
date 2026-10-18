@@ -13,6 +13,7 @@ import 'package:nds_native/rds.dart' as rds;
 
 import 'l10n/app_localizations.dart';
 import 'diagnostics.dart';
+import 'module_settings.dart';
 
 /// Presentation over canonical native responses. Local tools retain their state
 /// and safety policies; this screen exposes bounded read/preview operations.
@@ -32,7 +33,10 @@ class ModulesScreen extends StatefulWidget {
 
 class _ModulesScreenState extends State<ModulesScreen> {
   native.LocalAgent? _agent;
-  List<native.ModuleObservation> _modules = [];
+  List<native.DeviceModuleView> _modules = [];
+  String? _scope;
+  bool _metadataError = false;
+  Future<void>? _metadataRead;
   String _selected = 'sysinfo';
   Object? _result;
   String? _error;
@@ -86,30 +90,106 @@ class _ModulesScreenState extends State<ModulesScreen> {
     _discover();
   }
 
-  Future<void> _discover() async {
+  String? _currentScope() {
+    final view = widget.client?.snapshot();
+    return view == null
+        ? null
+        : '${view.authenticated}:${view.tenantId}:${view.userId}:${view.currentDeviceId}';
+  }
+
+  @override
+  void didUpdateWidget(covariant ModulesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.client, widget.client) ||
+        _scope != _currentScope()) {
+      _epoch++;
+      _agent?.close();
+      _agent?.dispose();
+      _agent = null;
+      _modules = [];
+      _result = null;
+      _error = null;
+      _metadataRead = null;
+      _discover();
+    } else if (!_busy && _metadataError) {
+      _refreshModules();
+    }
+  }
+
+  Future<void> _refreshModules() {
+    if (_metadataRead case final reading?) return reading;
+    late final Future<void> owned;
+    owned = _readModules().whenComplete(() {
+      if (identical(_metadataRead, owned)) _metadataRead = null;
+    });
+    _metadataRead = owned;
+    return owned;
+  }
+
+  Future<void> _readModules() async {
+    final client = widget.client;
     final epoch = _epoch;
+    if (client == null) return;
     try {
-      final agent = await native.LocalAgent.discover();
-      if (!mounted || epoch != _epoch) {
-        agent.close();
-        agent.dispose();
-        return;
-      }
-      setState(() {
-        _agent = agent;
-        _modules = agent.modules();
-        _busy = false;
-      });
-    } catch (error) {
-      if (error is! native.ModuleError) {
-        widget.diagnostics?.reportFailure(native.FailureKind.nativeBridge);
-      }
-      if (mounted && epoch == _epoch) {
+      final modules = await client.deviceModules();
+      if (mounted && epoch == _epoch && identical(client, widget.client)) {
         setState(() {
-          _error = 'unavailable';
-          _busy = false;
+          _modules = modules;
+          _metadataError = false;
         });
       }
+    } catch (error) {
+      if (error is native.ClientError) error.dispose();
+      if (mounted && epoch == _epoch) setState(() => _metadataError = true);
+    }
+  }
+
+  Future<void> _discover() async {
+    final client = widget.client;
+    final epoch = _epoch;
+    _scope = _currentScope();
+    final view = client?.snapshot();
+    if (client == null ||
+        view == null ||
+        !view.authenticated ||
+        view.currentDeviceId.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _error = 'module_device_required';
+        });
+      }
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _busy = true;
+        _error = null;
+      });
+    }
+    try {
+      native.LocalAgent? agent;
+      if (native.supportsLocalAgent()) {
+        agent = await client.discoverLocalAgent();
+      }
+      if (!mounted || epoch != _epoch || !identical(client, widget.client)) {
+        agent?.close();
+        agent?.dispose();
+        return;
+      }
+      _agent = agent;
+      await _refreshModules();
+    } catch (error) {
+      var code = 'unavailable';
+      if (error is native.ClientError) {
+        code = error.code();
+        error.dispose();
+      } else {
+        widget.diagnostics?.reportFailure(native.FailureKind.nativeBridge);
+      }
+      if (mounted && epoch == _epoch) setState(() => _error = code);
+    } finally {
+      if (mounted && epoch == _epoch) setState(() => _busy = false);
     }
   }
 
@@ -125,20 +205,21 @@ class _ModulesScreenState extends State<ModulesScreen> {
       final result = await operation();
       if (mounted && epoch == _epoch) setState(() => _result = result);
     } catch (error) {
-      if (error is! native.ModuleError) {
+      var code = 'unknown';
+      if (error is native.ClientError) {
+        code = error.code();
+        error.dispose();
+      } else {
         widget.diagnostics?.reportFailure(native.FailureKind.nativeBridge);
       }
-      if (mounted && epoch == _epoch) {
-        setState(
-          () => _error = error is native.ModuleError ? error.name : 'unknown',
-        );
-      }
+      if (mounted && epoch == _epoch) setState(() => _error = code);
     } finally {
       if (mounted && epoch == _epoch) {
         setState(() {
           _busy = false;
-          _modules = _agent?.modules() ?? [];
+          // Metadata refresh is separate from the completed operation result.
         });
+        await _refreshModules();
       } else if (mounted && _cancelled) {
         // Close is terminal. Wait for the owned operation to finish before
         // creating another engine, so repeated cancellation cannot queue work.
@@ -189,7 +270,8 @@ class _ModulesScreenState extends State<ModulesScreen> {
     'invalidResponse' || 'invalidContract' => l.moduleResponseError,
     'sync_capacity_exhausted' => l.serverCapacityExhausted,
     'publish' => l.statePublishError,
-    _ => l.providerFailed,
+    'module_device_required' => l.moduleDeviceRequired,
+    _ => moduleFailureLabel(l, error),
   };
 
   String _number(num? value, [String unit = '']) => value == null
@@ -257,6 +339,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
                                   mime.startsWith('text/plain;'),
                             );
                             final bytes = await _agent!.clipboardContent(
+                              client: widget.client!,
                               entry: entry.id,
                               mime: mime,
                             );
@@ -273,7 +356,10 @@ class _ModulesScreenState extends State<ModulesScreen> {
             onPressed: _busy
                 ? null
                 : () => _load(
-                    () => _agent!.clipboardEntries(before: value.items.last.id),
+                    () => _agent!.clipboardEntries(
+                      client: widget.client!,
+                      before: value.items.last.id,
+                    ),
                   ),
             child: Text(l.nextPage),
           ),
@@ -396,13 +482,21 @@ class _ModulesScreenState extends State<ModulesScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final client = widget.client;
+    final scope = _scope;
     final current = _modules
         .where((module) => module.id == _selected)
         .firstOrNull;
     Widget action(String label, Future<Object> Function() run, {Key? key}) =>
         FilledButton(
           key: key,
-          onPressed: _busy || _agent == null ? null : () => _load(run),
+          onPressed:
+              _busy ||
+                  _agent == null ||
+                  current?.localToolSupported != true ||
+                  current?.localToolInstalled != true
+              ? null
+              : () => _load(run),
           child: Text(label),
         );
     return Scaffold(
@@ -432,7 +526,18 @@ class _ModulesScreenState extends State<ModulesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(l.localReadOnly),
+                  Text(l.moduleManagementHelp),
+                  if (widget.client != null)
+                    OutlinedButton(
+                      key: const Key('module-settings-refresh'),
+                      onPressed: _refreshModules,
+                      child: Text(l.moduleReloadDraft),
+                    ),
+                  if (_metadataError)
+                    Text(
+                      l.moduleMetadataError,
+                      key: const Key('module-metadata-error'),
+                    ),
                   if (widget.client?.snapshot().currentDeviceId.isNotEmpty ==
                       true) ...[
                     OutlinedButton(
@@ -473,13 +578,28 @@ class _ModulesScreenState extends State<ModulesScreen> {
                         vertical: OpenNetworkSpacing.four,
                       ),
                       child: Text(
-                        '${_name(l, current.id)} · ${current.version} · ${!current.configured ? l.providerUnavailable : switch (current.reachability) {
-                                native.Reachability.notChecked => l.notChecked,
-                                native.Reachability.reachable => l.reachable,
-                                native.Reachability.unavailable => l.providerUnavailable,
-                                native.Reachability.failed => l.providerFailed,
-                              }}${!current.configured || current.observedAtMs == null ? '' : ' · ${DateFormat.yMd(Localizations.localeOf(context).toString()).add_Hms().format(DateTime.fromMillisecondsSinceEpoch(current.observedAtMs!.toInt()))}'}',
+                        '${_name(l, current.id)} · ${current.version}${current.checkedAtMs == null ? '' : ' · ${DateFormat.yMd(Localizations.localeOf(context).toString()).add_Hms().format(DateTime.fromMillisecondsSinceEpoch(current.checkedAtMs!.toInt()))}'}',
                       ),
+                    ),
+                  if (current != null && widget.client != null)
+                    ModuleSettings(
+                      key: ValueKey('$_scope:${current.id}'),
+                      client: widget.client!,
+                      module: current,
+                      onSaved: () async {
+                        // A read begun before this edit must finish first. The
+                        // following read then observes the durable new basis.
+                        await _metadataRead;
+                        if (!mounted ||
+                            !identical(client, widget.client) ||
+                            scope != _scope) {
+                          return;
+                        }
+                        if (_selected == current.id) {
+                          setState(() => _result = null);
+                        }
+                        await _refreshModules();
+                      },
                     ),
                   if (_selected == 'gds')
                     Padding(
@@ -502,35 +622,54 @@ class _ModulesScreenState extends State<ModulesScreen> {
                       if (_selected == 'sysinfo')
                         action(
                           l.moduleRefresh,
-                          () => _agent!.systemInfo(),
+                          () => _agent!.systemInfo(client: widget.client!),
                           key: const Key('read-system-info'),
                         ),
                       if (_selected == 'clipboard')
                         action(
                           l.moduleRefresh,
-                          () => _agent!.clipboardEntries(),
+                          () =>
+                              _agent!.clipboardEntries(client: widget.client!),
                         ),
                       if (_selected == 'cleaner') ...[
                         action(
                           l.moduleDiagnostics,
-                          () => _agent!.cleanerDiagnostics(),
+                          () => _agent!.cleanerDiagnostics(
+                            client: widget.client!,
+                          ),
                         ),
-                        action(l.preview, () => _agent!.cleanerPreview()),
-                        action(l.lastRun, () => _agent!.cleanerLastRun()),
+                        action(
+                          l.preview,
+                          () => _agent!.cleanerPreview(client: widget.client!),
+                        ),
+                        action(
+                          l.lastRun,
+                          () => _agent!.cleanerLastRun(client: widget.client!),
+                        ),
                       ],
                       if (_selected == 'updater') ...[
-                        action(l.updatePlan, () => _agent!.updatePlan()),
-                        action(l.lastRun, () => _agent!.updateLastRun()),
+                        action(
+                          l.updatePlan,
+                          () => _agent!.updatePlan(client: widget.client!),
+                        ),
+                        action(
+                          l.lastRun,
+                          () => _agent!.updateLastRun(client: widget.client!),
+                        ),
                       ],
                       if (_selected == 'gds')
                         action(
                           l.moduleRefresh,
                           () => _agent!.repositoryStatus(
+                            client: widget.client!,
                             path: _repository.text.trim(),
                           ),
                         ),
                       if (_selected == 'rds')
-                        action(l.moduleRefresh, () => _agent!.remoteSessions()),
+                        action(
+                          l.moduleRefresh,
+                          () => _agent!.remoteSessions(client: widget.client!),
+                        ),
                       if (_busy && !_publishing && _agent != null)
                         TextButton(
                           onPressed: _cancelled ? null : _cancel,

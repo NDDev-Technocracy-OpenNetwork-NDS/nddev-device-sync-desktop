@@ -200,6 +200,9 @@ pub enum GithubCatalogError {
     ProviderFailed,
     InvalidResponse,
     CapacityExhausted,
+    ModuleDisabled,
+    ModulePermissionRequired,
+    ModuleConfigurationConflict,
 }
 
 impl std::fmt::Display for GithubCatalogError {
@@ -227,6 +230,13 @@ impl From<nddev_device_sync_accounts::view::ClientError> for GithubCatalogError 
     fn from(error: nddev_device_sync_accounts::view::ClientError) -> Self {
         use nddev_device_sync_accounts::view::ClientError as E;
         match error {
+            E::Server(ref code) if code == "module_disabled" => Self::ModuleDisabled,
+            E::Server(ref code) if code == "module_permission_required" => {
+                Self::ModulePermissionRequired
+            }
+            E::Server(ref code) if code == "module_configuration_conflict" => {
+                Self::ModuleConfigurationConflict
+            }
             E::Busy => Self::Busy,
             E::Cancelled => Self::Cancelled,
             E::Timeout => Self::Timeout,

@@ -1,6 +1,7 @@
 pub mod catalog;
 pub mod catalog_types;
 pub mod identity;
+pub mod module_control;
 pub mod module_types;
 pub mod modules;
 pub mod organizations;

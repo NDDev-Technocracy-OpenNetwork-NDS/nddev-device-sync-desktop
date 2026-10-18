@@ -7,6 +7,7 @@ import 'package:nds_native/nds_native.dart' as native;
 
 import 'l10n/app_localizations.dart';
 import 'activity.dart';
+import 'module_settings.dart';
 
 class StateScreen extends StatefulWidget {
   const StateScreen({super.key, required this.client});
@@ -138,7 +139,8 @@ class _StateScreenState extends State<StateScreen> {
                         children: [
                           Text(switch (item.kind) {
                             'device_state' => l.stateDevices,
-                            'module_state' => l.module,
+                            'module_state' ||
+                            'module_configuration' => l.module,
                             _ => l.sessionTitle,
                           }),
                           Text(
@@ -168,6 +170,13 @@ class _StateScreenState extends State<StateScreen> {
                                       _ => l.notChecked,
                                     },
                             ),
+                          if (item.kind == 'module_configuration') ...[
+                            Text(
+                              '${l.moduleEnabled}: ${item.enabled == true ? l.checkOk : l.checkError}',
+                            ),
+                            for (final permission in item.permissions)
+                              Text(modulePermissionLabel(l, permission)),
+                          ],
                           if (item.checkedAtMs != BigInt.zero)
                             Text('${l.lastRun}: ${_date(item.checkedAtMs)}'),
                           if (item.expiresAtMs != BigInt.zero)

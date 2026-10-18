@@ -10,17 +10,26 @@ parser.add_argument('log', type=Path)
 args = parser.parse_args()
 if args.log.stat().st_size > 32 * 1024 * 1024:
     raise SystemExit('Private acceptance log exceeded its bound')
-events=[]
-for line in args.log.read_text(errors='replace').splitlines():
+modules=[]
+processes=[]
+count=0
+for line in args.log.open(errors='replace'):
     start=line.find('{')
     if start < 0: continue
     try: event,_=json.JSONDecoder().raw_decode(line[start:])
     except json.JSONDecodeError: continue
     if isinstance(event,dict) and event.get('service.name')=='nddev-device-sync-client':
-        events.append(event)
-        if len(events)>1024: raise SystemExit('Unexpected client event volume')
-modules=[event for event in events if event.get('event.name')=='module.query.completed']
-processes=[event for event in events if event.get('event.name') in ['native.process.completed','native.process.failed']]
+        count += 1
+        if event.get('event.name','').startswith('logging.') and 'rejected' in event.get('event.name',''):
+            raise SystemExit('An actual owned event/field was rejected')
+        if any(isinstance(value,str) and (value.startswith(('/home/','/tmp/')) or 'NDS isolated archive:' in value) for value in event.values()):
+            raise SystemExit('Private path/content reached client telemetry')
+        if event.get('event.name')=='module.query.completed':
+            modules.append(event)
+        if event.get('event.name') in ['native.process.completed','native.process.failed']:
+            processes.append(event)
+        if len(modules)+len(processes)>1024:
+            raise SystemExit('Unexpected module/process event volume')
 if not {'sysinfo','clipboard','cleaner','updater','gds'} <= {event.get('module') for event in modules} or not processes:
     raise SystemExit('Actual module/process telemetry was not captured')
 for event in [*modules,*processes]:
@@ -35,9 +44,4 @@ for event in [*modules,*processes]:
 for process in processes:
     if not any(process['trace_id']==module['trace_id'] and process.get('module')==module.get('module') for module in modules):
         raise SystemExit('Native process event does not belong to its actual module call')
-for event in events:
-    if event.get('event.name','').startswith('logging.') and 'rejected' in event.get('event.name',''):
-        raise SystemExit('An actual owned event/field was rejected')
-    if any(isinstance(value,str) and (value.startswith(('/home/','/tmp/')) or 'NDS isolated archive:' in value) for value in event.values()):
-        raise SystemExit('Private path/content reached client telemetry')
-print(f'Validated {len(modules)} actual module and {len(processes)} process events; values not printed')
+print(f'Validated {count} client events including {len(modules)} actual module and {len(processes)} process events; values not printed')

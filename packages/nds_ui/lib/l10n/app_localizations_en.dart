@@ -1156,4 +1156,75 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get screenTargetsFailed =>
       'Could not load devices. Refresh to check access and connection.';
+
+  @override
+  String get moduleManagementHelp =>
+      'Enable modules and choose their NDS permissions for this device. System or browser consent is still required when a feature uses it.';
+
+  @override
+  String get moduleEnabled => 'Module enabled';
+
+  @override
+  String get modulePermissions => 'NDS permissions';
+
+  @override
+  String get moduleSave => 'Save module settings';
+
+  @override
+  String get moduleSaved =>
+      'Settings saved on this device; synchronization continues separately.';
+
+  @override
+  String get moduleDisabled => 'Enable this module to use its features.';
+
+  @override
+  String get modulePermissionRequired =>
+      'Choose the required NDS permissions before using this feature.';
+
+  @override
+  String get moduleConfigurationConflict =>
+      'Module settings conflict. No permission is granted until the conflict is resolved.';
+
+  @override
+  String get moduleDeviceRequired =>
+      'Sign in and register this device to manage modules.';
+
+  @override
+  String get moduleNotInstalled =>
+      'The required local tool is not installed or has not been found.';
+
+  @override
+  String get moduleInstalled => 'Available on this device';
+
+  @override
+  String get moduleInstallationUnknown => 'Availability has not been checked';
+
+  @override
+  String get moduleMetadataError =>
+      'Module settings could not be refreshed. The last operation result is unchanged.';
+
+  @override
+  String get permissionReadOnly => 'Read local information';
+
+  @override
+  String get permissionCredentialStore => 'Use protected credential references';
+
+  @override
+  String get permissionProcessExecution => 'Run the declared local tool';
+
+  @override
+  String get permissionLocalNetwork => 'Communicate with the declared service';
+
+  @override
+  String get permissionUserService => 'Use the current user service';
+
+  @override
+  String get permissionClipboard => 'Use clipboard features';
+
+  @override
+  String get moduleSettingsChanged =>
+      'Module settings changed. Refresh the form before saving your choice.';
+
+  @override
+  String get moduleReloadDraft => 'Reload settings';
 }

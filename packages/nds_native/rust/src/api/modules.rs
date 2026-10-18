@@ -1,15 +1,16 @@
+#[cfg(feature = "flutter")]
 use flutter_rust_bridge::frb;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 use nddev_device_sync_agent::NativeAgent;
 use nddev_device_sync_domain::modules::{ModuleError, ModuleObservation};
 
-#[frb(opaque)]
+#[cfg_attr(feature = "flutter", frb(opaque))]
 pub struct LocalAgent {
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     inner: NativeAgent,
 }
 
-#[frb(sync)]
+#[cfg_attr(feature = "flutter", frb(sync))]
 pub fn supports_local_agent() -> bool {
     cfg!(any(
         target_os = "linux",
@@ -33,12 +34,12 @@ impl LocalAgent {
             Err(ModuleError::UnsupportedPlatform)
         }
     }
-    #[frb(sync)]
+    #[cfg_attr(feature = "flutter", frb(sync))]
     pub fn close(&self) {
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         self.inner.close();
     }
-    #[frb(sync)]
+    #[cfg_attr(feature = "flutter", frb(sync))]
     pub fn modules(&self) -> Result<Vec<ModuleObservation>, ModuleError> {
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         {
@@ -182,24 +183,28 @@ impl LocalAgent {
 
 /// Presentation access to the provider's opaque data-carrying enum. The
 /// canonical enum remains in updater; no DTO is copied or serialized to JSON.
-#[frb(sync)]
-pub fn update_action_kind(action: &nddev_device_sync_updater::view::Action) -> String {
-    use nddev_device_sync_updater::view::Action;
+#[cfg_attr(feature = "flutter", frb(sync))]
+pub fn update_action_kind(action: &nddev_device_sync_updater::view::SystemUpdateAction) -> String {
+    use nddev_device_sync_updater::view::SystemUpdateAction;
     match action {
-        Action::GdsInstall { .. } => "gds_install",
-        Action::VerifiedApplications => "verified_applications",
-        Action::AptObserve => "apt_observe",
-        Action::ToolchainObserve => "toolchain_observe",
-        Action::Homebrew => "homebrew",
-        Action::Flatpak => "flatpak",
+        SystemUpdateAction::GdsInstall { .. } => "gds_install",
+        SystemUpdateAction::VerifiedApplications => "verified_applications",
+        SystemUpdateAction::AptObserve => "apt_observe",
+        SystemUpdateAction::ToolchainObserve => "toolchain_observe",
+        SystemUpdateAction::Homebrew => "homebrew",
+        SystemUpdateAction::Flatpak => "flatpak",
     }
     .into()
 }
 
-#[frb(sync)]
-pub fn update_action_platform(action: &nddev_device_sync_updater::view::Action) -> Option<String> {
+#[cfg_attr(feature = "flutter", frb(sync))]
+pub fn update_action_platform(
+    action: &nddev_device_sync_updater::view::SystemUpdateAction,
+) -> Option<String> {
     match action {
-        nddev_device_sync_updater::view::Action::GdsInstall { platform } => Some(platform.clone()),
+        nddev_device_sync_updater::view::SystemUpdateAction::GdsInstall { platform } => {
+            Some(platform.clone())
+        }
         _ => None,
     }
 }

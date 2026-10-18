@@ -11,21 +11,21 @@
     "windows/runner/resources/app_icon.ico": "b323bb7844dfeae1bd562741a9f960aca5fd8d7319770fe88d592df94b33a9a4"
   },
   "source": {
-    "commit": "b9e989b14e7196d7292c20847869fa92964bec21",
+    "commit": "3d1fdea194a7ab8eb1928018f21512330a79cd43",
     "inputs_sha256": {
       ".gitattributes": "1aa4dff82b46fab86daa00edfe5180a952bdd2de760ddc6a19d54f4f2ddbd675",
       "assets/brand-source.json": "d512d54c78c672356593942cb6d4c5361135e6df90026c233c803757c1091e6a",
       "assets/nddev-mark.svg": "3997b08aa3c47d0d5827484db657c8e18a53dc0a00e1a875cc57eb931c6f4877",
       "tokens/tokens.json": "82d2da35ec8595ec3352a4f17e997159f81b45a7c057a2c2d5985c15f47ffef1",
-      "tools/generate_launchers.py": "a47b9e0c2bef341e7a2b2c30235c1a7661d1bf2aa92524088b2c48db226bfe9d",
-      "tools/requirements-icons.txt": "69676f88aba8a6e253f59c6921d70e62959658a8b02baf921b1b358fb70f86d5",
-      "tools/with-renderer-zlib.sh": "85aabb9dc8b7b97835039a5a64b6eab8f1858cd9cf558875d1eb7bd9b78de8fe"
+      "tools/generate_launchers.py": "b2dbd24bd6492625221b54a449ed3d5085fa05119f340ded29b0aa02a12d856c",
+      "tools/requirements-icons.txt": "db19e0d56c0fbab27ef325252529465dd4d7ca2b7c776a8de74d3b02e3afcc1c",
+      "tools/with-renderer-zlib.sh": "24067dfe5b6cfeef57c4ddb5bbf3218ed6209ec6a1f273629d599ab6352841c0"
     },
     "renderer": {
-      "pillow": "12.1.1",
+      "pillow": "12.3.0",
       "platform": "Linux-x86_64",
-      "python": "3.14.4",
-      "zlib": "1.3.1"
+      "python": "3.15.0",
+      "zlib": "1.3.2"
     },
     "repository": "NDDev-OpenNetwork/nddev-opennetwork-design-system"
   }

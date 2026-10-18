@@ -1,8 +1,13 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:code_assets/code_assets.dart';
 import 'package:flutter_rust_bridge_hooks/flutter_rust_bridge_hooks.dart';
 import 'package:logging/logging.dart';
 
 void main(List<String> args) async {
   await build(args, (input, output) async {
+    if (!input.config.buildCodeAssets) return;
     final development = input.userDefines['development_http'];
     if (development != null && development is! bool) {
       throw const FormatException('development_http must be a boolean');
@@ -21,6 +26,54 @@ void main(List<String> args) async {
         'gds_worker_sha256 must be an artifact digest',
       );
     }
+    final preparation = input.packageRoot.resolve('tool/prepare_native.py');
+    final pythonExecutable = input.userDefines['native_build_python'];
+    if (pythonExecutable != null &&
+        (pythonExecutable is! String || !File(pythonExecutable).isAbsolute)) {
+      throw const FormatException(
+        'native_build_python must be an absolute path',
+      );
+    }
+    final requestedCache = input.userDefines['native_build_cache'];
+    if (requestedCache != null &&
+        (requestedCache is! String || !Directory(requestedCache).isAbsolute)) {
+      throw const FormatException(
+        'native_build_cache must be an absolute path',
+      );
+    }
+    final cache =
+        requestedCache as String? ??
+        Directory.fromUri(input.outputDirectoryShared.resolve('nds-native/'))
+            .path;
+    final prepared = await Process.run(
+      pythonExecutable as String? ??
+          (Platform.isWindows ? 'python' : 'python3'),
+      [
+        File.fromUri(preparation).path,
+        '--cache',
+        cache,
+        '--json',
+        if (requestedCache != null) '--configured',
+      ],
+    );
+    stderr.write(prepared.stderr);
+    if (prepared.exitCode != 0) {
+      throw const ProcessException(
+        'prepare_native',
+        [],
+        'Native input preparation failed',
+      );
+    }
+    final native = (jsonDecode(
+      prepared.stdout as String,
+    ) as Map<String, dynamic>).cast<String, String>();
+    output.dependencies.addAll([
+      preparation,
+      input.packageRoot.resolve('rust/Cargo.toml'),
+      input.packageRoot.resolve('rust/Cargo.lock'),
+      input.packageRoot.resolve('rust/rust-toolchain.toml'),
+      File('${native['cargo_home']}${Platform.pathSeparator}config.toml').uri,
+    ]);
     // The upstream build helper logs its environment at CONFIG level. Never
     // forward those diagnostics; compiler failures still propagate as errors.
     final safeLogger = Logger.detached('nds_native_build')..level = Level.OFF;
@@ -32,6 +85,12 @@ void main(List<String> args) async {
       features: development == true ? const ['development-http'] : const [],
       extraCargoBuildArgs: const ['--locked', '--jobs', '4'],
       extraCargoEnvironmentVariables: {
+        'CARGO_HOME': native['cargo_home']!,
+        'CARGO_NET_GIT_FETCH_WITH_CLI': 'true',
+        'GIT_CONFIG_GLOBAL': Platform.isWindows ? 'NUL' : '/dev/null',
+        'GIT_CONFIG_NOSYSTEM': '1',
+        'GIT_TERMINAL_PROMPT': '0',
+        'NDS_NATIVE_BUILD_HOME': native['cache']!,
         'RUSTUP_AUTO_INSTALL': '0',
         'NDS_SOURCE_COMMIT': sourceCommit as String? ?? 'unknown',
         if (workerDigest != null)

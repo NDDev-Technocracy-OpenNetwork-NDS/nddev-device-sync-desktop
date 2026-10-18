@@ -19,10 +19,10 @@ bool supportsLocalAgent() =>
 
 /// Presentation access to the provider's opaque data-carrying enum. The
 /// canonical enum remains in updater; no DTO is copied or serialized to JSON.
-String updateActionKind({required Action action}) =>
+String updateActionKind({required SystemUpdateAction action}) =>
     RustLib.instance.api.crateApiModulesUpdateActionKind(action: action);
 
-String? updateActionPlatform({required Action action}) =>
+String? updateActionPlatform({required SystemUpdateAction action}) =>
     RustLib.instance.api.crateApiModulesUpdateActionPlatform(action: action);
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalAgent>>

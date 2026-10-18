@@ -4,8 +4,12 @@ import argparse
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 root = Path(__file__).resolve().parents[1]
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / 'packages/nds_native/tool'))
+from prepare_native import build_environment
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--check', action='store_true')
 args = parser.parse_args()
@@ -17,7 +21,7 @@ def generated():
     return {path: path.read_bytes() for path in paths if path.exists()}
 
 original = generated()
-environment = os.environ.copy()
+environment = build_environment()
 environment['CARGO_BUILD_JOBS'] = '4'
 completed = False
 try:

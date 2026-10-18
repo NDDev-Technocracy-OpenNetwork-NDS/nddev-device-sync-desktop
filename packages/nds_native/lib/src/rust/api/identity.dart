@@ -5,18 +5,22 @@
 
 import '../frb_generated.dart';
 import '../third_party/nddev_device_sync_accounts/view.dart';
+import '../third_party/nddev_device_sync_organizations/view.dart';
 import '../third_party/nddev_device_sync_telemetry/view.dart';
 import '../third_party/nddev_device_sync_vault/view.dart';
 import 'catalog_types.dart';
 import 'modules.dart';
+import 'organizations.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `batch_outcome`, `capacity_blocked`, `catalog_active`, `catalog_identity`, `clipboard_error`, `data_directory`, `device_observations`, `ensure_delivery`, `incident_view`, `observe_operation`, `observe`, `publish_state_inner`, `replica_start_error`, `reset_replica_session`, `schedule`, `start_replica`, `stop_replica`, `vault`, `wake_replica`, `write_clipboard`
+import 'screen.dart';
+
+// These functions are ignored because they are not marked as `pub`: `batch_outcome`, `cancel_work`, `capacity_blocked`, `catalog_active`, `clear_replica_fenced`, `clipboard_error`, `data_directory`, `device_observations`, `ensure_delivery`, `incident_view`, `observe_cleanup`, `observe_in_span`, `observe_incident`, `observe_operation`, `observe`, `publish_state_inner`, `recovered_policy`, `replica_auth_error`, `replica_start_error`, `reset_replica_schedule`, `reset_replica_session`, `schedule`, `shared_identity`, `spawn_replica`, `start_replica_fenced`, `start_replica_for_schedule`, `stop_replica`, `vault`, `wake_replica`, `write_clipboard`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `ClipboardReservation`, `Replica`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `drop`, `drop`
 
-/// Flutter reports raw lifecycle once. The shared application policy decides
+/// Presentation reports raw lifecycle once. The shared application policy decides
 /// whether this target may perform bounded replica and delivery work.
 bool clientWorkPermitted({required ClientLifecycle state}) =>
     RustLib.instance.api.crateApiIdentityClientWorkPermitted(state: state);
@@ -52,6 +56,25 @@ abstract class NdsClient implements RustOpaqueInterface {
 
   Future<ClipboardView> clipboardSnapshot();
 
+  Future<OrganizationOverviewView> company();
+
+  Future<CompanyCommand> companyChangeMember({
+    required String user,
+    required BigInt revision,
+    OrganizationRoleView? role,
+  });
+
+  Future<OrganizationInvitationPageView> companyInvitations({String? after});
+
+  Future<CompanyCommand> companyInvite({
+    required String email,
+    required OrganizationRoleView role,
+  });
+
+  Future<OrganizationMemberPageView> companyMembers({String? after});
+
+  Future<CompanyCommand> companyRevoke({required String invitation});
+
   DeliveryView deliverySnapshot();
 
   Future<GithubCredentialReferencePage> githubCatalogCredentials({
@@ -61,6 +84,10 @@ abstract class NdsClient implements RustOpaqueInterface {
   Future<GithubRepositoryPageView> githubRepositoryPage({
     required bool nextPage,
   });
+
+  Future<View> importBrowserInvitation();
+
+  Future<View> importInvitation({required String link});
 
   Future<IncidentView> incidentAction({
     required String id,
@@ -104,6 +131,29 @@ abstract class NdsClient implements RustOpaqueInterface {
 
   Future<View> revokePasskey({required String id});
 
+  /// Saved facts use NDS local authorization; no GitHub credential is resolved.
+  Future<GithubSavedRepositoryPageView> savedGithubRepositoryPage({
+    required bool nextPage,
+  });
+
+  Future<ScreenHost> screenAccept({required String id});
+
+  void screenCancel();
+
+  Future<void> screenClose();
+
+  Future<ScreenRequest?> screenIncoming();
+
+  Future<ScreenView> screenOpen({required String target});
+
+  Future<void> screenPrepare();
+
+  Future<void> screenStop();
+
+  /// Metadata read only. Opening a view still rechecks current server authority
+  /// and the target endpoint; registration is never capture consent or presence.
+  Future<List<ScreenTargetView>> screenTargets({required String user});
+
   void selectGithubCredential({
     required String recordRef,
     required String revision,
@@ -118,6 +168,7 @@ abstract class NdsClient implements RustOpaqueInterface {
 
   Future<View> startPasskey({
     required bool registration,
+    String? email,
     required String locale,
   });
 

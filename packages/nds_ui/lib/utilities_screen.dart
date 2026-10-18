@@ -162,6 +162,7 @@ class _UtilitiesState extends State<UtilitiesScreen> {
     'vault_locked' || 'authentication_failed' => l.authError,
     'device_revoked' => l.deviceRevokedHelp,
     'vault_busy' || 'clipboard_busy' || 'busy' || 'conflict' => l.operationBusy,
+    'vault_cancelled' => l.moduleCancelled,
     'vault_invalid_input' || 'invalid_input' => l.vaultInputError,
     'sync_capacity_exhausted' => l.serverCapacityExhausted,
     'vault_dependency_unavailable' ||
@@ -364,7 +365,7 @@ class _UtilitiesState extends State<UtilitiesScreen> {
                 TextButton(
                   key: const Key('refresh-incidents'),
                   onPressed: _busy ? null : () => _action(_alerts),
-                  child: Text(l.refresh),
+                  child: Text(l.moduleRefresh),
                 ),
                 if (_incidentsUnavailable) Text(l.incidentsUnavailable),
                 if (_incidents != null)
@@ -389,6 +390,10 @@ class _UtilitiesState extends State<UtilitiesScreen> {
                               incident.occurrences.toInt(),
                             ),
                           ),
+                          if (incident.silencedUntil.isNotEmpty)
+                            Text(
+                              '${l.silenceIncident} · ${l.expires}: ${_date(incident.silencedUntil)}',
+                            ),
                           if (incident.state != 'resolved')
                             Wrap(
                               spacing: OpenNetworkSpacing.four,

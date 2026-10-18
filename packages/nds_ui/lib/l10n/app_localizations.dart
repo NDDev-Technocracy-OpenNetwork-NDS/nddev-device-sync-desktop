@@ -1551,7 +1551,7 @@ abstract class AppLocalizations {
   /// No description provided for @serverCapacityExhausted.
   ///
   /// In en, this message translates to:
-  /// **'Server storage capacity is exhausted. Your encrypted changes remain on this device. Automatic sync is paused; retry manually after server capacity becomes available.'**
+  /// **'Server storage capacity is exhausted. Your encrypted changes remain on this device. Automatic sending is paused while NDS checks for a safe retry; you can also retry manually.'**
   String get serverCapacityExhausted;
 
   /// No description provided for @catalogTitle.
@@ -1563,7 +1563,7 @@ abstract class AppLocalizations {
   /// No description provided for @catalogHelp.
   ///
   /// In en, this message translates to:
-  /// **'Choose a vault record containing a GitHub access token. Read one page of repositories available to that credential.'**
+  /// **'Choose a vault record containing a GitHub access token to update the saved catalog. Each request reads one page available to that credential.'**
   String get catalogHelp;
 
   /// No description provided for @catalogCredential.
@@ -1623,7 +1623,7 @@ abstract class AppLocalizations {
   /// No description provided for @catalogInvalidResponse.
   ///
   /// In en, this message translates to:
-  /// **'GitHub returned a repository page that could not be verified.'**
+  /// **'Repository data could not be verified.'**
   String get catalogInvalidResponse;
 
   /// No description provided for @catalogProviderFailed.
@@ -1739,6 +1739,378 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Repository requests are paused while this app is in the background.'**
   String get catalogPaused;
+
+  /// No description provided for @screenView.
+  ///
+  /// In en, this message translates to:
+  /// **'View screen'**
+  String get screenView;
+
+  /// No description provided for @screenEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen viewing ended.'**
+  String get screenEnded;
+
+  /// No description provided for @screenOpening.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for screen access…'**
+  String get screenOpening;
+
+  /// No description provided for @screenUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The screen is unavailable.'**
+  String get screenUnavailable;
+
+  /// No description provided for @screenStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop viewing'**
+  String get screenStop;
+
+  /// No description provided for @screenRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen requests'**
+  String get screenRequests;
+
+  /// No description provided for @screenRequestsHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh requests from devices allowed by your current company policy. Sharing starts only after you allow this request.'**
+  String get screenRequestsHelp;
+
+  /// No description provided for @screenConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow this device to view your screen for the requested session?'**
+  String get screenConsent;
+
+  /// No description provided for @screenAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow screen viewing'**
+  String get screenAllow;
+
+  /// No description provided for @screenAccessAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen access is allowed for this session.'**
+  String get screenAccessAllowed;
+
+  /// No description provided for @screenStopSharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing'**
+  String get screenStopSharing;
+
+  /// No description provided for @catalogSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved catalog'**
+  String get catalogSaved;
+
+  /// No description provided for @catalogProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Update from GitHub'**
+  String get catalogProvider;
+
+  /// No description provided for @catalogSavedHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted observations retained in NDS. Dates show when data was observed, not current GitHub access or freshness.'**
+  String get catalogSavedHelp;
+
+  /// No description provided for @catalogReadSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh saved page'**
+  String get catalogReadSaved;
+
+  /// No description provided for @catalogSavedNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next saved page'**
+  String get catalogSavedNext;
+
+  /// No description provided for @catalogReadSavedAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh the saved catalog and try again.'**
+  String get catalogReadSavedAgain;
+
+  /// No description provided for @catalogMissingOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner {id}: details have not synchronized yet.'**
+  String catalogMissingOwner(String id);
+
+  /// No description provided for @catalogCapacityReached.
+  ///
+  /// In en, this message translates to:
+  /// **'The catalog could not finish updating because synchronization storage reached its limit. Saved observations remain available.'**
+  String get catalogCapacityReached;
+
+  /// No description provided for @companyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Company'**
+  String get companyTitle;
+
+  /// No description provided for @companyPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Company administration is online. Personal Vault, secrets and repositories remain private to their owner.'**
+  String get companyPrivacy;
+
+  /// No description provided for @companyAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Administrator'**
+  String get companyAdmin;
+
+  /// No description provided for @companyUser.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get companyUser;
+
+  /// No description provided for @companyCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'The server confirmed the change. Refresh to see the current state.'**
+  String get companyCompleted;
+
+  /// No description provided for @companyLastAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'The last active administrator cannot be removed or demoted.'**
+  String get companyLastAdmin;
+
+  /// No description provided for @companyConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'The member changed since this page was loaded. Review the current state.'**
+  String get companyConflict;
+
+  /// No description provided for @companyExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'The command has expired. Review the current state before a new action.'**
+  String get companyExpired;
+
+  /// No description provided for @companyInvitationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This invitation or recipient is no longer available for this action.'**
+  String get companyInvitationUnavailable;
+
+  /// No description provided for @companyDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current membership does not allow this action.'**
+  String get companyDenied;
+
+  /// No description provided for @companyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the email address and selected action.'**
+  String get companyInvalid;
+
+  /// No description provided for @companyPending.
+  ///
+  /// In en, this message translates to:
+  /// **'The original command is retained for retry. If the connection failed, the server may have applied it. Review the current state before creating another command. Closing this screen does not resend it.'**
+  String get companyPending;
+
+  /// No description provided for @companyRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry the same command'**
+  String get companyRetry;
+
+  /// No description provided for @companyReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review state and finish this command'**
+  String get companyReview;
+
+  /// No description provided for @companyMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get companyMembers;
+
+  /// No description provided for @companyActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get companyActive;
+
+  /// No description provided for @companyRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed'**
+  String get companyRemoved;
+
+  /// No description provided for @companyRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove member'**
+  String get companyRemove;
+
+  /// No description provided for @companyChangeRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Change role'**
+  String get companyChangeRole;
+
+  /// No description provided for @companyChangeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply this membership change to {member}? Removing a member ends their active sessions; their personal data is retained.'**
+  String companyChangeHelp(String member);
+
+  /// No description provided for @companyConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get companyConfirm;
+
+  /// No description provided for @companyNextMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Next members'**
+  String get companyNextMembers;
+
+  /// No description provided for @companyInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite by email'**
+  String get companyInvite;
+
+  /// No description provided for @companyDeliveryHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending an invitation, acceptance by the mail service and joining the company are separate steps. Links expire after seven days.'**
+  String get companyDeliveryHelp;
+
+  /// No description provided for @companyInvitePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting acceptance'**
+  String get companyInvitePending;
+
+  /// No description provided for @companyJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined'**
+  String get companyJoined;
+
+  /// No description provided for @companyInviteExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get companyInviteExpired;
+
+  /// No description provided for @companyInviteRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoked'**
+  String get companyInviteRevoked;
+
+  /// No description provided for @companyDeliveryPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Mail: awaiting delivery result'**
+  String get companyDeliveryPending;
+
+  /// No description provided for @companyDeliveryAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Mail: accepted by the mail service'**
+  String get companyDeliveryAccepted;
+
+  /// No description provided for @companyDeliveryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mail: not sent'**
+  String get companyDeliveryFailed;
+
+  /// No description provided for @companyDeliveryUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Mail: delivery result unknown'**
+  String get companyDeliveryUnknown;
+
+  /// No description provided for @companyRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke invitation'**
+  String get companyRevoke;
+
+  /// No description provided for @companyNextInvitations.
+  ///
+  /// In en, this message translates to:
+  /// **'Next invitations'**
+  String get companyNextInvitations;
+
+  /// No description provided for @invitationImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Open invitation'**
+  String get invitationImport;
+
+  /// No description provided for @invitationLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation link'**
+  String get invitationLink;
+
+  /// No description provided for @invitationVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation loaded. Enter the invited email address and verify the code sent to it. The link alone does not sign you in.'**
+  String get invitationVerify;
+
+  /// No description provided for @invitationSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'An invitation is waiting. Sign out first to verify the invited email address.'**
+  String get invitationSignOut;
+
+  /// No description provided for @passkeyAccountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For passkey sign-in, enter the email address linked to your NDS account. With multiple members, an account must be selected.'**
+  String get passkeyAccountHint;
+
+  /// No description provided for @screenTargets.
+  ///
+  /// In en, this message translates to:
+  /// **'Devices for screen viewing'**
+  String get screenTargets;
+
+  /// No description provided for @screenTargetsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No active devices.'**
+  String get screenTargetsEmpty;
+
+  /// No description provided for @screenNotRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'Open screen sharing on this device first.'**
+  String get screenNotRegistered;
+
+  /// No description provided for @screenTargetsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load devices. Refresh to check access and connection.'**
+  String get screenTargetsFailed;
 }
 
 class _AppLocalizationsDelegate

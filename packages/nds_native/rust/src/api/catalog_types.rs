@@ -1,5 +1,13 @@
-//! Transient presentation only. Provider IDs remain exact decimal strings on web.
+//! Catalog presentation only. Provider IDs and revisions remain decimal strings.
 #[derive(Clone)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubCredentialReference {
     pub record_ref: String,
     pub title: String,
@@ -7,27 +15,67 @@ pub struct GithubCredentialReference {
     pub revision: String,
     pub pending_id: Option<String>,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubCredentialReferencePage {
     pub items: Vec<GithubCredentialReference>,
     pub next_after: String,
     pub has_more: bool,
 }
 #[derive(Clone, Copy)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub enum GithubOwnerKindView {
     User,
     Organization,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubOwnerView {
     pub id: String,
     pub login: String,
     pub kind: GithubOwnerKindView,
 }
 #[derive(Clone, Copy)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub enum GithubRepositoryVisibilityView {
     Public,
     Private,
     Internal,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubRepositorySummaryView {
     pub id: String,
     pub name: String,
@@ -35,21 +83,110 @@ pub struct GithubRepositorySummaryView {
     pub archived: bool,
     pub default_branch: Option<String>,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubRepositoryGroupView {
     pub owner: GithubOwnerView,
     pub repositories: Vec<GithubRepositorySummaryView>,
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub enum GithubCatalogContinuationView {
     More,
     EndOfAccessScope,
     LimitReached,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubRepositoryPageView {
     pub principal: GithubOwnerView,
     pub groups: Vec<GithubRepositoryGroupView>,
     pub observed_at_ms: String,
     pub continuation: GithubCatalogContinuationView,
+}
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
+pub struct GithubObservationView {
+    pub revision: String,
+    pub pending: bool,
+    pub conflicted: bool,
+    pub observed_at_ms: String,
+}
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
+pub struct GithubSavedOwnerView {
+    pub owner: GithubOwnerView,
+    pub observation: GithubObservationView,
+}
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
+pub struct GithubSavedRepositoryView {
+    pub repository: GithubRepositorySummaryView,
+    pub observation: GithubObservationView,
+}
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
+pub struct GithubSavedRepositoryGroupView {
+    pub owner_id: String,
+    pub owner: Option<GithubSavedOwnerView>,
+    pub repositories: Vec<GithubSavedRepositoryView>,
+}
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
+pub struct GithubSavedRepositoryPageView {
+    pub groups: Vec<GithubSavedRepositoryGroupView>,
+    pub observed_seq: String,
+    pub local_revision: String,
+    pub has_more: bool,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GithubCatalogError {
@@ -62,6 +199,7 @@ pub enum GithubCatalogError {
     Unavailable,
     ProviderFailed,
     InvalidResponse,
+    CapacityExhausted,
 }
 
 impl std::fmt::Display for GithubCatalogError {
@@ -105,9 +243,26 @@ impl From<nddev_device_sync_vault::view::VaultError> for GithubCatalogError {
             E::Busy => Self::Busy,
             E::Invalid => Self::InvalidResponse,
             E::SelectionChanged => Self::CredentialChanged,
+            E::Cancelled => Self::Cancelled,
             E::Locked | E::Authentication | E::RegistrationRequired => Self::AuthorizationRequired,
-            E::Unavailable | E::StorageFull | E::CapacityExhausted => Self::Unavailable,
+            E::CapacityExhausted => Self::CapacityExhausted,
+            E::Unavailable | E::StorageFull => Self::Unavailable,
         }
+    }
+}
+
+fn owner(value: nddev_device_sync_domain::repositories::catalog::GithubOwner) -> GithubOwnerView {
+    GithubOwnerView {
+        id: value.id.value().to_string(),
+        login: value.login,
+        kind: match value.kind {
+            nddev_device_sync_domain::repositories::catalog::GithubOwnerKind::User => {
+                GithubOwnerKindView::User
+            }
+            nddev_device_sync_domain::repositories::catalog::GithubOwnerKind::Organization => {
+                GithubOwnerKindView::Organization
+            }
+        },
     }
 }
 
@@ -118,16 +273,6 @@ pub(crate) fn project_page(
     Option<nddev_device_sync_domain::repositories::catalog::CatalogCursor>,
 ) {
     use nddev_device_sync_domain::repositories::catalog as c;
-    fn owner(value: c::GithubOwner) -> GithubOwnerView {
-        GithubOwnerView {
-            id: value.id.value().to_string(),
-            login: value.login,
-            kind: match value.kind {
-                c::GithubOwnerKind::User => GithubOwnerKindView::User,
-                c::GithubOwnerKind::Organization => GithubOwnerKindView::Organization,
-            },
-        }
-    }
     let (continuation, cursor) = match page.continuation {
         c::CatalogContinuation::More(cursor) => (GithubCatalogContinuationView::More, Some(cursor)),
         c::CatalogContinuation::EndOfAccessScope => {
@@ -168,6 +313,64 @@ pub(crate) fn project_page(
         },
         cursor,
     )
+}
+
+pub(crate) fn project_saved_page(
+    groups: Vec<nddev_device_sync_domain::repositories::catalog::observations::projection::SavedRepositoryGroup>,
+    observed_seq: u64,
+    local_revision: u64,
+    has_more: bool,
+) -> GithubSavedRepositoryPageView {
+    use nddev_device_sync_domain::repositories::catalog::{
+        RepositoryVisibility, observations::TargetVersion,
+    };
+    fn observed(version: TargetVersion, at: u64) -> GithubObservationView {
+        GithubObservationView {
+            revision: version.revision.to_string(),
+            pending: version.pending_id.is_some(),
+            conflicted: version.conflicted,
+            observed_at_ms: at.to_string(),
+        }
+    }
+    GithubSavedRepositoryPageView {
+        observed_seq: observed_seq.to_string(),
+        local_revision: local_revision.to_string(),
+        has_more,
+        groups: groups
+            .into_iter()
+            .map(|group| GithubSavedRepositoryGroupView {
+                owner_id: group.owner_id.value().to_string(),
+                owner: group.owner.map(|value| GithubSavedOwnerView {
+                    owner: owner(value.owner),
+                    observation: observed(value.version, value.observed_at_ms),
+                }),
+                repositories: group
+                    .repositories
+                    .into_iter()
+                    .map(|value| GithubSavedRepositoryView {
+                        repository: GithubRepositorySummaryView {
+                            id: value.repository.id.value().to_string(),
+                            name: value.repository.name,
+                            visibility: match value.repository.visibility {
+                                RepositoryVisibility::Public => {
+                                    GithubRepositoryVisibilityView::Public
+                                }
+                                RepositoryVisibility::Private => {
+                                    GithubRepositoryVisibilityView::Private
+                                }
+                                RepositoryVisibility::Internal => {
+                                    GithubRepositoryVisibilityView::Internal
+                                }
+                            },
+                            archived: value.repository.archived,
+                            default_branch: value.repository.default_branch,
+                        },
+                        observation: observed(value.version, value.observed_at_ms),
+                    })
+                    .collect(),
+            })
+            .collect(),
+    }
 }
 
 #[cfg(test)]

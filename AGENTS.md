@@ -6,8 +6,8 @@ NDS credentials stay in the Rust accounts module and its platform adapters. Neve
 exchange tokens or private keys through FFI or log bodies. Protocol owns wire
 schemas; generate mechanical projections and keep core independent of Flutter.
 
-Read standarts.lock and module.yaml. Use Rust 1.99.0 and Flutter 3.47.7/Dart
-3.13.5. Keep en/ru ARB messages, NDDev OpenNetwork branding and https://nddev.ai.
+Read standarts.lock and module.yaml. Use the Rust compiler in
+packages/nds_native/rust/rust-toolchain.toml and Flutter/Dart in toolchains.lock.json. Keep en/ru ARB messages, NDDev OpenNetwork branding and https://nddev.ai.
 Public code is AGPL-3.0-only and contains no real owner addresses, infrastructure
 configuration or runtime evidence. Preserve native stores and unrelated work.
 Run formatting, analysis, generated-source checks and actual platform acceptance;

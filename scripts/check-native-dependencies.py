@@ -13,8 +13,10 @@ metadata = json.loads(subprocess.check_output(
 # accounts/SDK state even when their names and versions match. Android-only
 # dependencies must participate in this check on Linux CI too.
 for name in (
+    'nddev-device-sync-application',
     'nddev-device-sync-domain',
     'nddev-device-sync-accounts',
+    'nddev-device-sync-organizations',
     'nddev-device-sync-telemetry',
     'nddev-device-sync-vault',
     'nddev-device-sync-clipboard',
@@ -22,4 +24,4 @@ for name in (
     packages = [package for package in metadata['packages'] if package['name'] == name]
     if len(packages) != 1:
         raise SystemExit(f'Expected one {name} package across all platforms, found {len(packages)}')
-print('Locked native graph has one domain, accounts, telemetry, vault and clipboard package')
+print('Locked native graph has one application, domain, accounts, telemetry, vault and clipboard package')

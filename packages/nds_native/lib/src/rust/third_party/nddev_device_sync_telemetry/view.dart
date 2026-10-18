@@ -15,7 +15,13 @@ enum DebugScope { http, transport, database, io, process }
 
 enum DiagnosticsError { invalidInput, unavailable }
 
-enum FailureKind { flutterFramework, dartUnhandled, nativeBridge }
+enum FailureKind {
+  flutterFramework,
+  dartUnhandled,
+  nativeBridge,
+  reactRender,
+  browserUnhandled,
+}
 
 /// A local sink is never evidence of remote collection or searchable delivery.
 class LocalDiagnostics {

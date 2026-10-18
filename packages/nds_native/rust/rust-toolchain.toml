@@ -1,5 +1,5 @@
 [toolchain]
-channel = "1.99.0"
+channel = "1.99.1"
 profile = "minimal"
 # NativeAssets validates the requested target against this declaration. Entries
 # declare build targets, not evidence that a platform has passed acceptance.

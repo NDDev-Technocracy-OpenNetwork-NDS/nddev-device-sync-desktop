@@ -169,24 +169,35 @@ class RecordView {
 }
 
 class StatePage {
+  final BigInt observedSeq;
+  final BigInt localRevision;
   final List<StateView> items;
   final String nextAfter;
   final bool hasMore;
 
   const StatePage({
+    required this.observedSeq,
+    required this.localRevision,
     required this.items,
     required this.nextAfter,
     required this.hasMore,
   });
 
   @override
-  int get hashCode => items.hashCode ^ nextAfter.hashCode ^ hasMore.hashCode;
+  int get hashCode =>
+      observedSeq.hashCode ^
+      localRevision.hashCode ^
+      items.hashCode ^
+      nextAfter.hashCode ^
+      hasMore.hashCode;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is StatePage &&
           runtimeType == other.runtimeType &&
+          observedSeq == other.observedSeq &&
+          localRevision == other.localRevision &&
           items == other.items &&
           nextAfter == other.nextAfter &&
           hasMore == other.hasMore;
@@ -206,6 +217,7 @@ class StateView {
   final BigInt expiresAtMs;
   final String errorClass;
   final BigInt revision;
+  final String? pendingId;
   final bool conflicted;
 
   const StateView({
@@ -222,6 +234,7 @@ class StateView {
     required this.expiresAtMs,
     required this.errorClass,
     required this.revision,
+    this.pendingId,
     required this.conflicted,
   });
 
@@ -240,6 +253,7 @@ class StateView {
       expiresAtMs.hashCode ^
       errorClass.hashCode ^
       revision.hashCode ^
+      pendingId.hashCode ^
       conflicted.hashCode;
 
   @override
@@ -260,6 +274,7 @@ class StateView {
           expiresAtMs == other.expiresAtMs &&
           errorClass == other.errorClass &&
           revision == other.revision &&
+          pendingId == other.pendingId &&
           conflicted == other.conflicted;
 }
 
@@ -270,6 +285,7 @@ enum VaultError {
   unavailable,
   busy,
   selectionChanged,
+  cancelled,
   storageFull,
   capacityExhausted,
   registrationRequired;

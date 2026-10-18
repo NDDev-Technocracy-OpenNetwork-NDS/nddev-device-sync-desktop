@@ -8,4 +8,41 @@ allow = [
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-allow-git = ["https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault.git", "https://github.com/NDDev-OpenNetwork/nddev-device-sync-protocol.git", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability", "https://github.com/NDDev-OpenNetwork/nddev-device-sync-sysinfo", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-clipboard", "https://github.com/NDDev-OpenNetwork/nddev-device-sync-cleaner", "https://github.com/NDDev-OpenNetwork/nddev-device-sync-updater", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds", "https://github.com/NDDev-OpenNetwork/nddev-device-sync-rds", "https://github.com/NDDev-OpenNetwork/nddev-device-sync-core.git", "https://github.com/NDDev-OpenNetwork/nddev-device-sync-agent", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent"]
+allow-git = [
+    "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations","https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-protocol.git", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-sysinfo", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-clipboard", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-cleaner", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-updater", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-rds", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-core.git", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent"]
+
+# Exact native/relay inputs already reviewed by the owning RDS package.
+[[licenses.exceptions]]
+name = "attohttpc"
+version = "=0.30.1"
+allow = ["MPL-2.0"]
+[[licenses.exceptions]]
+name = "openh264"
+version = "=0.9.9"
+allow = ["BSD-2-Clause"]
+[[licenses.exceptions]]
+name = "openh264-sys2"
+version = "=0.9.9"
+allow = ["BSD-2-Clause"]
+[[licenses.exceptions]]
+name = "spez"
+version = "=0.1.2"
+allow = ["BSD-2-Clause"]
+[[licenses.exceptions]]
+name = "async_io_stream"
+version = "=0.3.3"
+allow = ["Unlicense"]
+[[licenses.exceptions]]
+name = "pharos"
+version = "=0.5.3"
+allow = ["Unlicense"]
+[[licenses.exceptions]]
+name = "ws_stream_wasm"
+version = "=0.7.5"
+allow = ["Unlicense"]
+
+# Native libsecret build-time target detection; reviewed permissive exception.
+[[licenses.exceptions]]
+name = "target-lexicon"
+version = "=0.13.5"
+allow = ["Apache-2.0 WITH LLVM-exception"]

@@ -9,8 +9,8 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`
 
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Action>>
-abstract class Action implements RustOpaqueInterface {}
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<SystemUpdateAction>>
+abstract class SystemUpdateAction implements RustOpaqueInterface {}
 
 class ActionResult {
   final String action;
@@ -62,7 +62,7 @@ class ActionResult {
 class Plan {
   final int schema;
   final String channel;
-  final List<Action> actions;
+  final List<SystemUpdateAction> actions;
 
   const Plan({
     required this.schema,

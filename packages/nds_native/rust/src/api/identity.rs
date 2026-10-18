@@ -1233,6 +1233,14 @@ fn data_directory() -> Result<std::path::PathBuf, VaultError> {
 }
 
 #[derive(Clone)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct IncidentView {
     pub id: String,
     pub service: String,
@@ -1246,6 +1254,14 @@ pub struct IncidentView {
     pub silenced_until: String,
 }
 #[derive(Clone)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct IncidentPage {
     pub incidents: Vec<IncidentView>,
     pub next_cursor: String,

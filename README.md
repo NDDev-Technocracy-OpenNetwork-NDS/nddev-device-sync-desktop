@@ -171,10 +171,13 @@ Browser storage, HTTP, credentials and clipboard are owned by their adapters;
 native tools are not exposed as browser capabilities.
 
 With default features disabled, `browser-bindings` exposes identity, company
-administration, Vault and clipboard operations over the same Rust owners without
-linking the Flutter bridge. Public metadata types come from their owning Rust
-views; 64-bit values remain `bigint`, inputs reject coercion and company commands
-retain their immutable Rust handles. Secrets are copied by the Rust clipboard
+administration, Vault, clipboard, catalog and incident operations over the same
+Rust owners without linking the Flutter bridge. Public metadata types come from
+their owning Rust views; 64-bit values remain `bigint`, inputs reject coercion and company commands
+retain their immutable Rust handles. Catalog continuations stay in Rust and
+explicit page actions are not automatically replayed by presentation caches.
+Clipboard availability uses the same platform capability check as Flutter.
+Secrets are copied by the Rust clipboard
 adapter, never returned as presentation values. Fixed React/browser failure
 classes use the shared telemetry SDK without exception text or stacks.
 Install `wasm32-unknown-unknown` for the pinned compiler and run `just browser-check`.

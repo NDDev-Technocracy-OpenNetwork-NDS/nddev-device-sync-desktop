@@ -1,6 +1,14 @@
 //! Thin browser boundary over the same Rust composition used by Flutter.
 //! Public values are generated metadata projections; commands stay opaque.
-use crate::api::{identity::NdsClient, organizations::CompanyCommand, telemetry};
+use crate::api::{
+    catalog_types::{
+        GithubCatalogError, GithubCredentialReferencePage, GithubRepositoryPageView,
+        GithubSavedRepositoryPageView,
+    },
+    identity::{IncidentPage, IncidentView, NdsClient},
+    organizations::CompanyCommand,
+    telemetry,
+};
 use nddev_device_sync_accounts::{
     ClientError,
     view::{DeliveryView, PasskeyView, View},
@@ -24,6 +32,16 @@ fn client_error(error: ClientError) -> JsError {
 }
 fn vault_error(error: VaultError) -> JsError {
     JsError::new(&error.code())
+}
+fn catalog_error(error: GithubCatalogError) -> JsError {
+    JsError::new(&error.to_string())
+}
+fn unsigned_number(value: js_sys::Number) -> Result<u32, JsError> {
+    JsValue::from(value)
+        .as_f64()
+        .filter(|n| n.is_finite() && n.fract() == 0.0 && (0.0..=f64::from(u32::MAX)).contains(n))
+        .map(|n| n as u32)
+        .ok_or_else(|| JsError::new("invalid_input"))
 }
 fn boolean_input(value: js_sys::Boolean) -> Result<bool, JsError> {
     JsValue::from(value)
@@ -55,6 +73,10 @@ pub fn new_vault_record_id() -> String {
     crate::api::identity::new_vault_record_id()
 }
 #[wasm_bindgen]
+pub fn supports_clipboard() -> bool {
+    crate::api::identity::supports_native_clipboard()
+}
+#[wasm_bindgen]
 pub fn client_diagnostics() -> Result<Ts<LocalDiagnostics>, JsError> {
     present(telemetry::client_diagnostics())
 }
@@ -74,11 +96,9 @@ pub async fn shutdown_telemetry() -> Result<Ts<LocalDiagnostics>, JsError> {
 pub fn configure_debug(scope: Ts<DebugScope>, seconds: js_sys::Number) -> Result<(), JsError> {
     // Preserve the number at the ABI; the owning configuration enforces its
     // policy after this checked representation conversion (never integer wrap).
-    let seconds = JsValue::from(seconds)
-        .as_f64()
-        .filter(|n| n.is_finite() && n.fract() == 0.0 && (0.0..=f64::from(u16::MAX)).contains(n))
-        .ok_or_else(|| JsError::new("invalid_input"))?;
-    telemetry::configure_debug(enum_input(scope)?, seconds as u16)
+    let seconds =
+        u16::try_from(unsigned_number(seconds)?).map_err(|_| JsError::new("invalid_input"))?;
+    telemetry::configure_debug(enum_input(scope)?, seconds)
         .map_err(|error| JsError::new(&error.to_string()))
 }
 #[wasm_bindgen(js_name=NdsClient)]
@@ -196,6 +216,68 @@ impl BrowserClient {
     }
     pub async fn company(&self) -> Result<Ts<OrganizationOverviewView>, JsError> {
         present(self.inner.company().await.map_err(client_error)?)
+    }
+    pub async fn incidents(&self, after: String) -> Result<Ts<IncidentPage>, JsError> {
+        present(self.inner.incidents(after).await.map_err(client_error)?)
+    }
+    pub async fn incident_action(
+        &self,
+        id: String,
+        expected: js_sys::BigInt,
+        silence_seconds: js_sys::Number,
+    ) -> Result<Ts<IncidentView>, JsError> {
+        present(
+            self.inner
+                .incident_action(id, revision(expected)?, unsigned_number(silence_seconds)?)
+                .await
+                .map_err(client_error)?,
+        )
+    }
+    pub fn cancel_github_catalog(&self) {
+        self.inner.cancel_github_catalog();
+    }
+    pub fn select_github_credential(
+        &self,
+        record_ref: String,
+        revision: String,
+        pending_id: Option<String>,
+    ) -> Result<(), JsError> {
+        self.inner
+            .select_github_credential(record_ref, revision, pending_id)
+            .map_err(catalog_error)
+    }
+    pub async fn github_catalog_credentials(
+        &self,
+        after: String,
+    ) -> Result<Ts<GithubCredentialReferencePage>, JsError> {
+        present(
+            self.inner
+                .github_catalog_credentials(after)
+                .await
+                .map_err(catalog_error)?,
+        )
+    }
+    pub async fn saved_github_repository_page(
+        &self,
+        next_page: js_sys::Boolean,
+    ) -> Result<Ts<GithubSavedRepositoryPageView>, JsError> {
+        present(
+            self.inner
+                .saved_github_repository_page(boolean_input(next_page)?)
+                .await
+                .map_err(catalog_error)?,
+        )
+    }
+    pub async fn github_repository_page(
+        &self,
+        next_page: js_sys::Boolean,
+    ) -> Result<Ts<GithubRepositoryPageView>, JsError> {
+        present(
+            self.inner
+                .github_repository_page(boolean_input(next_page)?)
+                .await
+                .map_err(catalog_error)?,
+        )
     }
     pub async fn company_members(
         &self,

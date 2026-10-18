@@ -9,7 +9,7 @@ crate-type = ["cdylib", "staticlib"]
 [features]
 default = ["flutter"]
 flutter = ["dep:flutter_rust_bridge"]
-browser-bindings = ["dep:tsify", "nddev-device-sync-accounts/browser-bindings", "nddev-device-sync-organizations/browser-bindings", "nddev-device-sync-vault/browser-bindings", "nddev-device-sync-telemetry/browser-bindings"]
+browser-bindings = ["dep:tsify", "serde/derive", "nddev-device-sync-accounts/browser-bindings", "nddev-device-sync-organizations/browser-bindings", "nddev-device-sync-vault/browser-bindings", "nddev-device-sync-telemetry/browser-bindings"]
 development-http = ["nddev-device-sync-accounts/development-http"]
 [dependencies]
 nddev-device-sync-organizations = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations", rev = "ef3050e0ac633120f08781ebba07e7daf61cf81d" }

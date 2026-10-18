@@ -1,5 +1,13 @@
 //! Catalog presentation only. Provider IDs and revisions remain decimal strings.
 #[derive(Clone)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubCredentialReference {
     pub record_ref: String,
     pub title: String,
@@ -7,27 +15,67 @@ pub struct GithubCredentialReference {
     pub revision: String,
     pub pending_id: Option<String>,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubCredentialReferencePage {
     pub items: Vec<GithubCredentialReference>,
     pub next_after: String,
     pub has_more: bool,
 }
 #[derive(Clone, Copy)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub enum GithubOwnerKindView {
     User,
     Organization,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubOwnerView {
     pub id: String,
     pub login: String,
     pub kind: GithubOwnerKindView,
 }
 #[derive(Clone, Copy)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub enum GithubRepositoryVisibilityView {
     Public,
     Private,
     Internal,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubRepositorySummaryView {
     pub id: String,
     pub name: String,
@@ -35,41 +83,105 @@ pub struct GithubRepositorySummaryView {
     pub archived: bool,
     pub default_branch: Option<String>,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubRepositoryGroupView {
     pub owner: GithubOwnerView,
     pub repositories: Vec<GithubRepositorySummaryView>,
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub enum GithubCatalogContinuationView {
     More,
     EndOfAccessScope,
     LimitReached,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubRepositoryPageView {
     pub principal: GithubOwnerView,
     pub groups: Vec<GithubRepositoryGroupView>,
     pub observed_at_ms: String,
     pub continuation: GithubCatalogContinuationView,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubObservationView {
     pub revision: String,
     pub pending: bool,
     pub conflicted: bool,
     pub observed_at_ms: String,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubSavedOwnerView {
     pub owner: GithubOwnerView,
     pub observation: GithubObservationView,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubSavedRepositoryView {
     pub repository: GithubRepositorySummaryView,
     pub observation: GithubObservationView,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubSavedRepositoryGroupView {
     pub owner_id: String,
     pub owner: Option<GithubSavedOwnerView>,
     pub repositories: Vec<GithubSavedRepositoryView>,
 }
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct GithubSavedRepositoryPageView {
     pub groups: Vec<GithubSavedRepositoryGroupView>,
     pub observed_seq: String,

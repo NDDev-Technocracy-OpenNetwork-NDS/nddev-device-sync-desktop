@@ -365,7 +365,7 @@ class _UtilitiesState extends State<UtilitiesScreen> {
                 TextButton(
                   key: const Key('refresh-incidents'),
                   onPressed: _busy ? null : () => _action(_alerts),
-                  child: Text(l.refresh),
+                  child: Text(l.moduleRefresh),
                 ),
                 if (_incidentsUnavailable) Text(l.incidentsUnavailable),
                 if (_incidents != null)
@@ -390,6 +390,10 @@ class _UtilitiesState extends State<UtilitiesScreen> {
                               incident.occurrences.toInt(),
                             ),
                           ),
+                          if (incident.silencedUntil.isNotEmpty)
+                            Text(
+                              '${l.silenceIncident} · ${l.expires}: ${_date(incident.silencedUntil)}',
+                            ),
                           if (incident.state != 'resolved')
                             Wrap(
                               spacing: OpenNetworkSpacing.four,

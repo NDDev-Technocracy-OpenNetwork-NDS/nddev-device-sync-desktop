@@ -7,6 +7,7 @@ import 'package:nds_native/nds_native.dart' as native;
 import 'package:nds_native/clipboard.dart' as archive;
 
 import 'l10n/app_localizations.dart';
+import 'module_settings.dart';
 import 'activity.dart';
 
 class UtilitiesScreen extends StatefulWidget {
@@ -173,12 +174,15 @@ class _UtilitiesState extends State<UtilitiesScreen> {
     'clipboard_too_large' => l.clipboardRejected,
     'clipboard_unavailable' => l.clipboardUnavailable,
     'telemetry_unavailable' => l.telemetryUnavailable,
+    'module_disabled' ||
+    'module_permission_required' ||
+    'module_configuration_conflict' => moduleFailureLabel(l, _error!),
     _ => l.genericError,
   };
 
   Future<void> _archiveEntries() async {
-    _agent ??= await native.LocalAgent.discover();
-    final page = await _agent!.clipboardEntries();
+    _agent ??= await widget.client.discoverLocalAgent();
+    final page = await _agent!.clipboardEntries(client: widget.client);
     if (mounted) setState(() => _archive = page);
   }
 

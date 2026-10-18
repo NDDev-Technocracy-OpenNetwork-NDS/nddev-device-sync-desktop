@@ -6,6 +6,7 @@ use crate::api::{
         GithubSavedRepositoryPageView,
     },
     identity::{IncidentPage, IncidentView, NdsClient},
+    module_control::DeviceModuleView,
     organizations::CompanyCommand,
     telemetry,
 };
@@ -409,20 +410,63 @@ impl BrowserClient {
                 .map_err(vault_error)?,
         )
     }
+    pub async fn device_modules(&self) -> Result<Vec<Ts<DeviceModuleView>>, JsError> {
+        self.inner
+            .device_modules()
+            .await
+            .map_err(client_error)?
+            .into_iter()
+            .map(present)
+            .collect()
+    }
+    pub async fn configure_module(
+        &self,
+        module: String,
+        enabled: js_sys::Boolean,
+        permissions: js_sys::Array<js_sys::JsString>,
+        expected_revision: js_sys::BigInt,
+        pending_id: Option<String>,
+    ) -> Result<(), JsError> {
+        if permissions.length() > 16 {
+            return Err(JsError::new("invalid_input"));
+        }
+        let permissions = permissions
+            .iter()
+            .map(|v| v.as_string().ok_or_else(|| JsError::new("invalid_input")))
+            .collect::<Result<Vec<_>, _>>()?;
+        self.inner
+            .configure_module(
+                module,
+                boolean_input(enabled)?,
+                permissions,
+                revision(expected_revision)?,
+                pending_id,
+            )
+            .await
+            .map_err(client_error)
+    }
     pub async fn clipboard_snapshot(&self) -> Result<Ts<ClipboardView>, JsError> {
-        present(self.inner.clipboard_snapshot().await.map_err(vault_error)?)
+        present(
+            self.inner
+                .clipboard_snapshot()
+                .await
+                .map_err(client_error)?,
+        )
     }
     pub async fn clipboard_publish_text(&self, text: String) -> Result<String, JsError> {
         self.inner
             .clipboard_publish_text(text)
             .await
-            .map_err(vault_error)
+            .map_err(client_error)
     }
     pub fn reserve_clipboard_copy(&self) -> Result<Option<String>, JsError> {
         self.inner.reserve_clipboard_copy().map_err(vault_error)
     }
     pub async fn clipboard_copy(&self, ticket: Option<String>) -> Result<(), JsError> {
-        self.inner.clipboard_copy(ticket).await.map_err(vault_error)
+        self.inner
+            .clipboard_copy(ticket)
+            .await
+            .map_err(client_error)
     }
     pub async fn vault_copy_secret(
         &self,

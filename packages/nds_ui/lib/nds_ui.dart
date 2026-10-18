@@ -145,7 +145,6 @@ class _NdsAppState extends State<NdsApp> with WidgetsBindingObserver {
                 setState(() => _client = client);
               },
             );
-            if (!native.supportsLocalAgent()) return identity;
             final l = AppLocalizations.of(context)!;
             return Scaffold(
               body: IndexedStack(

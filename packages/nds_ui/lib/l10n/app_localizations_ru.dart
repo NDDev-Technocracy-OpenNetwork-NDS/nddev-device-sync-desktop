@@ -1163,4 +1163,78 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get screenTargetsFailed =>
       'Не удалось загрузить устройства. Обновите список, чтобы проверить доступ и соединение.';
+
+  @override
+  String get moduleManagementHelp =>
+      'Включайте модули и выбирайте их разрешения NDS для этого устройства. Для доступа к возможностям системы или браузера по-прежнему требуется их собственное разрешение.';
+
+  @override
+  String get moduleEnabled => 'Модуль включён';
+
+  @override
+  String get modulePermissions => 'Разрешения NDS';
+
+  @override
+  String get moduleSave => 'Сохранить настройки модуля';
+
+  @override
+  String get moduleSaved =>
+      'Настройки сохранены на этом устройстве; синхронизация выполняется отдельно.';
+
+  @override
+  String get moduleDisabled =>
+      'Включите модуль, чтобы использовать его возможности.';
+
+  @override
+  String get modulePermissionRequired =>
+      'Выберите необходимые разрешения NDS перед использованием этой возможности.';
+
+  @override
+  String get moduleConfigurationConflict =>
+      'Конфликт настроек модуля. До его разрешения доступ не предоставляется.';
+
+  @override
+  String get moduleDeviceRequired =>
+      'Войдите и зарегистрируйте это устройство для управления модулями.';
+
+  @override
+  String get moduleNotInstalled =>
+      'Нужный локальный инструмент не установлен или не найден.';
+
+  @override
+  String get moduleInstalled => 'Доступен на этом устройстве';
+
+  @override
+  String get moduleInstallationUnknown => 'Доступность ещё не проверена';
+
+  @override
+  String get moduleMetadataError =>
+      'Не удалось обновить сведения о модулях. Результат последней операции не изменён.';
+
+  @override
+  String get permissionReadOnly => 'Чтение локальных сведений';
+
+  @override
+  String get permissionCredentialStore =>
+      'Использование защищённых учётных данных';
+
+  @override
+  String get permissionProcessExecution =>
+      'Запуск заявленного локального инструмента';
+
+  @override
+  String get permissionLocalNetwork => 'Соединение с заявленным сервисом';
+
+  @override
+  String get permissionUserService => 'Доступ к сервису текущего пользователя';
+
+  @override
+  String get permissionClipboard => 'Использование буфера обмена';
+
+  @override
+  String get moduleSettingsChanged =>
+      'Настройки модуля изменились. Обновите форму перед сохранением своего выбора.';
+
+  @override
+  String get moduleReloadDraft => 'Обновить настройки';
 }

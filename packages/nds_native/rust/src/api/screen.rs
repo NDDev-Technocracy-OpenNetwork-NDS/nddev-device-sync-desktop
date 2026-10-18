@@ -133,6 +133,8 @@ struct State {
     device: tokio::sync::Mutex<Option<native::DeviceScreen>>,
     #[cfg(target_os = "linux")]
     fence: Mutex<Option<Arc<nddev_device_sync_accounts::LocalUseFence>>>,
+    #[cfg(target_os = "linux")]
+    module: Arc<super::module_control::ModuleUseGuard>,
 }
 // Captured before spawn: even an unpolled/aborted/panicking future publishes a
 // truthful terminal outcome. This is task completion, never authorization.
@@ -324,6 +326,9 @@ impl NdsClient {
         use nddev_device_sync_domain::{UserId, devices::DevicePlatform};
         let user = UserId::new(user).map_err(|_| ClientError::InvalidInput)?;
         let identity = self.shared_identity();
+        let _module = self
+            .module_access("rds", super::module_control::Adapter::Shared)
+            .await?;
         let lifetime = identity.local_use_lifetime();
         let fence = identity.local_use_fence_from(&lifetime).await?;
         let targets = identity.screen_targets(&fence, &user).await?;
@@ -641,6 +646,11 @@ impl NdsClient {
         &self,
         reserve_role: bool,
     ) -> Result<(Arc<State>, Option<Arc<RoleLife>>), ScreenFailure> {
+        let module = Arc::new(
+            self.module_access("rds", super::module_control::Adapter::Shared)
+                .await
+                .map_err(native::account)?,
+        );
         let identity = self.shared_identity().clone();
         let lifetime = identity.local_use_lifetime();
         let (state, opening, role) = {
@@ -674,7 +684,8 @@ impl NdsClient {
                 } else {
                     slot.take();
                     let state = Arc::new(State {
-                        stop: CancellationToken::new(),
+                        stop: module.lifetime.child_token(),
+                        module: module.clone(),
                         completion: tokio::sync::watch::channel(None).0,
                         task: Mutex::default(),
                         role: Mutex::default(),
@@ -724,6 +735,7 @@ impl NdsClient {
                 .validate_local_use(&fence)
                 .await
                 .map_err(native::account)?;
+            module.validate().await.map_err(native::account)?;
             let _publication = self.screen_publication(&state, role.as_ref())?;
             Ok(())
         }
@@ -1403,6 +1415,26 @@ mod native {
             tokio::select! {
                 _ = state.stop.cancelled() => break,
                 _ = tokio::time::sleep(Duration::from_secs(5)) => {}
+            }
+            let local_consent = async {
+                for attempt in 0..8 {
+                    match state.module.validate().await {
+                        Ok(()) => return Ok(()),
+                        Err(ClientError::Busy) if attempt < 7 => {
+                            tokio::time::sleep(Duration::from_millis((25u64 << attempt).min(400)))
+                                .await
+                        }
+                        Err(error) => return Err(account(error)),
+                    }
+                }
+                Err(ScreenFailure::Busy)
+            };
+            if !matches!(
+                tokio::time::timeout(Duration::from_secs(3), local_consent).await,
+                Ok(Ok(()))
+            ) {
+                state.stop.cancel();
+                break;
             }
             let role = state.role.lock().unwrap_or_else(|e| e.into_inner()).clone();
             let Some(role) = role else { continue };

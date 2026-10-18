@@ -9,6 +9,7 @@ import '../third_party/nddev_device_sync_organizations/view.dart';
 import '../third_party/nddev_device_sync_telemetry/view.dart';
 import '../third_party/nddev_device_sync_vault/view.dart';
 import 'catalog_types.dart';
+import 'module_control.dart';
 import 'modules.dart';
 import 'organizations.dart';
 
@@ -75,7 +76,19 @@ abstract class NdsClient implements RustOpaqueInterface {
 
   Future<CompanyCommand> companyRevoke({required String invitation});
 
+  Future<void> configureModule({
+    required String module,
+    required bool enabled,
+    required List<String> permissions,
+    required BigInt revision,
+    String? pendingId,
+  });
+
   DeliveryView deliverySnapshot();
+
+  Future<List<DeviceModuleView>> deviceModules();
+
+  Future<LocalAgent> discoverLocalAgent();
 
   Future<GithubCredentialReferencePage> githubCatalogCredentials({
     required String after,

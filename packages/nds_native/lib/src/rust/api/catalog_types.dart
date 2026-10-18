@@ -7,7 +7,7 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `project_page`
+// These functions are ignored because they are not marked as `pub`: `owner`, `project_page`, `project_saved_page`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `fmt`, `fmt`, `from`, `from`, `from`
 
 enum GithubCatalogContinuationView { more, endOfAccessScope, limitReached }
@@ -22,6 +22,7 @@ enum GithubCatalogError {
   unavailable,
   providerFailed,
   invalidResponse,
+  capacityExhausted,
 }
 
 class GithubCredentialReference {
@@ -81,6 +82,37 @@ class GithubCredentialReferencePage {
           items == other.items &&
           nextAfter == other.nextAfter &&
           hasMore == other.hasMore;
+}
+
+class GithubObservationView {
+  final String revision;
+  final bool pending;
+  final bool conflicted;
+  final String observedAtMs;
+
+  const GithubObservationView({
+    required this.revision,
+    required this.pending,
+    required this.conflicted,
+    required this.observedAtMs,
+  });
+
+  @override
+  int get hashCode =>
+      revision.hashCode ^
+      pending.hashCode ^
+      conflicted.hashCode ^
+      observedAtMs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GithubObservationView &&
+          runtimeType == other.runtimeType &&
+          revision == other.revision &&
+          pending == other.pending &&
+          conflicted == other.conflicted &&
+          observedAtMs == other.observedAtMs;
 }
 
 enum GithubOwnerKindView { user, organization }
@@ -197,3 +229,97 @@ class GithubRepositorySummaryView {
 }
 
 enum GithubRepositoryVisibilityView { public, private, internal }
+
+class GithubSavedOwnerView {
+  final GithubOwnerView owner;
+  final GithubObservationView observation;
+
+  const GithubSavedOwnerView({required this.owner, required this.observation});
+
+  @override
+  int get hashCode => owner.hashCode ^ observation.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GithubSavedOwnerView &&
+          runtimeType == other.runtimeType &&
+          owner == other.owner &&
+          observation == other.observation;
+}
+
+class GithubSavedRepositoryGroupView {
+  final String ownerId;
+  final GithubSavedOwnerView? owner;
+  final List<GithubSavedRepositoryView> repositories;
+
+  const GithubSavedRepositoryGroupView({
+    required this.ownerId,
+    this.owner,
+    required this.repositories,
+  });
+
+  @override
+  int get hashCode => ownerId.hashCode ^ owner.hashCode ^ repositories.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GithubSavedRepositoryGroupView &&
+          runtimeType == other.runtimeType &&
+          ownerId == other.ownerId &&
+          owner == other.owner &&
+          repositories == other.repositories;
+}
+
+class GithubSavedRepositoryPageView {
+  final List<GithubSavedRepositoryGroupView> groups;
+  final String observedSeq;
+  final String localRevision;
+  final bool hasMore;
+
+  const GithubSavedRepositoryPageView({
+    required this.groups,
+    required this.observedSeq,
+    required this.localRevision,
+    required this.hasMore,
+  });
+
+  @override
+  int get hashCode =>
+      groups.hashCode ^
+      observedSeq.hashCode ^
+      localRevision.hashCode ^
+      hasMore.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GithubSavedRepositoryPageView &&
+          runtimeType == other.runtimeType &&
+          groups == other.groups &&
+          observedSeq == other.observedSeq &&
+          localRevision == other.localRevision &&
+          hasMore == other.hasMore;
+}
+
+class GithubSavedRepositoryView {
+  final GithubRepositorySummaryView repository;
+  final GithubObservationView observation;
+
+  const GithubSavedRepositoryView({
+    required this.repository,
+    required this.observation,
+  });
+
+  @override
+  int get hashCode => repository.hashCode ^ observation.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GithubSavedRepositoryView &&
+          runtimeType == other.runtimeType &&
+          repository == other.repository &&
+          observation == other.observation;
+}

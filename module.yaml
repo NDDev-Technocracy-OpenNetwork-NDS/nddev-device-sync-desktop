@@ -6,4 +6,4 @@ license: AGPL-3.0-only
 repository: NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-desktop
 standards_lock: standarts.lock
 platforms: [linux, macos, windows]
-capabilities: [nds-session-ui, read_device_state, read_module_health]
+capabilities: [nds-session-ui, read_device_state, read_module_health, company-administration-ui]

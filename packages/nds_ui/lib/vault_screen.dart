@@ -262,6 +262,7 @@ class _VaultScreenState extends State<VaultScreen> {
     'vault_invalid_input' => l.vaultInputError,
     'vault_authentication_failed' => l.vaultProofError,
     'vault_busy' => l.operationBusy,
+    'vault_cancelled' => l.moduleCancelled,
     'vault_storage_full' => l.storageFull,
     'sync_capacity_exhausted' => l.serverCapacityExhausted,
     'vault_dependency_unavailable' => l.vaultDependencyUnavailable,
@@ -343,31 +344,45 @@ class _VaultScreenState extends State<VaultScreen> {
                       const SizedBox(height: OpenNetworkSpacing.six),
                       if (_editing != null)
                         Text(l.vaultEditing(_editing!.title)),
-                      TextField(
-                        key: const Key('vault-title'),
-                        controller: _title,
-                        maxLength: 128,
-                        enabled: !_busy,
-                        decoration: InputDecoration(
-                          labelText: l.vaultRecordTitle,
+                      // A new draft also owns new browser editing nodes, so
+                      // cleared values cannot survive in accessibility inputs.
+                      KeyedSubtree(
+                        key: ValueKey(_draftId),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            TextField(
+                              key: const Key('vault-title'),
+                              controller: _title,
+                              maxLength: 128,
+                              enabled: !_busy,
+                              decoration: InputDecoration(
+                                labelText: l.vaultRecordTitle,
+                              ),
+                            ),
+                            TextField(
+                              key: const Key('vault-username'),
+                              controller: _username,
+                              maxLength: 254,
+                              enabled: !_busy,
+                              autocorrect: false,
+                              decoration: InputDecoration(
+                                labelText: l.vaultUsername,
+                              ),
+                            ),
+                            TextField(
+                              key: const Key('vault-secret'),
+                              controller: _secret,
+                              enabled: !_busy,
+                              obscureText: true,
+                              autocorrect: false,
+                              enableSuggestions: false,
+                              decoration: InputDecoration(
+                                labelText: l.vaultSecret,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      TextField(
-                        key: const Key('vault-username'),
-                        controller: _username,
-                        maxLength: 254,
-                        enabled: !_busy,
-                        autocorrect: false,
-                        decoration: InputDecoration(labelText: l.vaultUsername),
-                      ),
-                      TextField(
-                        key: const Key('vault-secret'),
-                        controller: _secret,
-                        enabled: !_busy,
-                        obscureText: true,
-                        autocorrect: false,
-                        enableSuggestions: false,
-                        decoration: InputDecoration(labelText: l.vaultSecret),
                       ),
                       FilledButton(
                         key: const Key('vault-save'),

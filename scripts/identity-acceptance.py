@@ -21,6 +21,7 @@ parser.add_argument("--cold-restart", action="store_true",
                     help="Verify encrypted persistence across two Android app processes")
 parser.add_argument("--isolated-android", action="store_true",
                     help="Use a unique test applicationId on an explicitly selected Android device")
+parser.add_argument("--company", action="store_true", help="Exercise company invitation and revocation through the real UI")
 parser.add_argument("--vault", action="store_true", help="Exercise real native vault creation and encrypted sync")
 parser.add_argument("--sync-role", choices=["owner", "recipient"])
 parser.add_argument("--resume", action="store_true", help="Verify a retained desktop session after another device changed the server")
@@ -63,11 +64,15 @@ if fixture.get("status") != "running":
 source = Path(__file__).resolve().parents[1] / "packages/nds_ui/integration_test" / (
     "server_replica_flow_test.dart" if args.sync_role else "identity_flow_test.dart")
 target = app / "integration_test/identity_acceptance_generated_test.dart"
-if target.exists():
-    raise SystemExit("Refuse to overwrite existing generated test target")
+# flutter test forwards Dart test events, not the complete native stdout stream.
+# Keep the existing mobile and multi-replica runners; capture this ordinary Linux
+# identity flow through the same driver already used by module acceptance.
+driver = app / "integration_test/identity_acceptance_driver_generated.dart" if args.device == "linux" and not args.sync_role else None
+if target.exists() or (driver is not None and driver.exists()):
+    raise SystemExit("Refuse to overwrite existing generated test target or driver")
 target.parent.mkdir(exist_ok=True)
 ports = [str(urlparse(fixture[key]).port) for key in ["base_url", "mailpit_url"]]
-log = args.fixture.parent / ("flutter-" + args.device + ".log")
+log = args.fixture.with_name(args.fixture.stem + "-flutter-" + args.device + ".log")
 if args.sync_role:
     log = log.with_stem(log.stem + "-sync-" + args.sync_role)
 runner = ExitStack()
@@ -76,15 +81,30 @@ try:
         gradle_path.write_bytes(temporary_gradle)
     runner.enter_context(integration_runner(app, development_http=True))
     shutil.copyfile(source, target)
+    if driver is not None:
+        shutil.copyfile(source.with_name("driver.dart"), driver)
     if android:
         for port in ports:
             subprocess.run(["adb", "-s", args.device, "reverse", "tcp:" + port, "tcp:" + port], check=True, timeout=10)
-    command = ["flutter", "test", str(target), "-d", args.device,
-        "--timeout=5m" if args.sync_role else "--timeout=3m", "--no-pub",
+    command = (["flutter", "drive", "--target=" + str(target), "--driver=" + str(driver)]
+        if driver is not None else ["flutter", "test", str(target),
+        "--timeout=5m" if args.sync_role else "--timeout=3m"])
+    command += ["-d", args.device, "--no-pub",
         "--dart-define=NDS_TEST_SERVER=" + fixture["base_url"],
         "--dart-define=NDS_TEST_MAILPIT=" + fixture["mailpit_url"],
         "--dart-define=NDS_TEST_OWNER=" + fixture["owner_email"],
         "--dart-define=NDS_DEVICE_NAME=" + ("Sync " + args.sync_role if args.sync_role else "Acceptance device")]
+    if fixture.get("screen_peer_email") is not None:
+        handoff = Path(fixture["screen_handoff"])
+        if (args.device != "linux" or not fixture["screen_peer_email"].endswith("@example.invalid")
+                or not handoff.is_absolute() or not handoff.is_dir()
+                or not handoff.name.startswith("nds-native-screen-")
+                or os.environ.get("NDS_OWNED_XVFB") != "1"):
+            raise SystemExit("Screen UI acceptance requires an owned Linux display and native-pair handoff")
+        command += ["--dart-define=NDS_TEST_SCREEN_PEER=" + fixture["screen_peer_email"],
+                    "--dart-define=NDS_TEST_SCREEN_HANDOFF=" + str(handoff)]
+    if args.company:
+        command.append("--dart-define=NDS_TEST_COMPANY=true")
     if args.vault:
         command.append("--dart-define=NDS_TEST_VAULT=true")
     if args.sync_role:
@@ -111,7 +131,8 @@ try:
                     os.killpg(process.pid, signal.SIGKILL)
                     process.wait()
                 raise
-        if status == 0 and "All tests passed!" not in phase_log.read_text():
+        passed = "All tests passed." if driver is not None else "All tests passed!"
+        if status == 0 and passed not in phase_log.read_text():
             status = 1
             print("Flutter exited without a completed passing test receipt")
         print(f"Actual identity UI acceptance phase={phase} exit={status}; private log: {phase_log}")
@@ -127,6 +148,8 @@ try:
     raise SystemExit(status)
 finally:
     target.unlink(missing_ok=True)
+    if driver is not None:
+        driver.unlink(missing_ok=True)
     try:
         runner.close()
     finally:

@@ -157,6 +157,7 @@ class PasskeyView {
 
 /// Presentation state, never a bearer credential or a wire request.
 class View {
+  final bool invitationPending;
   final List<DeviceView> devices;
   final String currentDeviceId;
   final PlatformInt64 devicesCheckedAt;
@@ -183,6 +184,7 @@ class View {
   final int retryAfterSeconds;
 
   const View({
+    required this.invitationPending,
     required this.devices,
     required this.currentDeviceId,
     required this.devicesCheckedAt,
@@ -214,6 +216,7 @@ class View {
 
   @override
   int get hashCode =>
+      invitationPending.hashCode ^
       devices.hashCode ^
       currentDeviceId.hashCode ^
       devicesCheckedAt.hashCode ^
@@ -244,6 +247,7 @@ class View {
       identical(this, other) ||
       other is View &&
           runtimeType == other.runtimeType &&
+          invitationPending == other.invitationPending &&
           devices == other.devices &&
           currentDeviceId == other.currentDeviceId &&
           devicesCheckedAt == other.devicesCheckedAt &&

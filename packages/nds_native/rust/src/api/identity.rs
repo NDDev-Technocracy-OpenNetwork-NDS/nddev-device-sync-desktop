@@ -1,10 +1,12 @@
+#[cfg(feature = "flutter")]
 use flutter_rust_bridge::frb;
 use nddev_device_sync_accounts::runtime::{self, Instant};
 use nddev_device_sync_accounts::{
     IdentityClient,
     view::{ClientError, PasskeyView, View},
 };
-use nddev_device_sync_application::lifecycle::{BatchOutcome, ReplicaSchedule};
+use nddev_device_sync_application::lifecycle::{BatchOutcome, CapacityCheck, ReplicaSchedule};
+use nddev_device_sync_application::replica::CapacityProbeOutcome;
 use nddev_device_sync_telemetry::view::ClientLifecycle;
 use nddev_device_sync_vault::{
     VaultClient,
@@ -12,7 +14,7 @@ use nddev_device_sync_vault::{
 };
 use std::{
     sync::{
-        Arc, Mutex,
+        Arc, Mutex, Weak,
         atomic::{AtomicBool, Ordering},
     },
     time::Duration,
@@ -20,14 +22,19 @@ use std::{
 use tracing::Instrument;
 use zeroize::Zeroizing;
 
-#[frb(opaque)]
+#[cfg_attr(feature = "flutter", frb(opaque))]
 pub struct NdsClient {
     inner: Arc<IdentityClient>,
     pub(crate) catalog: Mutex<super::catalog::CatalogState>,
     vault: tokio::sync::Mutex<Option<Arc<VaultClient>>>,
     replica: Mutex<Option<Replica>>,
-    replica_schedule: Mutex<Arc<Mutex<ReplicaSchedule>>>,
+    replica_control: tokio::sync::Mutex<()>,
+    pub(super) publication: Arc<Mutex<()>>,
+    replica_schedule: Arc<Mutex<Arc<Mutex<ReplicaSchedule>>>>,
     active: AtomicBool,
+    pub(crate) screen: Mutex<Option<super::screen::ScreenSlot>>,
+    // Raw lifecycle fact; admission and publication share this lifetime owner.
+    pub(crate) screen_lifecycle: Mutex<ClientLifecycle>,
     delivery: Mutex<Option<super::telemetry::Delivery>>,
     #[cfg(not(target_arch = "wasm32"))]
     clipboard: nddev_device_sync_clipboard::os::TextClipboard,
@@ -55,11 +62,11 @@ impl Drop for Replica {
 }
 
 impl NdsClient {
-    #[frb(ignore)]
-    pub(crate) fn catalog_identity(&self) -> &Arc<IdentityClient> {
+    #[cfg_attr(feature = "flutter", frb(ignore))]
+    pub(crate) fn shared_identity(&self) -> &Arc<IdentityClient> {
         &self.inner
     }
-    #[frb(ignore)]
+    #[cfg_attr(feature = "flutter", frb(ignore))]
     pub(crate) fn catalog_active(&self) -> bool {
         self.active.load(Ordering::Relaxed)
     }
@@ -69,22 +76,28 @@ impl NdsClient {
             catalog: Mutex::default(),
             vault: tokio::sync::Mutex::new(None),
             replica: Mutex::default(),
-            replica_schedule: Mutex::default(),
+            replica_control: tokio::sync::Mutex::default(),
+            publication: Arc::default(),
+            replica_schedule: Arc::default(),
             active: AtomicBool::new(true),
+            screen: Mutex::default(),
+            screen_lifecycle: Mutex::new(ClientLifecycle::Detached),
             delivery: Mutex::default(),
             #[cfg(not(target_arch = "wasm32"))]
             clipboard: Default::default(),
         })
     }
     pub async fn refresh(&self) -> Result<View, ClientError> {
-        self.invalidate_catalog();
-        self.stop_replica().await;
+        if let Some(task) = self.cancel_work(false) {
+            task.join().await;
+        }
         self.inner.refresh().await
     }
     /// Reconcile shared local authorization on foreground ticks/resume. Pending
     /// logout retries through the identity owner; no presentation auth rules.
     pub async fn reconcile(&self) -> Result<View, ClientError> {
         let view = self.inner.view();
+        let lifetime = self.inner.local_use_lifetime();
         if !self.active.load(Ordering::Relaxed) || !view.flow.is_empty() {
             return Ok(view);
         }
@@ -96,23 +109,19 @@ impl NdsClient {
             .iter()
             .any(|device| device.is_current && device.revoked);
         if view.authenticated && !view.current_device_id.is_empty() && !revoked {
-            match self.inner.authorize_local().await {
+            let start = async {
+                let fence = self.inner.local_use_fence_from(&lifetime).await?;
+                self.start_replica_fenced(Duration::ZERO, &fence).await
+            }
+            .await;
+            match start {
                 Ok(()) => {
-                    self.start_replica(Duration::ZERO)
-                        .await
-                        .map_err(replica_start_error)?;
-                    self.ensure_delivery();
+                    self.reconcile_screen().await;
                     return Ok(self.inner.view());
                 }
                 Err(ClientError::Busy) => return Ok(self.inner.view()),
                 Err(error) => {
-                    self.stop_replica().await;
-                    self.delivery
-                        .lock()
-                        .unwrap_or_else(|e| e.into_inner())
-                        .take();
-                    self.invalidate_catalog();
-                    self.vault.lock().await.take();
+                    self.clear_replica_fenced(&lifetime).await;
                     return Err(error);
                 }
             }
@@ -120,17 +129,12 @@ impl NdsClient {
         // A known device revocation closes device capabilities while the NDS
         // session remains valid for inventory and explicit sign-out.
         if !view.authenticated || revoked {
-            self.invalidate_catalog();
-            self.stop_replica().await;
-            self.delivery
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .take();
-            self.vault.lock().await.take();
+            self.clear_replica_fenced(&lifetime).await;
         }
         Ok(self.inner.view())
     }
     pub async fn request_email(&self, email: String, locale: String) -> Result<View, ClientError> {
+        self.cancel_screen();
         self.invalidate_catalog();
         self.inner.request_email(email, &locale).await
     }
@@ -140,16 +144,18 @@ impl NdsClient {
         Ok(view)
     }
     pub async fn start_github(&self, locale: String) -> Result<View, ClientError> {
+        self.cancel_screen();
         self.invalidate_catalog();
         self.inner.start_github(&locale).await
     }
     pub async fn start_passkey(
         &self,
         registration: bool,
+        email: Option<String>,
         locale: String,
     ) -> Result<View, ClientError> {
         self.invalidate_catalog();
-        self.inner.start_passkey(registration, &locale).await
+        self.inner.start_passkey(registration, email, &locale).await
     }
     pub async fn passkeys(&self) -> Result<Vec<PasskeyView>, ClientError> {
         self.inner.passkeys().await
@@ -184,6 +190,7 @@ impl NdsClient {
         Ok(view)
     }
     pub async fn logout(&self) -> Result<View, ClientError> {
+        self.cancel_screen();
         self.invalidate_catalog();
         self.delivery
             .lock()
@@ -192,26 +199,25 @@ impl NdsClient {
         self.stop_replica().await;
         let view = self.inner.logout().await?;
         self.vault.lock().await.take();
-        *self
-            .replica_schedule
-            .lock()
-            .unwrap_or_else(|e| e.into_inner()) = Arc::default();
+        {
+            let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+            self.reset_replica_schedule();
+        }
         Ok(view)
     }
     pub async fn refresh_devices(&self) -> Result<View, ClientError> {
         self.inner.refresh_devices().await
     }
     pub async fn prepare_device(&self, name: String) -> Result<View, ClientError> {
+        let lifetime = self.inner.local_use_lifetime();
         self.stop_replica().await;
         let view = if self.inner.view().offline_authorized {
             self.inner.view()
         } else {
             self.inner.prepare_device(name).await?
         };
-        self.start_replica(Duration::ZERO)
-            .await
-            .map_err(replica_start_error)?;
-        self.ensure_delivery();
+        let fence = self.inner.local_use_fence_from(&lifetime).await?;
+        self.start_replica_fenced(Duration::ZERO, &fence).await?;
         Ok(view)
     }
     fn ensure_delivery(&self) {
@@ -230,6 +236,7 @@ impl NdsClient {
         }
     }
     pub async fn revoke_device(&self, id: String) -> Result<View, ClientError> {
+        self.cancel_screen();
         let view = self.inner.revoke_device(id).await?;
         if view
             .devices
@@ -240,13 +247,19 @@ impl NdsClient {
                 .lock()
                 .unwrap_or_else(|error| error.into_inner())
                 .take();
+            self.cancel_screen();
             self.invalidate_catalog();
             self.stop_replica().await;
         }
         Ok(view)
     }
-    #[frb(sync)]
+    #[cfg_attr(feature = "flutter", frb(sync))]
     pub fn set_lifecycle(&self, state: ClientLifecycle) {
+        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        *self
+            .screen_lifecycle
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = state;
         let active = client_work_permitted(state);
         // Focus changes that retain permission need not interrupt an in-flight
         // request or reset delivery. Hidden/resume transitions still wake tasks.
@@ -254,6 +267,7 @@ impl NdsClient {
             return;
         }
         if !active {
+            self.cancel_screen();
             self.invalidate_catalog();
         }
         if let Some(delivery) = &*self
@@ -281,21 +295,93 @@ impl NdsClient {
         }
     }
     async fn reset_replica_session(&self) {
+        self.cancel_screen();
         self.invalidate_catalog();
         self.stop_replica().await;
         self.vault.lock().await.take();
         // Detach the old session policy: a late result cannot block the new one.
-        *self
-            .replica_schedule
-            .lock()
-            .unwrap_or_else(|e| e.into_inner()) = Arc::default();
+        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        self.reset_replica_schedule();
     }
-    async fn start_replica(&self, initial_delay: Duration) -> Result<(), VaultError> {
-        let vault = self.vault().await?;
-        let weak = Arc::downgrade(&vault);
+    async fn clear_replica_fenced(&self, lifetime: &nddev_device_sync_accounts::LocalUseLifetime) {
+        let task = {
+            let mut vault = self.vault.lock().await;
+            let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+            if self
+                .inner
+                .check_captured_local_use_lifetime(lifetime)
+                .is_err()
+            {
+                return;
+            }
+            self.cancel_screen();
+            self.invalidate_catalog();
+            self.delivery
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .take();
+            vault.take();
+            let task = self
+                .replica
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .take()
+                .and_then(|mut replica| replica.task.take());
+            if let Some(task) = &task {
+                task.abort();
+            }
+            task
+        };
+        if let Some(task) = task {
+            task.join().await;
+        }
+    }
+    async fn start_replica_fenced(
+        &self,
+        initial_delay: Duration,
+        fence: &nddev_device_sync_accounts::LocalUseFence,
+    ) -> Result<(), ClientError> {
+        // A foreground tick must not replace a replica while manual sync owns
+        // its stop/retry/restart sequence. That caller restarts it on completion.
+        let Ok(_control) = self.replica_control.try_lock() else {
+            return Ok(());
+        };
+        self.start_replica_for_schedule(initial_delay, fence, self.schedule())
+            .await
+    }
+    #[cfg_attr(feature = "flutter", frb(ignore))]
+    async fn start_replica_for_schedule(
+        &self,
+        initial_delay: Duration,
+        fence: &nddev_device_sync_accounts::LocalUseFence,
+        schedule: Arc<Mutex<ReplicaSchedule>>,
+    ) -> Result<(), ClientError> {
+        let vault = self.vault().await.map_err(replica_start_error)?;
+        self.inner.validate_local_use(fence).await?;
+        // Protected I/O is complete before this brief cancellation/publication boundary.
+        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        self.inner.check_local_use_lifetime(fence)?;
+        if self.spawn_replica(initial_delay, Arc::downgrade(&vault), schedule) {
+            self.ensure_delivery();
+        }
+        Ok(())
+    }
+    // Caller holds publication: policy replacement and task publication cannot
+    // interleave after this check. The task retains this exact policy identity.
+    fn spawn_replica(
+        &self,
+        initial_delay: Duration,
+        weak: Weak<VaultClient>,
+        schedule: Arc<Mutex<ReplicaSchedule>>,
+    ) -> bool {
+        if !Arc::ptr_eq(&schedule, &self.schedule()) {
+            return false;
+        }
         let (active, mut enabled) =
             tokio::sync::watch::channel(self.active.load(Ordering::Relaxed));
         let identity = self.inner.clone();
+        let publication = self.publication.clone();
+        let policy_slot = self.replica_schedule.clone();
         let mut slot = self.replica.lock().unwrap_or_else(|e| e.into_inner());
         if slot.as_ref().is_some_and(|replica| {
             replica
@@ -303,11 +389,11 @@ impl NdsClient {
                 .as_ref()
                 .is_some_and(|task| !task.is_finished())
         }) {
-            return Ok(());
+            return true;
         }
         slot.take();
-        let schedule = self.schedule();
         let task = runtime::spawn(async move {
+            let mut schedule = schedule;
             let mut delay = initial_delay;
             let mut published = false;
             loop {
@@ -322,40 +408,106 @@ impl NdsClient {
                     changed = enabled.changed() => { if changed.is_err() { break; } delay = Duration::ZERO; continue; }
                     _ = runtime::sleep(delay) => {}
                 }
-                let inbox_only = schedule
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .is_capacity_blocked();
+                let (capacity_check, probe) = {
+                    let policy = schedule.lock().unwrap_or_else(|e| e.into_inner());
+                    (policy.capacity_check(), policy.capacity_probe())
+                };
+                let inbox_only = capacity_check.is_some() && probe.is_none();
                 let mut inbox_at_head = None;
+                let mut inbox_empty = false;
+                let mut capacity_outcome = None;
+                let mut attempt_history = None;
+                let lifetime = identity.local_use_lifetime();
                 let Some(vault) = weak.upgrade() else {
                     break;
                 };
                 let result = tokio::select! {
                     changed = enabled.changed() => { if changed.is_err() { break; } delay = Duration::ZERO; continue; }
                     result = observe("sync.replica.batch", async {
+                        if probe.is_some() {
+                            let attempt = vault.probe_capacity_attempt().await?;
+                            attempt_history = attempt.history;
+                            capacity_outcome = attempt.result?;
+                            return vault.refresh_local().await;
+                        }
                         if inbox_only {
-                            let progress = vault.synchronize_inbox().await?;
+                            let attempt = vault.synchronize_attempt(true).await?;
+                            attempt_history = attempt.history;
+                            let progress = attempt.result?;
                             inbox_at_head = Some(progress.inbox_at_head);
+                            inbox_empty = progress.caught_up;
                             return Ok(progress.view);
                         }
-                        let view = vault.synchronize().await?;
+                        let attempt = vault.synchronize_attempt(false).await?;
+                        attempt_history = attempt.history;
+                        let progress = attempt.result?;
+                        inbox_at_head = Some(progress.inbox_at_head);
+                        let view = progress.view;
                         if !published && !view.catching_up && !schedule.lock().unwrap_or_else(|e| e.into_inner()).is_capacity_blocked() {
-                            let view = vault.publish_states(device_observations(&identity)?).await?;
+                            let attempt = vault.publish_states_attempt(device_observations(&identity)?).await?;
+                            attempt_history = attempt.history;
+                            let view = attempt.result?;
                             published = true;
                             return Ok(view);
                         }
                         Ok(view)
                     }) => result
                 };
+                {
+                    let mut policy = schedule.lock().unwrap_or_else(|e| e.into_inner());
+                    if let Some(history) = attempt_history {
+                        policy.observe_history(history);
+                        if inbox_only
+                            && result.is_ok()
+                            && inbox_at_head == Some(true)
+                            && let Some(check) = &capacity_check
+                        {
+                            policy.observe_capacity_inbox(check, history);
+                        }
+                    }
+                    if inbox_only && inbox_at_head == Some(true) && inbox_empty && result.is_ok() {
+                        capacity_outcome = Some(CapacityProbeOutcome::NoEligibleWork);
+                    }
+                }
+                if let (Some(check), Some(completed)) = (&capacity_check, capacity_outcome)
+                    && let Ok(fence) = identity.local_use_fence_from(&lifetime).await
+                {
+                    let replacement = {
+                        let _publication = publication.lock().unwrap_or_else(|e| e.into_inner());
+                        if identity.check_local_use_lifetime(&fence).is_ok() {
+                            recovered_policy(&policy_slot, &schedule, check, completed)
+                        } else {
+                            None
+                        }
+                    };
+                    if let Some(next) = replacement {
+                        schedule = next;
+                        tracing::info!(
+                            event.name = "sync.capacity.recovered",
+                            module = "vault",
+                            outcome = "ok"
+                        );
+                    }
+                }
                 let outcome = match (result.is_ok(), inbox_at_head) {
-                    (true, Some(true)) => BatchOutcome::InboxHead,
-                    (true, Some(false)) => BatchOutcome::InboxMore,
+                    (true, Some(true))
+                        if inbox_only
+                            || result.as_ref().is_ok_and(|v| !v.sync_error.is_empty()) =>
+                    {
+                        BatchOutcome::InboxHead
+                    }
+                    (true, Some(false)) if inbox_only => BatchOutcome::InboxMore,
                     _ => batch_outcome(&result),
+                };
+                let sample = if matches!(outcome, BatchOutcome::Retryable) {
+                    uuid::Uuid::new_v4().as_u128() as u16
+                } else {
+                    0
                 };
                 let Some(next) = schedule
                     .lock()
                     .unwrap_or_else(|e| e.into_inner())
-                    .after(outcome)
+                    .after_with_sample(outcome, sample)
                 else {
                     break;
                 };
@@ -366,9 +518,9 @@ impl NdsClient {
             active,
             task: Some(task),
         });
-        Ok(())
+        true
     }
-    #[frb(ignore)]
+    #[cfg_attr(feature = "flutter", frb(ignore))]
     pub(crate) async fn vault(&self) -> Result<Arc<VaultClient>, VaultError> {
         let mut slot = self.vault.lock().await;
         if let Some(vault) = &*slot {
@@ -394,26 +546,50 @@ impl NdsClient {
         Ok(view)
     }
     pub async fn vault_sync(&self) -> Result<VaultView, VaultError> {
-        let schedule = self.schedule();
-        self.stop_replica().await;
-        schedule
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .retry_capacity();
-        let result = observe("vault.sync", async {
-            self.vault().await?.synchronize().await
+        let lifetime = self.inner.local_use_lifetime();
+        observe("vault.sync", async {
+            let _control = self
+                .replica_control
+                .try_lock()
+                .map_err(|_| VaultError::Busy)?;
+            self.stop_replica().await;
+            let fence = self
+                .inner
+                .local_use_fence_from(&lifetime)
+                .await
+                .map_err(replica_auth_error)?;
+            let schedule = {
+                let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+                self.inner
+                    .check_local_use_lifetime(&fence)
+                    .map_err(replica_auth_error)?;
+                // An explicit retry owns fresh policy. Already running state
+                // publishers may finish, but can only update their old policy.
+                self.reset_replica_schedule()
+            };
+            let mut history = None;
+            let result = async {
+                let vault = self.vault().await?;
+                let attempt = vault.synchronize_attempt(false).await?;
+                history = attempt.history;
+                attempt.result.map(|progress| progress.view)
+            }
+            .await;
+            let next = {
+                let mut policy = schedule.lock().unwrap_or_else(|e| e.into_inner());
+                if let Some(history) = history {
+                    policy.observe_history(history);
+                }
+                policy.after(batch_outcome(&result))
+            };
+            if let Some(delay) = next {
+                self.start_replica_for_schedule(delay, &fence, schedule)
+                    .await
+                    .map_err(replica_auth_error)?;
+            }
+            result
         })
-        .await;
-        let next = schedule
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .after(batch_outcome(&result));
-        if let Some(delay) = next
-            && Arc::ptr_eq(&schedule, &self.schedule())
-        {
-            self.start_replica(delay).await?;
-        }
-        result
+        .await
     }
     pub async fn vault_records(&self, after: String) -> Result<RecordPage, VaultError> {
         observe("vault.records", async {
@@ -430,6 +606,8 @@ impl NdsClient {
         username: String,
         secret: String,
     ) -> Result<VaultView, VaultError> {
+        // Own and clear supplied secret bytes even if authorization/storage fails.
+        let secret = Zeroizing::new(secret);
         let result = observe("vault.record.save", async {
             let vault = self.vault().await?;
             vault
@@ -439,7 +617,7 @@ impl NdsClient {
                     expected_pending,
                     title,
                     username,
-                    Zeroizing::new(secret),
+                    secret,
                 )
                 .await?;
             Ok(vault.snapshot())
@@ -511,11 +689,9 @@ impl NdsClient {
             .map_or_else(Default::default, |(metadata, _)| metadata))
     }
     pub async fn clipboard_publish_text(&self, text: String) -> Result<String, VaultError> {
+        let text = Zeroizing::new(text);
         let result = observe("clipboard.publish", async {
-            self.vault()
-                .await?
-                .share_clipboard(Zeroizing::new(text))
-                .await
+            self.vault().await?.share_clipboard(text).await
         })
         .await?;
         self.wake_replica();
@@ -580,7 +756,7 @@ impl NdsClient {
         }
     }
     /// Called synchronously in the explicit user gesture, before async decryption.
-    #[frb(sync)]
+    #[cfg_attr(feature = "flutter", frb(sync))]
     pub fn reserve_clipboard_copy(&self) -> Result<Option<String>, VaultError> {
         #[cfg(target_arch = "wasm32")]
         {
@@ -646,24 +822,27 @@ impl NdsClient {
         .await
     }
     pub async fn incidents(&self, after: String) -> Result<IncidentPage, ClientError> {
-        let reply = self
-            .inner
-            .sync_request(nddev_device_sync_accounts::SyncRequest::Incidents { after })
-            .await?;
-        let page: nddev_device_sync_accounts::observability_wire::IncidentPage =
-            serde_json::from_slice(&reply.body).map_err(|_| ClientError::InvalidResponse)?;
-        if page.incidents.len() > 50 {
-            return Err(ClientError::InvalidResponse);
-        }
-        let mut incidents = Vec::new();
-        for incident in page.incidents {
-            incidents.push(incident_view(incident)?);
-        }
-        Ok(IncidentPage {
-            incidents,
-            next_cursor: page.next_cursor.unwrap_or_default(),
-            generated_at: page.generated_at,
+        observe_incident("observability.incidents.read", async {
+            let reply = self
+                .inner
+                .sync_request(nddev_device_sync_accounts::SyncRequest::Incidents { after })
+                .await?;
+            let page: nddev_device_sync_accounts::observability_wire::IncidentPage =
+                serde_json::from_slice(&reply.body).map_err(|_| ClientError::InvalidResponse)?;
+            if page.incidents.len() > 50 {
+                return Err(ClientError::InvalidResponse);
+            }
+            let mut incidents = Vec::new();
+            for incident in page.incidents {
+                incidents.push(incident_view(incident)?);
+            }
+            Ok(IncidentPage {
+                incidents,
+                next_cursor: page.next_cursor.unwrap_or_default(),
+                generated_at: page.generated_at,
+            })
         })
+        .await
     }
     pub async fn incident_action(
         &self,
@@ -671,43 +850,51 @@ impl NdsClient {
         revision: u64,
         silence_seconds: u32,
     ) -> Result<IncidentView, ClientError> {
-        if !(1..=9_007_199_254_740_991).contains(&revision) || silence_seconds > 86_400 {
-            return Err(ClientError::InvalidInput);
-        }
-        let operation_id = uuid::Uuid::now_v7().to_string();
-        let expected_revision = revision as i64;
-        let body = if silence_seconds == 0 {
-            serde_json::to_vec(
-                &nddev_device_sync_accounts::observability_wire::IncidentAction {
-                    operation_id,
-                    expected_revision,
-                },
-            )
+        let event = if silence_seconds == 0 {
+            "observability.incident.acknowledge"
         } else {
-            let until = (time::OffsetDateTime::now_utc()
-                + time::Duration::seconds(i64::from(silence_seconds)))
-            .format(&time::format_description::well_known::Rfc3339)
+            "observability.incident.silence"
+        };
+        observe_incident(event, async {
+            if !(1..=9_007_199_254_740_991).contains(&revision) || silence_seconds > 86_400 {
+                return Err(ClientError::InvalidInput);
+            }
+            let operation_id = uuid::Uuid::now_v7().to_string();
+            let expected_revision = revision as i64;
+            let body = if silence_seconds == 0 {
+                serde_json::to_vec(
+                    &nddev_device_sync_accounts::observability_wire::IncidentAction {
+                        operation_id,
+                        expected_revision,
+                    },
+                )
+            } else {
+                let until = (time::OffsetDateTime::now_utc()
+                    + time::Duration::seconds(i64::from(silence_seconds)))
+                .format(&time::format_description::well_known::Rfc3339)
+                .map_err(|_| ClientError::InvalidInput)?;
+                serde_json::to_vec(
+                    &nddev_device_sync_accounts::observability_wire::SilenceAction {
+                        operation_id,
+                        expected_revision,
+                        until,
+                    },
+                )
+            }
             .map_err(|_| ClientError::InvalidInput)?;
-            serde_json::to_vec(
-                &nddev_device_sync_accounts::observability_wire::SilenceAction {
-                    operation_id,
-                    expected_revision,
-                    until,
-                },
+            let reply = self
+                .inner
+                .sync_request(nddev_device_sync_accounts::SyncRequest::IncidentAction {
+                    id,
+                    silence: silence_seconds > 0,
+                    body,
+                })
+                .await?;
+            incident_view(
+                serde_json::from_slice(&reply.body).map_err(|_| ClientError::InvalidResponse)?,
             )
-        }
-        .map_err(|_| ClientError::InvalidInput)?;
-        let reply = self
-            .inner
-            .sync_request(nddev_device_sync_accounts::SyncRequest::IncidentAction {
-                id,
-                silence: silence_seconds > 0,
-                body,
-            })
-            .await?;
-        incident_view(
-            serde_json::from_slice(&reply.body).map_err(|_| ClientError::InvalidResponse)?,
-        )
+        })
+        .await
     }
     pub async fn sync_states(&self, after: String) -> Result<StatePage, VaultError> {
         observe("sync.states.read", async {
@@ -731,6 +918,8 @@ impl NdsClient {
     ) -> Result<VaultView, VaultError> {
         use nddev_device_sync_domain::state::Snapshot;
         let schedule = self.schedule();
+        let mut attempted = false;
+        let mut history = None;
         let result = observe("sync.states.publish", async {
             if schedule
                 .lock()
@@ -754,14 +943,18 @@ impl NdsClient {
             for module in modules {
                 values.push(capture(module.state()));
             }
-            vault.publish_states(values).await
+            attempted = true;
+            let attempt = vault.publish_states_attempt(values).await?;
+            history = attempt.history;
+            attempt.result
         })
         .await;
-        if matches!(&result, Err(VaultError::CapacityExhausted)) {
-            let _ = schedule
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .after(BatchOutcome::CapacityExhausted);
+        if attempted && matches!(&result, Err(VaultError::CapacityExhausted)) {
+            let mut policy = schedule.lock().unwrap_or_else(|e| e.into_inner());
+            if let Some(history) = history {
+                policy.observe_history(history);
+            }
+            policy.after(BatchOutcome::CapacityExhausted);
         }
         result
     }
@@ -777,11 +970,20 @@ impl NdsClient {
             .unwrap_or_else(|e| e.into_inner())
             .clone()
     }
-    #[frb(sync)]
+    // Caller holds publication, including when replacing an identity session.
+    fn reset_replica_schedule(&self) -> Arc<Mutex<ReplicaSchedule>> {
+        let schedule = Arc::default();
+        *self
+            .replica_schedule
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = Arc::clone(&schedule);
+        schedule
+    }
+    #[cfg_attr(feature = "flutter", frb(sync))]
     pub fn snapshot(&self) -> View {
         self.inner.view()
     }
-    #[frb(sync)]
+    #[cfg_attr(feature = "flutter", frb(sync))]
     pub fn delivery_snapshot(&self) -> super::telemetry::DeliveryView {
         self.delivery
             .lock()
@@ -789,24 +991,39 @@ impl NdsClient {
             .as_ref()
             .map_or_else(Default::default, |delivery| delivery.snapshot())
     }
-    #[frb(sync)]
+    #[cfg_attr(feature = "flutter", frb(sync))]
     pub fn cancel(&self) {
+        self.cancel_work(true);
+    }
+    fn cancel_work(&self, clear_sign_in: bool) -> Option<runtime::Task> {
+        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        self.cancel_screen();
         self.invalidate_catalog();
         self.delivery
             .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .take();
-        self.replica
-            .lock()
             .unwrap_or_else(|e| e.into_inner())
             .take();
-        self.inner.cancel_sign_in();
+        let task = self
+            .replica
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .take()
+            .and_then(|mut replica| replica.task.take());
+        if let Some(task) = &task {
+            task.abort();
+        }
+        if clear_sign_in {
+            self.inner.cancel_sign_in();
+        } else {
+            self.inner.cancel();
+        }
+        task
     }
 }
 
-/// Flutter reports raw lifecycle once. The shared application policy decides
+/// Presentation reports raw lifecycle once. The shared application policy decides
 /// whether this target may perform bounded replica and delivery work.
-#[frb(sync)]
+#[cfg_attr(feature = "flutter", frb(sync))]
 pub fn client_work_permitted(state: ClientLifecycle) -> bool {
     use nddev_device_sync_application::lifecycle::ClientLifecycle as Activity;
     use nddev_device_sync_domain::Platform;
@@ -844,6 +1061,39 @@ fn replica_start_error(error: VaultError) -> ClientError {
         VaultError::Unavailable => ClientError::Server("vault_storage_unavailable".into()),
         other => ClientError::Server(other.code()),
     }
+}
+
+fn replica_auth_error(error: ClientError) -> VaultError {
+    match error {
+        ClientError::Busy => VaultError::Busy,
+        ClientError::Server(code) if code == "server_busy" => VaultError::Busy,
+        ClientError::Server(code) if code == "sync_capacity_exhausted" => {
+            VaultError::CapacityExhausted
+        }
+        ClientError::DeviceRevoked | ClientError::RevalidationRequired => VaultError::Locked,
+        _ => VaultError::Unavailable,
+    }
+}
+
+// Caller holds publication and has checked the original Accounts lifetime.
+#[cfg_attr(feature = "flutter", frb(ignore))]
+fn recovered_policy(
+    slot: &Mutex<Arc<Mutex<ReplicaSchedule>>>,
+    expected: &Arc<Mutex<ReplicaSchedule>>,
+    check: &CapacityCheck,
+    outcome: CapacityProbeOutcome,
+) -> Option<Arc<Mutex<ReplicaSchedule>>> {
+    let mut current = slot.lock().unwrap_or_else(|e| e.into_inner());
+    if !Arc::ptr_eq(&current, expected) {
+        return None;
+    }
+    let replacement = expected
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .recovered_capacity(check, outcome)?;
+    let replacement = Arc::new(Mutex::new(replacement));
+    *current = replacement.clone();
+    Some(replacement)
 }
 
 fn batch_outcome(result: &Result<VaultView, VaultError>) -> BatchOutcome {
@@ -906,10 +1156,37 @@ fn device_observations(
     Ok(values)
 }
 
-async fn observe<T>(
+// User actions produce one terminal event outside delivery-suppressed I/O.
+fn observe_incident<T>(
+    event: &'static str,
+    work: impl std::future::Future<Output = Result<T, ClientError>>,
+) -> impl std::future::Future<Output = Result<T, ClientError>> {
+    observe_operation(
+        "observability",
+        event,
+        work,
+        ClientError::TelemetryUnavailable,
+        |error| {
+            (
+                error.code(),
+                "error",
+                matches!(
+                    error,
+                    ClientError::InvalidResponse
+                        | ClientError::Transport
+                        | ClientError::Timeout
+                        | ClientError::CredentialStore
+                        | ClientError::TelemetryUnavailable
+                ),
+            )
+        },
+    )
+}
+
+fn observe<T>(
     event: &'static str,
     work: impl std::future::Future<Output = Result<T, VaultError>>,
-) -> Result<T, VaultError> {
+) -> impl std::future::Future<Output = Result<T, VaultError>> {
     observe_operation("vault", event, work, VaultError::Unavailable, |error| {
         (
             error.code(),
@@ -923,20 +1200,50 @@ async fn observe<T>(
             ),
         )
     })
-    .await
 }
 
 // One terminal caller event and process span; transport owners retain their I/O spans.
-#[frb(ignore)]
-pub(crate) async fn observe_operation<T, E>(
+#[cfg_attr(feature = "flutter", frb(ignore))]
+pub(crate) fn observe_operation<T, E>(
     module: &'static str,
     event: &'static str,
     work: impl std::future::Future<Output = Result<T, E>>,
     unavailable: E,
     classify: fn(&E) -> (String, &'static str, bool),
+) -> impl std::future::Future<Output = Result<T, E>> {
+    // Own the potentially large operation once. Keeping it inline in each
+    // observation wrapper exhausts mobile stacks when nested futures are polled.
+    let work = Box::pin(work);
+    async move {
+        let span = nddev_device_sync_telemetry::operation_span(module, "process")
+            .map_err(|_| unavailable)?;
+        observe_in_span(module, event, work, span, classify).await
+    }
+}
+
+// Once resources are owned, telemetry availability must not skip their teardown.
+#[cfg_attr(feature = "flutter", frb(ignore))]
+pub(crate) fn observe_cleanup<T, E>(
+    module: &'static str,
+    event: &'static str,
+    work: impl std::future::Future<Output = Result<T, E>>,
+    classify: fn(&E) -> (String, &'static str, bool),
+) -> impl std::future::Future<Output = Result<T, E>> {
+    let work = Box::pin(work);
+    async move {
+        let span = nddev_device_sync_telemetry::operation_span(module, "process")
+            .unwrap_or_else(|_| tracing::Span::none());
+        observe_in_span(module, event, work, span, classify).await
+    }
+}
+
+async fn observe_in_span<T, E>(
+    module: &'static str,
+    event: &'static str,
+    work: impl std::future::Future<Output = Result<T, E>>,
+    span: tracing::Span,
+    classify: fn(&E) -> (String, &'static str, bool),
 ) -> Result<T, E> {
-    let span =
-        nddev_device_sync_telemetry::operation_span(module, "process").map_err(|_| unavailable)?;
     let completion = span.clone();
     async {
         let start = Instant::now();
@@ -964,6 +1271,14 @@ fn data_directory() -> Result<std::path::PathBuf, VaultError> {
 }
 
 #[derive(Clone)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct IncidentView {
     pub id: String,
     pub service: String,
@@ -977,6 +1292,14 @@ pub struct IncidentView {
     pub silenced_until: String,
 }
 #[derive(Clone)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
 pub struct IncidentPage {
     pub incidents: Vec<IncidentView>,
     pub next_cursor: String,
@@ -1010,12 +1333,12 @@ fn incident_view(
 
 /// Native read preserves Android's sensitivity/URI refusal contract. Browser
 /// copy support does not imply a native clipboard read adapter exists.
-#[frb(sync)]
+#[cfg_attr(feature = "flutter", frb(sync))]
 pub fn supports_native_clipboard_read() -> bool {
     cfg!(target_os = "android")
 }
 
-#[frb(sync)]
+#[cfg_attr(feature = "flutter", frb(sync))]
 pub fn supports_native_clipboard() -> bool {
     #[cfg(target_arch = "wasm32")]
     {
@@ -1032,7 +1355,7 @@ pub fn supports_native_clipboard() -> bool {
     }
 }
 
-#[frb(sync)]
+#[cfg_attr(feature = "flutter", frb(sync))]
 pub fn new_vault_record_id() -> String {
     uuid::Uuid::new_v4().to_string()
 }
@@ -1043,6 +1366,235 @@ pub fn new_vault_record_id() -> String {
 ))]
 mod activity_tests {
     use super::*;
+
+    #[test]
+    fn public_operation_futures_fit_the_mobile_stack_budget() {
+        let client = NdsClient::new("https://example.invalid".into()).unwrap();
+        let sizes = [
+            (
+                "device state",
+                std::mem::size_of_val(&client.publish_device_state()),
+            ),
+            (
+                "clipboard",
+                std::mem::size_of_val(&client.clipboard_publish_text(String::new())),
+            ),
+            ("manual sync", std::mem::size_of_val(&client.vault_sync())),
+            ("company overview", std::mem::size_of_val(&client.company())),
+            (
+                "company members",
+                std::mem::size_of_val(&client.company_members(None)),
+            ),
+            (
+                "company invitations",
+                std::mem::size_of_val(&client.company_invitations(None)),
+            ),
+            (
+                "company invite",
+                std::mem::size_of_val(&client.company_invite(
+                    String::new(),
+                    nddev_device_sync_organizations::view::OrganizationRoleView::User,
+                )),
+            ),
+            (
+                "company revoke",
+                std::mem::size_of_val(&client.company_revoke(String::new())),
+            ),
+            (
+                "company role",
+                std::mem::size_of_val(&client.company_change_member(String::new(), 1, None)),
+            ),
+            (
+                "invitation import",
+                std::mem::size_of_val(&client.import_invitation(String::new())),
+            ),
+        ];
+        for (operation, bytes) in sizes {
+            assert!(
+                bytes <= 16 * 1024,
+                "{operation} future requires {bytes} bytes"
+            );
+        }
+    }
+
+    #[test]
+    fn blocked_state_preflight_does_not_create_a_new_server_refusal() {
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async {
+                let client = NdsClient::new("https://example.invalid".into()).unwrap();
+                let policy = client.schedule();
+                policy
+                    .lock()
+                    .unwrap()
+                    .after(BatchOutcome::CapacityExhausted);
+                let check = policy.lock().unwrap().capacity_check().unwrap();
+                assert!(matches!(
+                    client.publish_device_state().await,
+                    Err(VaultError::CapacityExhausted)
+                ));
+                assert!(
+                    policy
+                        .lock()
+                        .unwrap()
+                        .recovered_capacity(&check, CapacityProbeOutcome::Receipt)
+                        .is_some()
+                );
+                assert!(client.vault.try_lock().unwrap().is_none());
+            });
+    }
+
+    #[test]
+    fn verified_capacity_completion_replaces_only_its_current_refusal() {
+        let client = NdsClient::new("https://example.invalid".into()).unwrap();
+        let old = client.schedule();
+        old.lock().unwrap().after(BatchOutcome::CapacityExhausted);
+        let check = old.lock().unwrap().capacity_check().unwrap();
+        let replacement = {
+            let _publication = client.publication.lock().unwrap();
+            recovered_policy(
+                &client.replica_schedule,
+                &old,
+                &check,
+                CapacityProbeOutcome::Receipt,
+            )
+            .unwrap()
+        };
+        assert!(Arc::ptr_eq(&replacement, &client.schedule()));
+        assert!(!client.capacity_blocked());
+        old.lock().unwrap().after(BatchOutcome::CapacityExhausted);
+        assert!(!client.capacity_blocked());
+        {
+            let _publication = client.publication.lock().unwrap();
+            assert!(
+                recovered_policy(
+                    &client.replica_schedule,
+                    &old,
+                    &check,
+                    CapacityProbeOutcome::Receipt
+                )
+                .is_none()
+            );
+        }
+        replacement
+            .lock()
+            .unwrap()
+            .after(BatchOutcome::CapacityExhausted);
+        let stale = replacement.lock().unwrap().capacity_check().unwrap();
+        replacement
+            .lock()
+            .unwrap()
+            .after(BatchOutcome::CapacityExhausted);
+        let _publication = client.publication.lock().unwrap();
+        assert!(
+            recovered_policy(
+                &client.replica_schedule,
+                &replacement,
+                &stale,
+                CapacityProbeOutcome::NoEligibleWork
+            )
+            .is_none()
+        );
+        assert!(client.capacity_blocked());
+    }
+
+    #[test]
+    fn late_capacity_result_cannot_reblock_an_explicit_retry() {
+        let client = NdsClient::new("https://example.invalid".into()).unwrap();
+        let old = client.schedule();
+        let _ = old.lock().unwrap().after(BatchOutcome::CapacityExhausted);
+        let retry = {
+            let _publication = client.publication.lock().unwrap();
+            client.reset_replica_schedule()
+        };
+        let _ = retry.lock().unwrap().after(BatchOutcome::CaughtUp);
+
+        // A state publication admitted before the retry completes afterwards.
+        let _ = old.lock().unwrap().after(BatchOutcome::CapacityExhausted);
+        assert!(old.lock().unwrap().is_capacity_blocked());
+        assert!(!client.capacity_blocked());
+        assert!(Arc::ptr_eq(&retry, &client.schedule()));
+
+        // A real refusal from the new attempt still blocks its own policy,
+        // and healthy inbox reads cannot remove it.
+        let _ = retry.lock().unwrap().after(BatchOutcome::CapacityExhausted);
+        let _ = retry.lock().unwrap().after(BatchOutcome::InboxHead);
+        assert!(client.capacity_blocked());
+    }
+
+    #[test]
+    fn obsolete_policy_cannot_publish_or_replace_a_replica() {
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async {
+                let client = NdsClient::new("https://example.invalid".into()).unwrap();
+                let obsolete = client.schedule();
+                let mut active = {
+                    let _publication = client.publication.lock().unwrap();
+                    let current = client.reset_replica_schedule();
+                    assert!(!client.spawn_replica(Duration::ZERO, Weak::new(), obsolete.clone(),));
+                    assert!(client.replica.lock().unwrap().is_none());
+                    assert!(client.spawn_replica(Duration::from_secs(3600), Weak::new(), current,));
+                    client
+                        .replica
+                        .lock()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .active
+                        .subscribe()
+                };
+                {
+                    let _publication = client.publication.lock().unwrap();
+                    assert!(!client.spawn_replica(Duration::ZERO, Weak::new(), obsolete));
+                }
+                client.set_lifecycle(ClientLifecycle::Hidden);
+                assert!(!*active.borrow_and_update());
+                client.set_lifecycle(ClientLifecycle::Resumed);
+                assert!(*active.borrow_and_update());
+                client.stop_replica().await;
+                assert!(active.has_changed().is_err());
+            });
+    }
+
+    #[test]
+    fn overlapping_manual_sync_does_not_stop_the_owned_replica() {
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async {
+                let client = NdsClient::new("https://example.invalid".into()).unwrap();
+                let mut active = {
+                    let _publication = client.publication.lock().unwrap();
+                    assert!(client.spawn_replica(
+                        Duration::from_secs(3600),
+                        Weak::new(),
+                        client.schedule(),
+                    ));
+                    client
+                        .replica
+                        .lock()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .active
+                        .subscribe()
+                };
+                let control = client.replica_control.lock().await;
+                assert!(matches!(client.vault_sync().await, Err(VaultError::Busy)));
+                assert!(client.replica.lock().unwrap().is_some());
+                client.set_lifecycle(ClientLifecycle::Hidden);
+                assert!(!*active.borrow_and_update());
+                drop(control);
+                assert!(client.replica_control.try_lock().is_ok());
+                client.stop_replica().await;
+            });
+    }
 
     #[test]
     fn capacity_blocks_uploads_and_late_old_results_stay_in_the_old_session() {
@@ -1081,5 +1633,35 @@ mod activity_tests {
         client.set_lifecycle(ClientLifecycle::Resumed);
         assert!(client.active.load(Ordering::Relaxed));
         assert!(!client_work_permitted(ClientLifecycle::Ready));
+    }
+}
+
+#[cfg(test)]
+mod cleanup_observation_tests {
+    #[test]
+    fn cleanup_executes_when_span_configuration_is_rejected() {
+        use std::{
+            cell::Cell,
+            future::Future,
+            task::{Context, Poll, Waker},
+        };
+        assert!(nddev_device_sync_telemetry::operation_span("invalid/module", "process").is_err());
+        let called = Cell::new(false);
+        let work = async {
+            called.set(true);
+            Ok::<(), ()>(())
+        };
+        let mut future = Box::pin(super::observe_cleanup(
+            "invalid/module",
+            "cleanup.test",
+            work,
+            |_| ("test_error".into(), "error", true),
+        ));
+        let mut context = Context::from_waker(Waker::noop());
+        assert!(matches!(
+            future.as_mut().poll(&mut context),
+            Poll::Ready(Ok(()))
+        ));
+        assert!(called.get());
     }
 }

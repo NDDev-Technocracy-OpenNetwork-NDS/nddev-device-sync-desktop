@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart';
 import 'package:nddev_opennetwork_design_system/opennetwork_design_system.dart';
 import 'package:nds_native/nds_native.dart' as native;
 import 'package:url_launcher/url_launcher.dart';
@@ -10,14 +11,18 @@ import 'package:url_launcher/url_launcher.dart';
 import 'l10n/app_localizations.dart';
 import 'activity.dart';
 import 'modules_screen.dart';
+import 'screen_viewer.dart';
+import 'screen_requests.dart';
 import 'diagnostics.dart';
 import 'vault_screen.dart';
 import 'utilities_screen.dart';
 import 'passkeys_screen.dart';
+import 'company_screen.dart';
 import 'repositories_screen.dart';
 
 Future<void> runNdsApp() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final invitationReceived = kIsWeb && Uri.base.fragment.startsWith('invite/');
   final diagnostics = ApplicationDiagnostics();
   var nativeReady = false;
   try {
@@ -27,18 +32,32 @@ Future<void> runNdsApp() async {
   } catch (_) {
     diagnostics.reportFailure(native.FailureKind.nativeBridge);
   }
-  runApp(NdsApp(diagnostics: diagnostics, nativeReady: nativeReady));
+  runApp(
+    NdsApp(
+      diagnostics: diagnostics,
+      nativeReady: nativeReady,
+      invitationReceived: invitationReceived,
+    ),
+  );
 }
 
 class NdsApp extends StatefulWidget {
-  const NdsApp({super.key, this.diagnostics, this.nativeReady = true});
+  const NdsApp({
+    super.key,
+    this.diagnostics,
+    this.nativeReady = true,
+    this.invitationReceived = false,
+  });
   final ApplicationDiagnostics? diagnostics;
   final bool nativeReady;
+  final bool invitationReceived;
   @override
   State<NdsApp> createState() => _NdsAppState();
 }
 
-class _NdsAppState extends State<NdsApp> {
+class _NdsAppState extends State<NdsApp> with WidgetsBindingObserver {
+  final _identityKey = GlobalKey<_IdentityScreenState>();
+  SemanticsHandle? _webSemantics;
   Locale? _locale;
   int _page = 0;
   native.NdsClient? _client;
@@ -46,6 +65,10 @@ class _NdsAppState extends State<NdsApp> {
   @override
   void initState() {
     super.initState();
+    // Expose ordinary controls to assistive tools and browser agents without
+    // requiring Flutter's off-screen activation button. The app owns the handle.
+    if (kIsWeb) _webSemantics = SemanticsBinding.instance.ensureSemantics();
+    WidgetsBinding.instance.addObserver(this);
     _activity = ApplicationActivity(
       nativeReady: widget.nativeReady,
       onLifecycle: widget.diagnostics?.lifecycle,
@@ -59,9 +82,26 @@ class _NdsAppState extends State<NdsApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _webSemantics?.dispose();
     _activity.dispose();
     widget.diagnostics?.dispose();
     super.dispose();
+  }
+
+  @override
+  Future<bool> didPushRouteInformation(
+    RouteInformation routeInformation,
+  ) async {
+    final uri = routeInformation.uri;
+    if (!kIsWeb ||
+        !(uri.fragment.startsWith('invite/') ||
+            uri.path.startsWith('/invite/') ||
+            uri.path.startsWith('invite/'))) {
+      return false;
+    }
+    await _identityKey.currentState?._receiveInvitation(uri.toString());
+    return true;
   }
 
   @override
@@ -70,6 +110,7 @@ class _NdsAppState extends State<NdsApp> {
     child: LayoutBuilder(
       builder: (context, constraints) => MaterialApp(
         title: 'NDDev OpenNetwork',
+        initialRoute: '/',
         debugShowCheckedModeBanner: false,
         theme: OpenNetworkTheme.dark(width: constraints.maxWidth),
         locale: _locale,
@@ -95,6 +136,8 @@ class _NdsAppState extends State<NdsApp> {
               );
             }
             final identity = _IdentityScreen(
+              key: _identityKey,
+              invitationReceived: widget.invitationReceived,
               onLocale: (locale) => setState(() => _locale = locale),
               diagnostics: widget.diagnostics,
               onClient: (client) {
@@ -140,10 +183,13 @@ class _NdsAppState extends State<NdsApp> {
 
 class _IdentityScreen extends StatefulWidget {
   const _IdentityScreen({
+    super.key,
+    this.invitationReceived = false,
     required this.onLocale,
     this.diagnostics,
     this.onClient,
   });
+  final bool invitationReceived;
   final ValueChanged<Locale> onLocale;
   final ApplicationDiagnostics? diagnostics;
   final ValueChanged<native.NdsClient?>? onClient;
@@ -165,6 +211,7 @@ class _IdentityScreenState extends State<_IdentityScreen> {
   int _actionEpoch = 0;
   bool get _paused => !ApplicationActivityScope.read(context).value;
   bool _browserOpened = false;
+  bool _invitationNoticeHandled = false;
   String? _error;
   Timer? _poll;
   Timer? _clock;
@@ -208,6 +255,11 @@ class _IdentityScreenState extends State<_IdentityScreen> {
   Future<void> _reconcileInner(native.NdsClient client) async {
     try {
       await client.reconcile();
+      if (kIsWeb &&
+          !client.snapshot().authenticated &&
+          client.snapshot().flow.isEmpty) {
+        await client.importBrowserInvitation();
+      }
     } catch (error) {
       if (error is native.ClientError) {
         error.dispose();
@@ -301,7 +353,15 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     }
     ApplicationActivityScope.read(context).attach(client);
     _client = client;
-    return client.refresh();
+    await client.refresh();
+    final view = await client.importBrowserInvitation();
+    if (widget.invitationReceived &&
+        !_invitationNoticeHandled &&
+        view.authenticated) {
+      _invitationNoticeHandled = true;
+      _error = 'invitation_requires_sign_out';
+    }
+    return view;
   }, prepare: true);
 
   void _schedulePoll() {
@@ -324,6 +384,62 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     });
   }
 
+  Future<void> _receiveInvitation(String route) async {
+    try {
+      native.captureInvitationLink(route: route);
+    } catch (error) {
+      if (error is native.ClientError) error.dispose();
+      if (mounted) setState(() => _error = 'invalid_input');
+      return;
+    }
+    if (_client?.snapshot().authenticated == true) {
+      if (mounted) setState(() => _error = 'invitation_requires_sign_out');
+      return;
+    }
+    if (_client != null && !_busy) {
+      await _run(() => _client!.importBrowserInvitation());
+    }
+  }
+
+  Future<void> _importInvitation() async {
+    final l = AppLocalizations.of(context)!;
+    final input = TextEditingController();
+    try {
+      final accepted = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l.invitationImport),
+          content: TextField(
+            controller: input,
+            obscureText: true,
+            autocorrect: false,
+            enableSuggestions: false,
+            maxLength: 2048,
+            decoration: InputDecoration(labelText: l.invitationLink),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l.invitationImport),
+            ),
+          ],
+        ),
+      );
+      if (accepted == true && mounted) {
+        final link = input.text;
+        input.clear();
+        await _run(() => _client!.importInvitation(link: link));
+      }
+    } finally {
+      input.clear();
+      input.dispose();
+    }
+  }
+
   Future<void> _startGithub() {
     _browserOpened = false;
     _poll?.cancel();
@@ -334,7 +450,13 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     _browserOpened = false;
     _poll?.cancel();
     return _run(
-      () => _client!.startPasskey(registration: registration, locale: _locale),
+      () => _client!.startPasskey(
+        registration: registration,
+        email: registration || _email.text.trim().isEmpty
+            ? null
+            : _email.text.trim(),
+        locale: _locale,
+      ),
     );
   }
 
@@ -389,6 +511,7 @@ class _IdentityScreenState extends State<_IdentityScreen> {
   }
 
   String _message(AppLocalizations l, String code) => switch (code) {
+    'invitation_requires_sign_out' => l.invitationSignOut,
     'invalid_endpoint' => l.endpointError,
     'recent_authentication_required' => l.recentAuthenticationRequired,
     'invalid_input' => l.inputError,
@@ -544,6 +667,37 @@ class _IdentityScreenState extends State<_IdentityScreen> {
                               Text(
                                 '${device.platform} · ${device.revoked ? l.deviceRevoked : l.deviceActive}',
                               ),
+                              if (!device.isCurrent &&
+                                  !device.revoked &&
+                                  native.screenSupported())
+                                TextButton(
+                                  onPressed: _busy
+                                      ? null
+                                      : () => Navigator.of(context).push(
+                                          MaterialPageRoute<void>(
+                                            builder: (_) => ScreenViewer(
+                                              client: _client!,
+                                              deviceId: device.deviceId,
+                                            ),
+                                          ),
+                                        ),
+                                  child: Text(l.screenView),
+                                ),
+                              if (device.isCurrent &&
+                                  !device.revoked &&
+                                  native.screenSupported())
+                                TextButton(
+                                  onPressed: _busy
+                                      ? null
+                                      : () => Navigator.of(context).push(
+                                          MaterialPageRoute<void>(
+                                            builder: (_) => ScreenRequests(
+                                              client: _client!,
+                                            ),
+                                          ),
+                                        ),
+                                  child: Text(l.screenRequests),
+                                ),
                               if (device.isCurrent) Text(l.thisDevice),
                               Text(
                                 '${l.deviceCreated}: ${_date(device.createdAt)}',
@@ -656,6 +810,20 @@ class _IdentityScreenState extends State<_IdentityScreen> {
                       child: Text(l.catalogTitle),
                     ),
                     OutlinedButton(
+                      key: const Key('company'),
+                      onPressed:
+                          _busy ||
+                              !v.sessionVerified ||
+                              v.currentDeviceId.isEmpty
+                          ? null
+                          : () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => CompanyScreen(client: _client!),
+                              ),
+                            ),
+                      child: Text(l.companyTitle),
+                    ),
+                    OutlinedButton(
                       key: const Key('manage-passkeys'),
                       onPressed: _busy || !v.sessionVerified
                           ? null
@@ -711,16 +879,25 @@ class _IdentityScreenState extends State<_IdentityScreen> {
                     if (_browserOpened) Text(l.awaitApproval),
                     TextButton(onPressed: _cancel, child: Text(l.cancel)),
                   ] else ...[
+                    if (v.invitationPending) Text(l.invitationVerify),
+                    if (!v.invitationPending && v.flow.isEmpty)
+                      TextButton(
+                        onPressed: _busy ? null : _importInvitation,
+                        child: Text(l.invitationImport),
+                      ),
                     TextField(
                       key: const Key('email'),
                       controller: _email,
-                      enabled: !_busy && v.emailAvailable,
+                      enabled:
+                          !_busy && (v.emailAvailable || v.passkeyAvailable),
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
                       autofillHints: const [AutofillHints.email],
                       decoration: InputDecoration(labelText: l.email),
                     ),
                     const SizedBox(height: OpenNetworkSpacing.four),
+                    if (v.passkeyAvailable && !v.invitationPending)
+                      Text(l.passkeyAccountHint),
                     if (v.flow == 'email') ...[
                       Text(l.emailHint),
                       const SizedBox(height: OpenNetworkSpacing.four),
@@ -772,7 +949,8 @@ class _IdentityScreenState extends State<_IdentityScreen> {
                     const SizedBox(height: OpenNetworkSpacing.four),
                     OutlinedButton(
                       key: const Key('github'),
-                      onPressed: _busy || !v.githubAvailable
+                      onPressed:
+                          _busy || v.invitationPending || !v.githubAvailable
                           ? null
                           : _startGithub,
                       child: Text(l.github),
@@ -780,12 +958,13 @@ class _IdentityScreenState extends State<_IdentityScreen> {
                     if (!v.githubAvailable) Text(l.unavailable),
                     OutlinedButton(
                       key: const Key('passkey'),
-                      onPressed: _busy || !v.passkeyAvailable
+                      onPressed:
+                          _busy || v.invitationPending || !v.passkeyAvailable
                           ? null
                           : () => _startPasskey(false),
                       child: Text(l.passkey),
                     ),
-                    if (v.flow.isNotEmpty)
+                    if (v.flow.isNotEmpty || v.invitationPending)
                       TextButton(onPressed: _cancel, child: Text(l.cancel)),
                   ],
                   if (_busy) ...[

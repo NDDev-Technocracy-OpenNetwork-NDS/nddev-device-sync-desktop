@@ -7,6 +7,7 @@ import re
 import zipfile
 from pathlib import Path
 import subprocess
+import sys
 import tomllib
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -34,8 +35,15 @@ elif artifact.is_dir():
     if not paths or len(paths)>32768: raise SystemExit('Unexpected artifact file count')
     files = {str(path.relative_to(artifact)):sha(path) for path in paths}
 else: raise SystemExit('Built artifact does not exist')
-record = {'build_kind':args.build_kind, 'app_source':identity(args.app_root),
-          'native_source':identity(args.native_root),
+app_source = identity(args.app_root)
+native_source = identity(args.native_root)
+if any(source['state'] != 'committed' for source in (app_source, native_source)):
+    raise SystemExit('Committed wrapper and native sources are required')
+subprocess.run([sys.executable, str(Path(__file__).with_name('check-artifact.py')),
+                str(artifact), '--native-source-commit', native_source['commit']],
+               check=True, timeout=120)
+record = {'build_kind':args.build_kind, 'app_source':app_source,
+          'native_source':native_source,
           'standards':tomllib.loads((args.app_root/'standarts.lock').read_text()),
           'toolchains':json.loads((args.native_root/'toolchains.lock.json').read_text()),
           'rust_toolchain':tomllib.loads((args.native_root/'packages/nds_native/rust/rust-toolchain.toml').read_text())['toolchain'],

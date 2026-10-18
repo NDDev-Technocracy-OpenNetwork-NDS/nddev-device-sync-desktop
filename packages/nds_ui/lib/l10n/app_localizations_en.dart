@@ -839,14 +839,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get serverCapacityExhausted =>
-      'Server storage capacity is exhausted. Your encrypted changes remain on this device. Automatic sync is paused; retry manually after server capacity becomes available.';
+      'Server storage capacity is exhausted. Your encrypted changes remain on this device. Automatic sending is paused while NDS checks for a safe retry; you can also retry manually.';
 
   @override
   String get catalogTitle => 'GitHub repositories';
 
   @override
   String get catalogHelp =>
-      'Choose a vault record containing a GitHub access token. Read one page of repositories available to that credential.';
+      'Choose a vault record containing a GitHub access token to update the saved catalog. Each request reads one page available to that credential.';
 
   @override
   String get catalogCredential => 'Vault credential';
@@ -879,8 +879,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'This vault record changed. Refresh records and select it again.';
 
   @override
-  String get catalogInvalidResponse =>
-      'GitHub returned a repository page that could not be verified.';
+  String get catalogInvalidResponse => 'Repository data could not be verified.';
 
   @override
   String get catalogProviderFailed =>
@@ -948,4 +947,213 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get catalogPaused =>
       'Repository requests are paused while this app is in the background.';
+
+  @override
+  String get screenView => 'View screen';
+
+  @override
+  String get screenEnded => 'Screen viewing ended.';
+
+  @override
+  String get screenOpening => 'Waiting for screen access…';
+
+  @override
+  String get screenUnavailable => 'The screen is unavailable.';
+
+  @override
+  String get screenStop => 'Stop viewing';
+
+  @override
+  String get screenRequests => 'Screen requests';
+
+  @override
+  String get screenRequestsHelp =>
+      'Refresh requests from devices allowed by your current company policy. Sharing starts only after you allow this request.';
+
+  @override
+  String get screenConsent =>
+      'Allow this device to view your screen for the requested session?';
+
+  @override
+  String get screenAllow => 'Allow screen viewing';
+
+  @override
+  String get screenAccessAllowed =>
+      'Screen access is allowed for this session.';
+
+  @override
+  String get screenStopSharing => 'Stop sharing';
+
+  @override
+  String get catalogSaved => 'Saved catalog';
+
+  @override
+  String get catalogProvider => 'Update from GitHub';
+
+  @override
+  String get catalogSavedHelp =>
+      'Encrypted observations retained in NDS. Dates show when data was observed, not current GitHub access or freshness.';
+
+  @override
+  String get catalogReadSaved => 'Refresh saved page';
+
+  @override
+  String get catalogSavedNext => 'Next saved page';
+
+  @override
+  String get catalogReadSavedAgain =>
+      'Refresh the saved catalog and try again.';
+
+  @override
+  String catalogMissingOwner(String id) {
+    return 'Owner $id: details have not synchronized yet.';
+  }
+
+  @override
+  String get catalogCapacityReached =>
+      'The catalog could not finish updating because synchronization storage reached its limit. Saved observations remain available.';
+
+  @override
+  String get companyTitle => 'Company';
+
+  @override
+  String get companyPrivacy =>
+      'Company administration is online. Personal Vault, secrets and repositories remain private to their owner.';
+
+  @override
+  String get companyAdmin => 'Administrator';
+
+  @override
+  String get companyUser => 'User';
+
+  @override
+  String get companyCompleted =>
+      'The server confirmed the change. Refresh to see the current state.';
+
+  @override
+  String get companyLastAdmin =>
+      'The last active administrator cannot be removed or demoted.';
+
+  @override
+  String get companyConflict =>
+      'The member changed since this page was loaded. Review the current state.';
+
+  @override
+  String get companyExpired =>
+      'The command has expired. Review the current state before a new action.';
+
+  @override
+  String get companyInvitationUnavailable =>
+      'This invitation or recipient is no longer available for this action.';
+
+  @override
+  String get companyDenied =>
+      'Your current membership does not allow this action.';
+
+  @override
+  String get companyInvalid => 'Check the email address and selected action.';
+
+  @override
+  String get companyPending =>
+      'The original command is retained for retry. If the connection failed, the server may have applied it. Review the current state before creating another command. Closing this screen does not resend it.';
+
+  @override
+  String get companyRetry => 'Retry the same command';
+
+  @override
+  String get companyReview => 'Review state and finish this command';
+
+  @override
+  String get companyMembers => 'Members';
+
+  @override
+  String get companyActive => 'Active';
+
+  @override
+  String get companyRemoved => 'Removed';
+
+  @override
+  String get companyRemove => 'Remove member';
+
+  @override
+  String get companyChangeRole => 'Change role';
+
+  @override
+  String companyChangeHelp(String member) {
+    return 'Apply this membership change to $member? Removing a member ends their active sessions; their personal data is retained.';
+  }
+
+  @override
+  String get companyConfirm => 'Confirm';
+
+  @override
+  String get companyNextMembers => 'Next members';
+
+  @override
+  String get companyInvite => 'Invite by email';
+
+  @override
+  String get companyDeliveryHelp =>
+      'Sending an invitation, acceptance by the mail service and joining the company are separate steps. Links expire after seven days.';
+
+  @override
+  String get companyInvitePending => 'Awaiting acceptance';
+
+  @override
+  String get companyJoined => 'Joined';
+
+  @override
+  String get companyInviteExpired => 'Expired';
+
+  @override
+  String get companyInviteRevoked => 'Revoked';
+
+  @override
+  String get companyDeliveryPending => 'Mail: awaiting delivery result';
+
+  @override
+  String get companyDeliveryAccepted => 'Mail: accepted by the mail service';
+
+  @override
+  String get companyDeliveryFailed => 'Mail: not sent';
+
+  @override
+  String get companyDeliveryUnknown => 'Mail: delivery result unknown';
+
+  @override
+  String get companyRevoke => 'Revoke invitation';
+
+  @override
+  String get companyNextInvitations => 'Next invitations';
+
+  @override
+  String get invitationImport => 'Open invitation';
+
+  @override
+  String get invitationLink => 'Invitation link';
+
+  @override
+  String get invitationVerify =>
+      'Invitation loaded. Enter the invited email address and verify the code sent to it. The link alone does not sign you in.';
+
+  @override
+  String get invitationSignOut =>
+      'An invitation is waiting. Sign out first to verify the invited email address.';
+
+  @override
+  String get passkeyAccountHint =>
+      'For passkey sign-in, enter the email address linked to your NDS account. With multiple members, an account must be selected.';
+
+  @override
+  String get screenTargets => 'Devices for screen viewing';
+
+  @override
+  String get screenTargetsEmpty => 'No active devices.';
+
+  @override
+  String get screenNotRegistered => 'Open screen sharing on this device first.';
+
+  @override
+  String get screenTargetsFailed =>
+      'Could not load devices. Refresh to check access and connection.';
 }

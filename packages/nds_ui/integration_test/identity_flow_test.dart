@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +14,9 @@ void main() {
   const mailbox = String.fromEnvironment('NDS_TEST_MAILPIT');
   const owner = String.fromEnvironment('NDS_TEST_OWNER');
   const vault = bool.fromEnvironment('NDS_TEST_VAULT');
+  const company = bool.fromEnvironment('NDS_TEST_COMPANY');
+  const screenPeer = String.fromEnvironment('NDS_TEST_SCREEN_PEER');
+  const screenHandoff = String.fromEnvironment('NDS_TEST_SCREEN_HANDOFF');
   const phase = String.fromEnvironment(
     'NDS_TEST_PHASE',
     defaultValue: 'complete',
@@ -69,10 +73,11 @@ void main() {
       }
       await waitFor(tester, find.byKey(const Key('email')));
       await tester.enterText(find.byKey(const Key('email')), owner);
+      final priorMessages = await localMessageIds(mailbox);
       await tester.tap(find.byKey(const Key('send-code')));
       await waitFor(tester, find.byKey(const Key('otp')));
 
-      final code = await readLocalCode(mailbox);
+      final code = await readLocalCode(mailbox, owner, priorMessages);
       await tester.enterText(find.byKey(const Key('otp')), code);
       await tester.tap(find.byKey(const Key('verify')));
       await waitFor(tester, find.byKey(const Key('logout')));
@@ -91,6 +96,176 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const Key('enroll-device')), findsNothing);
+      if (screenPeer.isNotEmpty) {
+        expect(Platform.isLinux, isTrue);
+        expect(screenPeer.endsWith('@example.invalid'), isTrue);
+        expect(Directory(screenHandoff).isAbsolute, isTrue);
+        await writeScreenFact(screenHandoff, 'viewer-ui-ready.json', {
+          'ready': true,
+        });
+        await waitScreenFact(tester, screenHandoff, 'host-device.json');
+        await tester.ensureVisible(find.byKey(const Key('company')));
+        await tester.tap(find.byKey(const Key('company')));
+        await waitFor(tester, find.text(screenPeer));
+        final member = find.ancestor(
+          of: find.text(screenPeer),
+          matching: find.byType(Card),
+        );
+        final menu = find.descendant(
+          of: member,
+          matching: find.byType(PopupMenuButton<String>),
+        );
+        await tester.ensureVisible(menu);
+        await tester.tap(menu);
+        await waitFor(tester, find.text('View screen').hitTestable());
+        await tester.tap(find.text('View screen').hitTestable());
+        await waitFor(tester, find.byKey(const Key('screen-targets')));
+        await waitFor(tester, find.text('Owned screen host'));
+        final target = find.ancestor(
+          of: find.text('Owned screen host'),
+          matching: find.byType(Card),
+        );
+        final open = find.descendant(
+          of: target,
+          matching: find.widgetWithText(TextButton, 'View screen'),
+        );
+        await tester.ensureVisible(open);
+        await waitFor(
+          tester,
+          find.byWidgetPredicate(
+            (w) =>
+                w is TextButton &&
+                w.onPressed != null &&
+                w.child is Text &&
+                (w.child! as Text).data == 'View screen',
+          ),
+        );
+        await tester.tap(open);
+        Finder image() => find.byWidgetPredicate(
+          (widget) => widget is RawImage && widget.image != null,
+        );
+        await waitFor(tester, image());
+        await writeScreenFact(screenHandoff, 'viewer-capture.json', {
+          'capturing': true,
+        });
+        await waitScreenFact(tester, screenHandoff, 'host-painted.json');
+        final deadline = DateTime.now().add(const Duration(seconds: 10));
+        while (true) {
+          final displayed = tester
+              .widget<RawImage>(image().first)
+              .image!
+              .clone();
+          int red = 0;
+          final width = displayed.width, height = displayed.height;
+          try {
+            final data = await displayed.toByteData(
+              format: ui.ImageByteFormat.rawRgba,
+            );
+            expect(data, isNotNull);
+            final bytes = data!.buffer.asUint8List();
+            for (var i = 0; i + 3 < bytes.length; i += 4) {
+              if (bytes[i] > 150 && bytes[i + 1] < 90 && bytes[i + 2] < 90) {
+                red++;
+              }
+            }
+          } finally {
+            displayed.dispose();
+          }
+          if (red > width * height ~/ 2) {
+            await writeScreenFact(screenHandoff, 'viewer-frame.json', {
+              'width': width,
+              'height': height,
+              'red_pixels': red,
+              'flutter_rendered': true,
+            });
+            break;
+          }
+          expect(
+            DateTime.now().isBefore(deadline),
+            isTrue,
+            reason: 'Real Flutter image did not reflect the owned source color',
+          );
+          await tester.pump(const Duration(milliseconds: 100));
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        }
+        await waitScreenFact(tester, screenHandoff, 'demoted.json');
+        final stopped = Stopwatch()..start();
+        while (image().evaluate().isNotEmpty) {
+          expect(
+            stopped.elapsed < const Duration(seconds: 10),
+            isTrue,
+            reason: 'Flutter retained a revoked screen image',
+          );
+          await tester.pump(const Duration(milliseconds: 100));
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        }
+        await writeScreenFact(screenHandoff, 'viewer-proof.json', {
+          'stopped': true,
+          'image_removed': true,
+          'observed_stop_ms': stopped.elapsedMilliseconds,
+        });
+        await tester.pageBack();
+        await waitFor(tester, find.byKey(const Key('screen-targets-error')));
+        expect(find.text('Owned screen host'), findsNothing);
+        await tester.pageBack();
+        await waitFor(tester, find.text('User'));
+        expect(find.byKey(const Key('company-email')), findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+      }
+      if (company && screenPeer.isEmpty) {
+        await tester.ensureVisible(find.byKey(const Key('company')));
+        await tester.tap(find.byKey(const Key('company')));
+        await waitFor(tester, find.byKey(const Key('company-email')));
+        final recipient =
+            'ui-${DateTime.now().microsecondsSinceEpoch}@example.invalid';
+        await tester.enterText(
+          find.byKey(const Key('company-email')),
+          recipient,
+        );
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.ensureVisible(find.byKey(const Key('company-invite')));
+        await tester.tap(find.byKey(const Key('company-invite')));
+        await waitFor(tester, find.text(recipient));
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const Key('company-email')))
+              .controller!
+              .text,
+          isEmpty,
+        );
+        final card = find.ancestor(
+          of: find.text(recipient),
+          matching: find.byType(Card),
+        );
+        final revoke = find.descendant(
+          of: card,
+          matching: find.widgetWithText(TextButton, 'Revoke invitation'),
+        );
+        await tester.scrollUntilVisible(
+          revoke,
+          300,
+          scrollable: find
+              .descendant(
+                of: find.byType(ListView).first,
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(revoke);
+        await tester.pumpAndSettle();
+        expect(revoke.hitTestable(), findsOneWidget);
+        await tester.tap(revoke);
+        await waitFor(
+          tester,
+          find.descendant(of: card, matching: find.textContaining('· Revoked')),
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+      }
       if (vault) {
         await tester.ensureVisible(find.byKey(const Key('open-vault')));
         await tester.tap(find.byKey(const Key('open-vault')));
@@ -312,6 +487,7 @@ Future<void> waitFor(WidgetTester tester, Finder finder) async {
               const Key('state-error'),
               const Key('utility-error'),
               const Key('module-error'),
+              const Key('company-error'),
             }.contains(widget.key),
       );
       final message = error.evaluate().isEmpty
@@ -327,7 +503,11 @@ Future<void> waitFor(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
-Future<String> readLocalCode(String mailbox) async {
+Future<String> readLocalCode(
+  String mailbox,
+  String recipient,
+  Set<String> prior,
+) async {
   final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
   Future<Map<String, dynamic>> get(String path) async {
     final request = await client.getUrl(Uri.parse('$mailbox$path'));
@@ -343,9 +523,15 @@ Future<String> readLocalCode(String mailbox) async {
     return await (() async {
       while (true) {
         final messages = (await get('/api/v1/messages'))['messages'] as List;
-        if (messages.isNotEmpty) {
-          final id = (messages.first as Map)['ID'] as String;
+        for (final row in messages) {
+          final id = (row as Map)['ID'] as String;
+          if (prior.contains(id)) continue;
           final message = await get('/api/v1/message/$id');
+          if (!(message['To'] as List).any(
+            (to) => (to as Map)['Address'] == recipient,
+          )) {
+            continue;
+          }
           final match = RegExp(r'(?:code|код входа): (\d{8})')
               .firstMatch(message['Text'] as String);
           if (match != null) return match.group(1)!;
@@ -355,5 +541,49 @@ Future<String> readLocalCode(String mailbox) async {
     })().timeout(const Duration(seconds: 10));
   } finally {
     client.close(force: true);
+  }
+}
+
+Future<Set<String>> localMessageIds(String mailbox) async {
+  final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
+  try {
+    final request = await client.getUrl(Uri.parse('$mailbox/api/v1/messages'));
+    final response = await request.close().timeout(const Duration(seconds: 5));
+    if (response.statusCode != 200) {
+      throw StateError('Owned mailbox unavailable');
+    }
+    final body = jsonDecode(await utf8.decoder.bind(response).join()) as Map;
+    return (body['messages'] as List)
+        .map((row) => (row as Map)['ID'] as String)
+        .toSet();
+  } finally {
+    client.close(force: true);
+  }
+}
+
+Future<void> writeScreenFact(
+  String directory,
+  String name,
+  Map<String, Object> fact,
+) async {
+  final temporary = File('$directory/$name.tmp');
+  await temporary.writeAsString(jsonEncode(fact), flush: true);
+  await temporary.rename('$directory/$name');
+}
+
+Future<void> waitScreenFact(
+  WidgetTester tester,
+  String directory,
+  String name,
+) async {
+  final deadline = DateTime.now().add(const Duration(seconds: 90));
+  while (!await File('$directory/$name').exists()) {
+    expect(
+      DateTime.now().isBefore(deadline),
+      isTrue,
+      reason: 'Owned screen handoff timed out: $name',
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
   }
 }

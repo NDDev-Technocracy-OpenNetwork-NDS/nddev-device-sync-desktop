@@ -248,9 +248,9 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/flutter"
-      ref: b9e989b14e7196d7292c20847869fa92964bec21
-      resolved-ref: b9e989b14e7196d7292c20847869fa92964bec21
-      url: "https://github.com/NDDev-OpenNetwork/nddev-opennetwork-design-system.git"
+      ref: "3d1fdea194a7ab8eb1928018f21512330a79cd43"
+      resolved-ref: "3d1fdea194a7ab8eb1928018f21512330a79cd43"
+      url: "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-opennetwork-design-system.git"
     source: git
     version: "0.0.1-alpha.8"
   nds_native:
@@ -469,10 +469,10 @@ packages:
     dependency: transitive
     description:
       name: vm_service
-      sha256: "5f37239c4851efcef929cea7824e76df7f2f0970aef85d66bbc430afa40e72f0"
+      sha256: "89b11d62e1040ee681af3b4f1c97a803ecbf010c6e8b9c5896ee5b08c3bf7b78"
       url: "https://pub.dev"
     source: hosted
-    version: "15.3.0"
+    version: "15.4.0"
   web:
     dependency: transitive
     description:

@@ -4,6 +4,9 @@ Desktop client and shared Flutter presentation for
 [NDDev OpenNetwork](https://nddev.ai), AGPL-3.0-only. `packages/nds_ui` owns the
 en/ru interface used by desktop, mobile and web; `packages/nds_native` generates
 a thin bridge to shared Rust modules. NDS tokens and unwrapped keys never enter Dart.
+Flutter web remains the migration baseline under ADR 0010. The React browser
+assembly reuses this Rust composition through the optional `browser-bindings`
+feature; desktop and mobile retain the default Flutter bridge.
 
 Module presentation uses FRB's compile-checked mirrors of the three required
 core types. The bridge exports their fields and enums; domain helper methods
@@ -36,19 +39,51 @@ One Flutter lifecycle adapter feeds the core activity policy. Visible desktop
 and browser clients keep bounded synchronization and delivery when input focus
 moves elsewhere. Hidden clients pause and reconcile on resume; mobile activity
 restrictions follow the same core policy. Screens consume that shared decision.
+Manual synchronization owns one stop/retry/restart sequence; overlapping calls
+report busy. An authorized manual retry replaces its capacity policy, so late
+results from earlier work cannot block it again or restart an obsolete replica.
+Healthy inbox reads and lifecycle changes retain a real capacity refusal.
+After a completed inbox read observes newer retention, Core may request one
+immutable-original capacity check. Ordinary uploads stay blocked until its
+actual handled outcome (or proven empty inbox) is revalidated under the current
+Accounts lifetime and policy identity. Recovery replaces policy so late old
+publishers cannot reblock it. Repeated refusal at the same retention floor does
+not create a probe loop; uncertain transport retries preserve the original.
 
-Use Flutter 3.47.7/Dart 3.13.5, Rust 1.99.0 and flutter_rust_bridge_codegen 2.13.0.
+Use Flutter/Dart from `toolchains.lock.json`, the compiler from
+`packages/nds_native/rust/rust-toolchain.toml` and flutter_rust_bridge_codegen 2.13.0.
 Install the Rust target matching the platform being built. `flutter pub get
 --enforce-lockfile`, `just check`, `just generated-check` and `just build-linux`
 cover dependencies, static checks, generated-source drift and the Linux build.
 Run the same native build on each other supported host before claiming support.
+
+Native preparation is shared by the Flutter hook, build wrapper, generator and
+`just check`. It locates the immutable RDS SDK through Cargo, verifies its clean
+Git source, and calls that module's checked provider preparer. Generated inputs
+and a dedicated Cargo home stay in build caches; user Cargo/Git configuration is
+not changed. Public source fetching is non-interactive and needs no SSH agent.
+For direct Cargo checks, wrap the command with
+`python packages/nds_native/tool/prepare_native.py --` and supply
+`--manifest-path packages/nds_native/rust/Cargo.toml --locked` to Cargo.
+The product lock remains authoritative; source discovery does not build a second
+runtime. Concurrent preparation shares one bounded OS lock.
+The wrapper verifies source signatures before invoking Flutter. Its isolated
+hook consumes the checked configuration without receiving GitHub credentials;
+direct hook preparation requires the owning preparer's normal GitHub CLI access.
+Standalone worker packaging retains its own locked graph without the shared
+client's native provider overrides.
+
+Linux credentials use native libsecret through the Rust Accounts adapter. Builds
+require `libsecret-1-dev`; runtime requires libsecret 0.21 or newer and an encrypted
+Secret Service session. Existing credential attributes and binary values are preserved.
 
 The Linux alpha uses Flutter's supported Skia GPU backend. Requalify Impeller
 after an engine update passes native interaction acceptance under low VRAM;
 this selection does not enable software rendering.
 
 `flutter run -d linux` opens the client. Enter the HTTPS origin of an NDS server
-supporting protocol v2. Native credential storage must be available and unlocked.
+with compatible control-plane and encrypted-sync endpoints. Native credential
+storage must be available and unlocked.
 GitHub sign-in requires the server's actual provider configuration and explicit
 browser approval; an unavailable provider stays unavailable.
 
@@ -69,6 +104,31 @@ Missing tools report unavailable. `just module-acceptance /absolute/path/to/clip
 runs actual Flutter interactions with installed providers, a fresh clipboard
 archive with capture disabled, and a temporary Git repository. It does not read
 or change the personal clipboard archive or execute cleanup/updates.
+
+The repository page captures local catalog baselines before its protected
+GitHub read and publishes observations through the encrypted Vault writer.
+Core retains a bounded page until each candidate is unchanged or durably queued;
+backpressure and caller timeouts preserve its remaining work. The provider
+continuation advances only after all page facts and any terminal scope summary
+have a local receipt. Session or selection changes cancel the pending page.
+The saved-catalog view reads Vault without resolving a GitHub credential and
+shows observation dates, pending/conflict state and missing owner profiles.
+These are retained observations, not current access or an atomic provider snapshot.
+Known conflicts use a separate bounded pass: Vault captures the complete affected
+families before a real fresh provider read, and only matching returned facts may
+queue resolutions. That pass never advances traversal. An active queued or
+unknown operation waits for its actual outcome. A conflicted scope is captured
+before restarting the first page; its decision is made only from the genuine
+terminal traversal summary. Changed scope proof restarts the traversal while
+preserving saved observations. Conflicts remain visible until Applied receipts.
+Traversal selection/cursors are currently process-local; restart-safe automatic
+traversal/cadence and Git materialization/autosync remain incomplete. End-to-end
+provider/client acceptance remains separate.
+
+Screen requests and viewing use the shared Rust owner, Accounts authorization
+and Core contracts. The current viewer backend is Linux X11; other targets
+report unsupported. Native subsystem qualification is separate from final
+Accounts-authenticated Flutter viewing, whose acceptance remains incomplete.
 
 `python scripts/build.py linux --debug` builds committed source with an explicit,
 cache-tracked native source SHA; ordinary `flutter build` retains development
@@ -106,9 +166,23 @@ clipboard. Production UI confirmation uses the same native completion receipt.
 The browser assembly uses the same UI and a stable, single-threaded Rust/WASM
 bundle. `initializeNdsBridge` supplies the preloaded ES module to FRB without
 dynamic JavaScript evaluation; its default native loader remains unchanged.
-The composition root exports only the vault worker's four journal entrypoints.
+The Flutter build also exports the vault worker's four journal entrypoints.
 Browser storage, HTTP, credentials and clipboard are owned by their adapters;
 native tools are not exposed as browser capabilities.
+
+With default features disabled, `browser-bindings` exposes identity, company
+administration, Vault, clipboard, catalog and incident operations over the same
+Rust owners without linking the Flutter bridge. Public metadata types come from
+their owning Rust views; 64-bit values remain `bigint`, inputs reject coercion and company commands
+retain their immutable Rust handles. Catalog continuations stay in Rust and
+explicit page actions are not automatically replayed by presentation caches.
+Clipboard availability uses the same platform capability check as Flutter.
+Secrets are copied by the Rust clipboard
+adapter, never returned as presentation values. Fixed React/browser failure
+classes use the shared telemetry SDK without exception text or stacks.
+Install `wasm32-unknown-unknown` for the pinned compiler and run `just browser-check`.
+This boundary does not establish React workflow or offline-upgrade acceptance;
+the browser replacement remains in progress.
 
 The UI distinguishes cached offline authorization, local pending operation IDs,
 committed revisions and complete sync time. Foreground reconciliation observes
@@ -116,3 +190,16 @@ shared logout decisions and retries a pending remote logout. Storage persistence
 reports the browser's actual grant; it does not prevent explicit site-data
 removal. Browser clipboard requests reserve user activation before asynchronous
 secret access. Qualify the full browser assembly separately from native gates.
+
+Company management uses the standalone Organizations Rust client, the existing
+Accounts session/signing owner and Core policies. Shared presentation supports
+company metadata, bounded member/invitation pages, invite/revoke, role changes
+and membership removal. An uncertain command retains its original opaque Rust
+handle for retry; there is no offline administrative queue or automatic resend.
+
+Signed-out native clients can import an invitation link into Rust and complete
+the existing email verification. Browser entry captures and removes invitation
+fragments before presentation routing; incoming links do not switch an active
+account. HTTPS app/universal-link association is deployment-specific and is not
+claimed by manual native import. The existing browser assembly remains the
+Flutter migration baseline; its React replacement is a separate ADR 0010 task.

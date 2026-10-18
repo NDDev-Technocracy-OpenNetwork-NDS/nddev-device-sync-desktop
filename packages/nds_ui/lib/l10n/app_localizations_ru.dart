@@ -845,14 +845,14 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get serverCapacityExhausted =>
-      'На сервере достигнут лимит хранения. Ваши зашифрованные изменения остаются на этом устройстве. Автоматическая синхронизация приостановлена. Повторите её вручную, когда ограничение будет устранено.';
+      'На сервере достигнут лимит хранения. Зашифрованные изменения остаются на этом устройстве. NDS проверяет возможность безопасного повтора; повтор можно запустить и вручную.';
 
   @override
   String get catalogTitle => 'Репозитории GitHub';
 
   @override
   String get catalogHelp =>
-      'Выберите запись сейфа с токеном доступа GitHub. Запрос показывает одну страницу репозиториев, доступных этой записи.';
+      'Выберите запись vault с токеном GitHub, чтобы обновить сохранённый каталог. Каждый запрос читает одну страницу, доступную этим учётным данным.';
 
   @override
   String get catalogCredential => 'Учётные данные из сейфа';
@@ -886,7 +886,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get catalogInvalidResponse =>
-      'Не удалось проверить страницу репозиториев, полученную от GitHub.';
+      'Не удалось проверить данные репозиториев.';
 
   @override
   String get catalogProviderFailed =>
@@ -955,4 +955,212 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get catalogPaused =>
       'Запросы репозиториев приостановлены, пока приложение находится в фоне.';
+
+  @override
+  String get screenView => 'Просмотреть экран';
+
+  @override
+  String get screenEnded => 'Просмотр экрана завершён.';
+
+  @override
+  String get screenOpening => 'Ожидание доступа к экрану…';
+
+  @override
+  String get screenUnavailable => 'Экран недоступен.';
+
+  @override
+  String get screenStop => 'Завершить просмотр';
+
+  @override
+  String get screenRequests => 'Запросы просмотра экрана';
+
+  @override
+  String get screenRequestsHelp =>
+      'Обновите запросы от устройств, которым разрешён доступ по правилам компании. Передача экрана начнётся только после вашего разрешения.';
+
+  @override
+  String get screenConsent =>
+      'Разрешить этому устройству просмотр экрана в запрошенной сессии?';
+
+  @override
+  String get screenAllow => 'Разрешить просмотр экрана';
+
+  @override
+  String get screenAccessAllowed => 'Доступ к экрану разрешён для этой сессии.';
+
+  @override
+  String get screenStopSharing => 'Прекратить передачу';
+
+  @override
+  String get catalogSaved => 'Сохранённый каталог';
+
+  @override
+  String get catalogProvider => 'Обновление из GitHub';
+
+  @override
+  String get catalogSavedHelp =>
+      'Зашифрованные сведения, сохранённые в NDS. Даты показывают время наблюдения, а не текущую актуальность или доступ к GitHub.';
+
+  @override
+  String get catalogReadSaved => 'Обновить сохранённую страницу';
+
+  @override
+  String get catalogSavedNext => 'Следующая сохранённая страница';
+
+  @override
+  String get catalogReadSavedAgain =>
+      'Обновите сохранённый каталог и повторите попытку.';
+
+  @override
+  String catalogMissingOwner(String id) {
+    return 'Владелец $id: сведения ещё не синхронизированы.';
+  }
+
+  @override
+  String get catalogCapacityReached =>
+      'Каталог обновлён не полностью: достигнут лимит хранилища синхронизации. Сохранённые сведения остаются доступны.';
+
+  @override
+  String get companyTitle => 'Компания';
+
+  @override
+  String get companyPrivacy =>
+      'Управление компанией доступно онлайн. Личный Vault, секреты и репозитории доступны только владельцу.';
+
+  @override
+  String get companyAdmin => 'Администратор';
+
+  @override
+  String get companyUser => 'Пользователь';
+
+  @override
+  String get companyCompleted =>
+      'Сервер подтвердил изменение. Обновите данные, чтобы увидеть текущее состояние.';
+
+  @override
+  String get companyLastAdmin =>
+      'Нельзя удалить последнего активного администратора или понизить его роль.';
+
+  @override
+  String get companyConflict =>
+      'Данные участника изменились после загрузки. Проверьте текущее состояние.';
+
+  @override
+  String get companyExpired =>
+      'Срок команды истёк. Проверьте текущее состояние перед новым действием.';
+
+  @override
+  String get companyInvitationUnavailable =>
+      'Это приглашение или получатель больше недоступны для действия.';
+
+  @override
+  String get companyDenied => 'Ваша текущая роль не разрешает это действие.';
+
+  @override
+  String get companyInvalid => 'Проверьте email и выбранное действие.';
+
+  @override
+  String get companyPending =>
+      'Исходная команда сохранена для повтора. При сбое связи сервер мог её выполнить. Проверьте состояние перед новой командой. Закрытие экрана не повторяет отправку.';
+
+  @override
+  String get companyRetry => 'Повторить исходную команду';
+
+  @override
+  String get companyReview => 'Проверить состояние и завершить эту команду';
+
+  @override
+  String get companyMembers => 'Участники';
+
+  @override
+  String get companyActive => 'Активен';
+
+  @override
+  String get companyRemoved => 'Удалён';
+
+  @override
+  String get companyRemove => 'Удалить участника';
+
+  @override
+  String get companyChangeRole => 'Изменить роль';
+
+  @override
+  String companyChangeHelp(String member) {
+    return 'Применить изменение к $member? Удаление участника завершает его активные сессии; личные данные сохраняются.';
+  }
+
+  @override
+  String get companyConfirm => 'Подтвердить';
+
+  @override
+  String get companyNextMembers => 'Следующие участники';
+
+  @override
+  String get companyInvite => 'Пригласить по email';
+
+  @override
+  String get companyDeliveryHelp =>
+      'Создание приглашения, принятие почтовым сервисом и вступление в компанию — отдельные шаги. Ссылка действует семь дней.';
+
+  @override
+  String get companyInvitePending => 'Ожидает принятия';
+
+  @override
+  String get companyJoined => 'Вступил';
+
+  @override
+  String get companyInviteExpired => 'Истекло';
+
+  @override
+  String get companyInviteRevoked => 'Отозвано';
+
+  @override
+  String get companyDeliveryPending => 'Письмо: ожидается результат отправки';
+
+  @override
+  String get companyDeliveryAccepted => 'Письмо: принято почтовым сервисом';
+
+  @override
+  String get companyDeliveryFailed => 'Письмо: не отправлено';
+
+  @override
+  String get companyDeliveryUnknown => 'Письмо: результат отправки неизвестен';
+
+  @override
+  String get companyRevoke => 'Отозвать приглашение';
+
+  @override
+  String get companyNextInvitations => 'Следующие приглашения';
+
+  @override
+  String get invitationImport => 'Открыть приглашение';
+
+  @override
+  String get invitationLink => 'Ссылка-приглашение';
+
+  @override
+  String get invitationVerify =>
+      'Приглашение загружено. Укажите email получателя и подтвердите код из письма. Сама ссылка не выполняет вход.';
+
+  @override
+  String get invitationSignOut =>
+      'Получено приглашение. Сначала выйдите из текущего аккаунта, затем подтвердите email получателя.';
+
+  @override
+  String get passkeyAccountHint =>
+      'Для входа с ключом доступа укажите email вашего аккаунта NDS. Если участников несколько, необходимо выбрать аккаунт.';
+
+  @override
+  String get screenTargets => 'Устройства для просмотра экрана';
+
+  @override
+  String get screenTargetsEmpty => 'Нет активных устройств.';
+
+  @override
+  String get screenNotRegistered =>
+      'Сначала откройте общий доступ к экрану на этом устройстве.';
+
+  @override
+  String get screenTargetsFailed =>
+      'Не удалось загрузить устройства. Обновите список, чтобы проверить доступ и соединение.';
 }

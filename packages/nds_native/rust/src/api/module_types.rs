@@ -1,12 +1,13 @@
 //! Presentation shape only. FRB checks mirrors against the canonical core types;
 //! no domain methods or query/observation policy are exported to Dart here.
+#[cfg(feature = "flutter")]
 use flutter_rust_bridge::frb;
 pub use nddev_device_sync_domain::{
     modules::{ModuleError, ModuleObservation},
     state::Reachability,
 };
 
-#[frb(mirror(ModuleObservation))]
+#[cfg_attr(feature = "flutter", frb(mirror(ModuleObservation)))]
 pub struct _ModuleObservation {
     pub id: String,
     pub version: String,
@@ -16,7 +17,7 @@ pub struct _ModuleObservation {
     pub error: Option<ModuleError>,
 }
 
-#[frb(mirror(ModuleError))]
+#[cfg_attr(feature = "flutter", frb(mirror(ModuleError)))]
 pub enum _ModuleError {
     UnsupportedPlatform,
     Unavailable,
@@ -29,7 +30,7 @@ pub enum _ModuleError {
     InvalidContract,
 }
 
-#[frb(mirror(Reachability))]
+#[cfg_attr(feature = "flutter", frb(mirror(Reachability)))]
 pub enum _Reachability {
     NotChecked,
     Reachable,

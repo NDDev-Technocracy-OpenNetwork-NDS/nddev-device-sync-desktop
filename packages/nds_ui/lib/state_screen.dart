@@ -23,6 +23,7 @@ class _StateScreenState extends State<StateScreen> {
   bool get _paused => !ApplicationActivityScope.read(context).value;
   String _after = '';
   BigInt? _cursor;
+  BigInt? _localRevision;
   @override
   void initState() {
     super.initState();
@@ -65,6 +66,7 @@ class _StateScreenState extends State<StateScreen> {
           setState(() {
             _page = null;
             _cursor = null;
+            _localRevision = null;
             _error = 'vault_locked';
           });
         }
@@ -73,12 +75,17 @@ class _StateScreenState extends State<StateScreen> {
       if (view.syncError == 'sync_capacity_exhausted' && mounted) {
         setState(() => _error = view.syncError);
       }
-      if (polling && _cursor == view.cursor) return;
+      if (polling &&
+          _cursor == view.cursor &&
+          _localRevision == view.localRevision) {
+        return;
+      }
       final page = await widget.client.syncStates(after: after);
       if (mounted) {
         setState(() {
           _page = page;
-          _cursor = view.cursor;
+          _cursor = page.observedSeq;
+          _localRevision = page.localRevision;
           _after = after;
         });
       }
@@ -166,6 +173,8 @@ class _StateScreenState extends State<StateScreen> {
                           if (item.expiresAtMs != BigInt.zero)
                             Text('${l.expires}: ${_date(item.expiresAtMs)}'),
                           Text(l.vaultRevision(item.revision.toString())),
+                          if (item.pendingId != null)
+                            Text(l.vaultRecordPending),
                           if (item.conflicted) Text(l.vaultConflict),
                         ],
                       ),
@@ -188,6 +197,8 @@ class _StateScreenState extends State<StateScreen> {
                       ? l.serverCapacityExhausted
                       : _error == 'vault_busy'
                       ? l.operationBusy
+                      : _error == 'vault_cancelled'
+                      ? l.moduleCancelled
                       : l.statePublishError,
                   key: const Key('state-error'),
                 ),

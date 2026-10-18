@@ -7,6 +7,8 @@ import 'api/catalog_types.dart';
 import 'api/identity.dart';
 import 'api/module_types.dart';
 import 'api/modules.dart';
+import 'api/organizations.dart';
+import 'api/screen.dart';
 import 'api/telemetry.dart';
 
 import 'dart:async';
@@ -21,6 +23,7 @@ import 'third_party/nddev_device_sync_accounts/view.dart';
 import 'third_party/nddev_device_sync_cleaner/view.dart';
 import 'third_party/nddev_device_sync_clipboard/view.dart';
 import 'third_party/nddev_device_sync_gds/view.dart';
+import 'third_party/nddev_device_sync_organizations/view.dart';
 import 'third_party/nddev_device_sync_rds/view.dart';
 import 'third_party/nddev_device_sync_sysinfo/view.dart';
 import 'third_party/nddev_device_sync_telemetry/view.dart';
@@ -36,12 +39,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   });
 
   CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_ActionPtr => wire
-      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerActionPtr;
-
-  CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_ClientErrorPtr => wire
       ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientErrorPtr;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_CompanyCommandPtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommandPtr;
 
   CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_LocalAgentPtr => wire
@@ -51,15 +54,31 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   get rust_arc_decrement_strong_count_NdsClientPtr => wire
       ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNdsClientPtr;
 
-  @protected
-  Action
-  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
-    dynamic raw,
-  );
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_ScreenFramePtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFramePtr;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_ScreenHostPtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHostPtr;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_ScreenViewPtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenViewPtr;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_SystemUpdateActionPtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateActionPtr;
 
   @protected
   ClientError
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
+    dynamic raw,
+  );
+
+  @protected
+  CompanyCommand
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand(
     dynamic raw,
   );
 
@@ -76,14 +95,38 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  Action
-  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
+  ScreenFrame
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame(
+    dynamic raw,
+  );
+
+  @protected
+  ScreenHost
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost(
+    dynamic raw,
+  );
+
+  @protected
+  ScreenView
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView(
+    dynamic raw,
+  );
+
+  @protected
+  SystemUpdateAction
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
     dynamic raw,
   );
 
   @protected
   ClientError
   dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
+    dynamic raw,
+  );
+
+  @protected
+  CompanyCommand
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand(
     dynamic raw,
   );
 
@@ -100,14 +143,38 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  Action
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
+  ScreenFrame
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame(
+    dynamic raw,
+  );
+
+  @protected
+  ScreenHost
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost(
+    dynamic raw,
+  );
+
+  @protected
+  ScreenView
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView(
+    dynamic raw,
+  );
+
+  @protected
+  SystemUpdateAction
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
     dynamic raw,
   );
 
   @protected
   ClientError
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
+    dynamic raw,
+  );
+
+  @protected
+  CompanyCommand
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand(
     dynamic raw,
   );
 
@@ -120,6 +187,30 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   NdsClient
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNdsClient(
+    dynamic raw,
+  );
+
+  @protected
+  ScreenFrame
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame(
+    dynamic raw,
+  );
+
+  @protected
+  ScreenHost
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost(
+    dynamic raw,
+  );
+
+  @protected
+  ScreenView
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView(
+    dynamic raw,
+  );
+
+  @protected
+  SystemUpdateAction
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
     dynamic raw,
   );
 
@@ -148,10 +239,23 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GitStatus dco_decode_box_autoadd_git_status(dynamic raw);
 
   @protected
+  GithubSavedOwnerView dco_decode_box_autoadd_github_saved_owner_view(
+    dynamic raw,
+  );
+
+  @protected
   int dco_decode_box_autoadd_i_32(dynamic raw);
 
   @protected
   ModuleError dco_decode_box_autoadd_module_error(dynamic raw);
+
+  @protected
+  OrganizationRoleView dco_decode_box_autoadd_organization_role_view(
+    dynamic raw,
+  );
+
+  @protected
+  ScreenRequest dco_decode_box_autoadd_screen_request(dynamic raw);
 
   @protected
   int dco_decode_box_autoadd_u_32(dynamic raw);
@@ -239,6 +343,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  GithubObservationView dco_decode_github_observation_view(dynamic raw);
+
+  @protected
   GithubOwnerKindView dco_decode_github_owner_kind_view(dynamic raw);
 
   @protected
@@ -263,6 +370,24 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  GithubSavedOwnerView dco_decode_github_saved_owner_view(dynamic raw);
+
+  @protected
+  GithubSavedRepositoryGroupView dco_decode_github_saved_repository_group_view(
+    dynamic raw,
+  );
+
+  @protected
+  GithubSavedRepositoryPageView dco_decode_github_saved_repository_page_view(
+    dynamic raw,
+  );
+
+  @protected
+  GithubSavedRepositoryView dco_decode_github_saved_repository_view(
+    dynamic raw,
+  );
+
+  @protected
   Gpu dco_decode_gpu(dynamic raw);
 
   @protected
@@ -278,8 +403,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   IncidentView dco_decode_incident_view(dynamic raw);
 
   @protected
-  List<Action>
-  dco_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
+  List<SystemUpdateAction>
+  dco_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
     dynamic raw,
   );
 
@@ -316,10 +441,29 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   dco_decode_list_github_repository_summary_view(dynamic raw);
 
   @protected
+  List<GithubSavedRepositoryGroupView>
+  dco_decode_list_github_saved_repository_group_view(dynamic raw);
+
+  @protected
+  List<GithubSavedRepositoryView> dco_decode_list_github_saved_repository_view(
+    dynamic raw,
+  );
+
+  @protected
   List<IncidentView> dco_decode_list_incident_view(dynamic raw);
 
   @protected
   List<ModuleObservation> dco_decode_list_module_observation(dynamic raw);
+
+  @protected
+  List<OrganizationInvitationView> dco_decode_list_organization_invitation_view(
+    dynamic raw,
+  );
+
+  @protected
+  List<OrganizationMemberView> dco_decode_list_organization_member_view(
+    dynamic raw,
+  );
 
   @protected
   List<PasskeyView> dco_decode_list_passkey_view(dynamic raw);
@@ -332,6 +476,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<RemoteSession> dco_decode_list_remote_session(dynamic raw);
+
+  @protected
+  List<ScreenTargetView> dco_decode_list_screen_target_view(dynamic raw);
 
   @protected
   List<StateView> dco_decode_list_state_view(dynamic raw);
@@ -370,16 +517,60 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GitStatus? dco_decode_opt_box_autoadd_git_status(dynamic raw);
 
   @protected
+  GithubSavedOwnerView? dco_decode_opt_box_autoadd_github_saved_owner_view(
+    dynamic raw,
+  );
+
+  @protected
   int? dco_decode_opt_box_autoadd_i_32(dynamic raw);
 
   @protected
   ModuleError? dco_decode_opt_box_autoadd_module_error(dynamic raw);
 
   @protected
+  OrganizationRoleView? dco_decode_opt_box_autoadd_organization_role_view(
+    dynamic raw,
+  );
+
+  @protected
+  ScreenRequest? dco_decode_opt_box_autoadd_screen_request(dynamic raw);
+
+  @protected
   int? dco_decode_opt_box_autoadd_u_32(dynamic raw);
 
   @protected
   BigInt? dco_decode_opt_box_autoadd_u_64(dynamic raw);
+
+  @protected
+  OrganizationDeliveryView dco_decode_organization_delivery_view(dynamic raw);
+
+  @protected
+  OrganizationInvitationPageView dco_decode_organization_invitation_page_view(
+    dynamic raw,
+  );
+
+  @protected
+  OrganizationInvitationStatusView
+  dco_decode_organization_invitation_status_view(dynamic raw);
+
+  @protected
+  OrganizationInvitationView dco_decode_organization_invitation_view(
+    dynamic raw,
+  );
+
+  @protected
+  OrganizationMemberPageView dco_decode_organization_member_page_view(
+    dynamic raw,
+  );
+
+  @protected
+  OrganizationMemberView dco_decode_organization_member_view(dynamic raw);
+
+  @protected
+  OrganizationOverviewView dco_decode_organization_overview_view(dynamic raw);
+
+  @protected
+  OrganizationRoleView dco_decode_organization_role_view(dynamic raw);
 
   @protected
   Page dco_decode_page(dynamic raw);
@@ -404,6 +595,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   RemoteSnapshot dco_decode_remote_snapshot(dynamic raw);
+
+  @protected
+  ScreenFailure dco_decode_screen_failure(dynamic raw);
+
+  @protected
+  ScreenLayout dco_decode_screen_layout(dynamic raw);
+
+  @protected
+  ScreenRequest dco_decode_screen_request(dynamic raw);
+
+  @protected
+  ScreenTargetView dco_decode_screen_target_view(dynamic raw);
 
   @protected
   SessionState dco_decode_session_state(dynamic raw);
@@ -451,14 +654,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   View dco_decode_view(dynamic raw);
 
   @protected
-  Action
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
+  ClientError
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
     SseDeserializer deserializer,
   );
 
   @protected
-  ClientError
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
+  CompanyCommand
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand(
     SseDeserializer deserializer,
   );
 
@@ -475,14 +678,38 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  Action
-  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
+  ScreenFrame
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ScreenHost
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ScreenView
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  SystemUpdateAction
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
     SseDeserializer deserializer,
   );
 
   @protected
   ClientError
   sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  CompanyCommand
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand(
     SseDeserializer deserializer,
   );
 
@@ -499,14 +726,38 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  Action
-  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
+  ScreenFrame
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ScreenHost
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ScreenView
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  SystemUpdateAction
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
     SseDeserializer deserializer,
   );
 
   @protected
   ClientError
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  CompanyCommand
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand(
     SseDeserializer deserializer,
   );
 
@@ -519,6 +770,30 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   NdsClient
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNdsClient(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ScreenFrame
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ScreenHost
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ScreenView
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  SystemUpdateAction
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
     SseDeserializer deserializer,
   );
 
@@ -549,10 +824,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GitStatus sse_decode_box_autoadd_git_status(SseDeserializer deserializer);
 
   @protected
+  GithubSavedOwnerView sse_decode_box_autoadd_github_saved_owner_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   int sse_decode_box_autoadd_i_32(SseDeserializer deserializer);
 
   @protected
   ModuleError sse_decode_box_autoadd_module_error(SseDeserializer deserializer);
+
+  @protected
+  OrganizationRoleView sse_decode_box_autoadd_organization_role_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ScreenRequest sse_decode_box_autoadd_screen_request(
+    SseDeserializer deserializer,
+  );
 
   @protected
   int sse_decode_box_autoadd_u_32(SseDeserializer deserializer);
@@ -646,6 +936,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  GithubObservationView sse_decode_github_observation_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   GithubOwnerKindView sse_decode_github_owner_kind_view(
     SseDeserializer deserializer,
   );
@@ -674,6 +969,26 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  GithubSavedOwnerView sse_decode_github_saved_owner_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GithubSavedRepositoryGroupView sse_decode_github_saved_repository_group_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GithubSavedRepositoryPageView sse_decode_github_saved_repository_page_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GithubSavedRepositoryView sse_decode_github_saved_repository_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   Gpu sse_decode_gpu(SseDeserializer deserializer);
 
   @protected
@@ -689,8 +1004,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   IncidentView sse_decode_incident_view(SseDeserializer deserializer);
 
   @protected
-  List<Action>
-  sse_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
+  List<SystemUpdateAction>
+  sse_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
     SseDeserializer deserializer,
   );
 
@@ -729,12 +1044,33 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   sse_decode_list_github_repository_summary_view(SseDeserializer deserializer);
 
   @protected
+  List<GithubSavedRepositoryGroupView>
+  sse_decode_list_github_saved_repository_group_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<GithubSavedRepositoryView> sse_decode_list_github_saved_repository_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<IncidentView> sse_decode_list_incident_view(
     SseDeserializer deserializer,
   );
 
   @protected
   List<ModuleObservation> sse_decode_list_module_observation(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<OrganizationInvitationView> sse_decode_list_organization_invitation_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<OrganizationMemberView> sse_decode_list_organization_member_view(
     SseDeserializer deserializer,
   );
 
@@ -749,6 +1085,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<RemoteSession> sse_decode_list_remote_session(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<ScreenTargetView> sse_decode_list_screen_target_view(
     SseDeserializer deserializer,
   );
 
@@ -795,6 +1136,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  GithubSavedOwnerView? sse_decode_opt_box_autoadd_github_saved_owner_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   int? sse_decode_opt_box_autoadd_i_32(SseDeserializer deserializer);
 
   @protected
@@ -803,10 +1149,59 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  OrganizationRoleView? sse_decode_opt_box_autoadd_organization_role_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ScreenRequest? sse_decode_opt_box_autoadd_screen_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer);
 
   @protected
   BigInt? sse_decode_opt_box_autoadd_u_64(SseDeserializer deserializer);
+
+  @protected
+  OrganizationDeliveryView sse_decode_organization_delivery_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  OrganizationInvitationPageView sse_decode_organization_invitation_page_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  OrganizationInvitationStatusView
+  sse_decode_organization_invitation_status_view(SseDeserializer deserializer);
+
+  @protected
+  OrganizationInvitationView sse_decode_organization_invitation_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  OrganizationMemberPageView sse_decode_organization_member_page_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  OrganizationMemberView sse_decode_organization_member_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  OrganizationOverviewView sse_decode_organization_overview_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  OrganizationRoleView sse_decode_organization_role_view(
+    SseDeserializer deserializer,
+  );
 
   @protected
   Page sse_decode_page(SseDeserializer deserializer);
@@ -831,6 +1226,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   RemoteSnapshot sse_decode_remote_snapshot(SseDeserializer deserializer);
+
+  @protected
+  ScreenFailure sse_decode_screen_failure(SseDeserializer deserializer);
+
+  @protected
+  ScreenLayout sse_decode_screen_layout(SseDeserializer deserializer);
+
+  @protected
+  ScreenRequest sse_decode_screen_request(SseDeserializer deserializer);
+
+  @protected
+  ScreenTargetView sse_decode_screen_target_view(SseDeserializer deserializer);
 
   @protected
   SessionState sse_decode_session_state(SseDeserializer deserializer);
@@ -879,15 +1286,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
-    Action self,
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
+    ClientError self,
     SseSerializer serializer,
   );
 
   @protected
   void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
-    ClientError self,
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand(
+    CompanyCommand self,
     SseSerializer serializer,
   );
 
@@ -907,8 +1314,29 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
-  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
-    Action self,
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame(
+    ScreenFrame self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost(
+    ScreenHost self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView(
+    ScreenView self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
+    SystemUpdateAction self,
     SseSerializer serializer,
   );
 
@@ -916,6 +1344,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void
   sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
     ClientError self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand(
+    CompanyCommand self,
     SseSerializer serializer,
   );
 
@@ -935,8 +1370,29 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
-    Action self,
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame(
+    ScreenFrame self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost(
+    ScreenHost self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView(
+    ScreenView self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
+    SystemUpdateAction self,
     SseSerializer serializer,
   );
 
@@ -944,6 +1400,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
     ClientError self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand(
+    CompanyCommand self,
     SseSerializer serializer,
   );
 
@@ -958,6 +1421,34 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNdsClient(
     NdsClient self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame(
+    ScreenFrame self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost(
+    ScreenHost self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView(
+    ScreenView self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
+    SystemUpdateAction self,
     SseSerializer serializer,
   );
 
@@ -995,11 +1486,29 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_github_saved_owner_view(
+    GithubSavedOwnerView self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_i_32(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_module_error(
     ModuleError self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_organization_role_view(
+    OrganizationRoleView self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_screen_request(
+    ScreenRequest self,
     SseSerializer serializer,
   );
 
@@ -1106,6 +1615,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_github_observation_view(
+    GithubObservationView self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_github_owner_kind_view(
     GithubOwnerKindView self,
     SseSerializer serializer,
@@ -1142,6 +1657,30 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_github_saved_owner_view(
+    GithubSavedOwnerView self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_github_saved_repository_group_view(
+    GithubSavedRepositoryGroupView self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_github_saved_repository_page_view(
+    GithubSavedRepositoryPageView self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_github_saved_repository_view(
+    GithubSavedRepositoryView self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_gpu(Gpu self, SseSerializer serializer);
 
   @protected
@@ -1158,8 +1697,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
-  sse_encode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
-    List<Action> self,
+  sse_encode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
+    List<SystemUpdateAction> self,
     SseSerializer serializer,
   );
 
@@ -1206,6 +1745,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_github_saved_repository_group_view(
+    List<GithubSavedRepositoryGroupView> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_github_saved_repository_view(
+    List<GithubSavedRepositoryView> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_incident_view(
     List<IncidentView> self,
     SseSerializer serializer,
@@ -1214,6 +1765,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_module_observation(
     List<ModuleObservation> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_organization_invitation_view(
+    List<OrganizationInvitationView> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_organization_member_view(
+    List<OrganizationMemberView> self,
     SseSerializer serializer,
   );
 
@@ -1238,6 +1801,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_remote_session(
     List<RemoteSession> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_screen_target_view(
+    List<ScreenTargetView> self,
     SseSerializer serializer,
   );
 
@@ -1296,6 +1865,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_github_saved_owner_view(
+    GithubSavedOwnerView? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_i_32(int? self, SseSerializer serializer);
 
   @protected
@@ -1305,10 +1880,70 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_organization_role_view(
+    OrganizationRoleView? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_screen_request(
+    ScreenRequest? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_box_autoadd_u_64(BigInt? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_organization_delivery_view(
+    OrganizationDeliveryView self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_organization_invitation_page_view(
+    OrganizationInvitationPageView self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_organization_invitation_status_view(
+    OrganizationInvitationStatusView self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_organization_invitation_view(
+    OrganizationInvitationView self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_organization_member_page_view(
+    OrganizationMemberPageView self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_organization_member_view(
+    OrganizationMemberView self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_organization_overview_view(
+    OrganizationOverviewView self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_organization_role_view(
+    OrganizationRoleView self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_page(Page self, SseSerializer serializer);
@@ -1334,6 +1969,21 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_remote_snapshot(
     RemoteSnapshot self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_screen_failure(ScreenFailure self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_screen_layout(ScreenLayout self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_screen_request(ScreenRequest self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_screen_target_view(
+    ScreenTargetView self,
     SseSerializer serializer,
   );
 
@@ -1404,40 +2054,6 @@ class RustLibWire implements BaseWire {
     : _lookup = dynamicLibrary.lookup;
 
   void
-  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
-    ffi.Pointer<ffi.Void> ptr,
-  ) {
-    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
-      ptr,
-    );
-  }
-
-  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerActionPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'frbgen_nds_native_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction',
-      );
-  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction =
-      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerActionPtr
-          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
-
-  void
-  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
-    ffi.Pointer<ffi.Void> ptr,
-  ) {
-    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction(
-      ptr,
-    );
-  }
-
-  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerActionPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'frbgen_nds_native_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction',
-      );
-  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAction =
-      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerActionPtr
-          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
-
-  void
   rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
     ffi.Pointer<ffi.Void> ptr,
   ) {
@@ -1469,6 +2085,40 @@ class RustLibWire implements BaseWire {
       );
   late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError =
       _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientErrorPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommandPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_nds_native_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommandPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommandPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_nds_native_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommand =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCompanyCommandPtr
           .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
 
   void
@@ -1537,5 +2187,141 @@ class RustLibWire implements BaseWire {
       );
   late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNdsClient =
       _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNdsClientPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFramePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_nds_native_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFramePtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFramePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_nds_native_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFrame =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenFramePtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHostPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_nds_native_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHostPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHostPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_nds_native_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHost =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenHostPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenViewPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_nds_native_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenViewPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenViewPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_nds_native_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenView =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScreenViewPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateActionPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_nds_native_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateActionPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateActionPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_nds_native_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateActionPtr
           .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
 }

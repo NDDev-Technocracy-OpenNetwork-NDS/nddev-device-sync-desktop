@@ -161,9 +161,9 @@ def prepare(cache, *, configured=False):
             "rust_bin": str(rust_bin), "cache": str(cache)}
 
 
-def build_environment(cache=None):
+def build_environment(cache=None, *, configured=False):
     cache = Path(cache or os.environ.get("NDS_NATIVE_BUILD_HOME", Path.cwd() / "build/nds-native"))
-    result = prepare(cache)
+    result = prepare(cache, configured=configured)
     return dict(os.environ, CARGO_HOME=result["cargo_home"],
                 PATH=result["rust_bin"] + os.pathsep + os.environ.get("PATH", ""),
                 NDS_NATIVE_BUILD_HOME=result["cache"], RUSTUP_AUTO_INSTALL="0",

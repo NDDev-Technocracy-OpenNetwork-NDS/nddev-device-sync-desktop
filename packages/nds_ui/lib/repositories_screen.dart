@@ -217,6 +217,11 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
 
   String _errorText(AppLocalizations l, native.GithubCatalogError error) =>
       switch (error) {
+        native.GithubCatalogError.moduleDisabled => l.moduleDisabled,
+        native.GithubCatalogError.modulePermissionRequired =>
+          l.modulePermissionRequired,
+        native.GithubCatalogError.moduleConfigurationConflict =>
+          l.moduleConfigurationConflict,
         native.GithubCatalogError.authorizationRequired => l.catalogSignIn,
         native.GithubCatalogError.credentialChanged =>
           l.catalogCredentialChanged,

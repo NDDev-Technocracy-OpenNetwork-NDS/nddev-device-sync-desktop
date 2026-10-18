@@ -1,6 +1,10 @@
 //! NdsClient owns one catalog flight and a bounded page awaiting durable receipts.
 //! Core owns page progress; Vault owns encrypted state. No LocalAgent dependency.
-use super::{catalog_types::*, identity::NdsClient};
+use super::{
+    catalog_types::*,
+    identity::NdsClient,
+    module_control::{Adapter, ModuleUseGuard},
+};
 use catalog::observations::{PagePublication, ReadObservationBaselines, Traversal};
 #[cfg(feature = "flutter")]
 use flutter_rust_bridge::frb;
@@ -135,6 +139,7 @@ impl Drop for Flight<'_> {
 /// and final return, within its overall deadline; an outer recheck is insufficient.
 #[derive(Clone)]
 struct CatalogUseGuard {
+    module: Arc<ModuleUseGuard>,
     identity: Arc<IdentityClient>,
     vault: Arc<VaultClient>,
     selection: CredentialSelection,
@@ -144,13 +149,17 @@ struct CatalogUseGuard {
 }
 impl CatalogUseGuard {
     fn check(&self) -> Result<(), GithubCatalogError> {
-        if self.cancellation.is_cancelled() || self.lifetime.is_cancelled() {
+        if self.module.lifetime.is_cancelled()
+            || self.cancellation.is_cancelled()
+            || self.lifetime.is_cancelled()
+        {
             Err(GithubCatalogError::Cancelled)
         } else {
             Ok(())
         }
     }
     async fn validate(&self) -> Result<(), GithubCatalogError> {
+        self.module.validate().await?;
         self.check()?;
         self.identity.validate_local_use(&self.fence).await?;
         self.check()?;
@@ -197,7 +206,10 @@ fn revalidation(
                     GithubCatalogError::AuthorizationRequired
                     | GithubCatalogError::CredentialChanged
                     | GithubCatalogError::CapacityExhausted
-                    | GithubCatalogError::Unavailable => E::Unavailable,
+                    | GithubCatalogError::Unavailable
+                    | GithubCatalogError::ModuleDisabled
+                    | GithubCatalogError::ModulePermissionRequired
+                    | GithubCatalogError::ModuleConfigurationConflict => E::Unavailable,
                 })
             }
         }
@@ -282,6 +294,7 @@ impl ReadGithubCatalogPage for CatalogPort {
             move || revalidation(callback_guard.clone(), callback_error.clone()),
         )
         .await;
+        self.guard.module.observe(&result);
         result.map_err(|error| {
             guard_error
                 .lock()
@@ -295,6 +308,9 @@ impl ReadGithubCatalogPage for CatalogPort {
 fn caller_error(error: &GithubCatalogError) -> (String, &'static str, bool) {
     use GithubCatalogError as E;
     let (class, outcome, failure) = match error {
+        E::ModuleDisabled => ("module_disabled", "rejected", false),
+        E::ModulePermissionRequired => ("module_permission_required", "rejected", false),
+        E::ModuleConfigurationConflict => ("module_configuration_conflict", "rejected", false),
         E::InvalidInput => ("invalid_input", "rejected", false),
         E::AuthorizationRequired => ("credential_revalidation_required", "rejected", false),
         E::CredentialChanged => ("vault_selection_changed", "rejected", false),
@@ -384,8 +400,18 @@ impl NdsClient {
         flight: &Flight<'_>,
         next_page: bool,
     ) -> Result<Arc<PendingPage>, GithubCatalogError> {
+        let mut next_page = next_page;
         let (selection, after, prior_fence, scan_id) = {
             let mut state = self.catalog.lock().unwrap_or_else(|e| e.into_inner());
+            if state
+                .pending
+                .as_ref()
+                .is_some_and(|pending| pending.port.guard.module.lifetime.is_cancelled())
+            {
+                state.pending = None;
+                state.rewind();
+                next_page = false;
+            }
             if let Some(pending) = &state.pending {
                 if pending.requested_next == next_page {
                     return Ok(pending.clone());
@@ -428,6 +454,7 @@ impl NdsClient {
                 (selection, None, None, uuid::Uuid::new_v4().to_string())
             }
         };
+        let module = Arc::new(self.module_access("gds", Adapter::Shared).await?);
         let fence = match prior_fence {
             Some(fence) => fence,
             None => Arc::new(self.shared_identity().local_use_fence().await?),
@@ -452,6 +479,7 @@ impl NdsClient {
         }
         let port = CatalogPort {
             guard: CatalogUseGuard {
+                module,
                 identity: self.shared_identity().clone(),
                 vault,
                 selection: selection.clone(),

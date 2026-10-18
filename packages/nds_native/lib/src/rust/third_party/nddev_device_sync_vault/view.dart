@@ -212,6 +212,8 @@ class StateView {
   final String platform;
   final String reachability;
   final bool configured;
+  final bool? enabled;
+  final List<String> permissions;
   final BigInt checkedAtMs;
   final BigInt observedAtMs;
   final BigInt expiresAtMs;
@@ -229,6 +231,8 @@ class StateView {
     required this.platform,
     required this.reachability,
     required this.configured,
+    this.enabled,
+    required this.permissions,
     required this.checkedAtMs,
     required this.observedAtMs,
     required this.expiresAtMs,
@@ -248,6 +252,8 @@ class StateView {
       platform.hashCode ^
       reachability.hashCode ^
       configured.hashCode ^
+      enabled.hashCode ^
+      permissions.hashCode ^
       checkedAtMs.hashCode ^
       observedAtMs.hashCode ^
       expiresAtMs.hashCode ^
@@ -269,6 +275,8 @@ class StateView {
           platform == other.platform &&
           reachability == other.reachability &&
           configured == other.configured &&
+          enabled == other.enabled &&
+          permissions == other.permissions &&
           checkedAtMs == other.checkedAtMs &&
           observedAtMs == other.observedAtMs &&
           expiresAtMs == other.expiresAtMs &&

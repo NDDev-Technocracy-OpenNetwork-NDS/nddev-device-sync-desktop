@@ -2,11 +2,24 @@
 
 Desktop client and shared Flutter presentation for
 [NDDev OpenNetwork](https://nddev.ai), AGPL-3.0-only. `packages/nds_ui` owns the
-en/ru interface used by desktop, mobile and web; `packages/nds_native` generates
+en/ru Flutter interface used by desktop and mobile; `packages/nds_native` generates
 a thin bridge to shared Rust modules. NDS tokens and unwrapped keys never enter Dart.
-Flutter web remains the migration baseline under ADR 0010. The React browser
-assembly reuses this Rust composition through the optional `browser-bindings`
-feature; desktop and mobile retain the default Flutter bridge.
+The React browser assembly reuses this Rust composition and the canonical en/ru
+message catalog through the optional `browser-bindings` feature. Desktop and
+mobile retain the default Flutter bridge; the Flutter web baseline is retired.
+
+Module management requires an authenticated, enrolled device. Desired enabled
+state and NDS permissions use the existing encrypted per-device Vault journal
+with displayed revision/pending-ID CAS. The original operation and frozen local
+revision fence authorization across acknowledgement, delayed results and
+withdrawal/reapproval. Provider observations cannot overwrite consent.
+
+Core owns admission and readiness. The composition reports actual supported
+adapters, discovered local dependencies and last query results separately;
+consent alone is not readiness and never grants OS/browser permissions. A
+configuration change cancels affected owned work and stale results. Existing
+replica/RDS lifetimes perform revalidation; no second scheduler or plugin
+installer is introduced. Source delivery and platform acceptance remain separate.
 
 Module presentation uses FRB's compile-checked mirrors of the three required
 core types. The bridge exports their fields and enums; domain helper methods
@@ -100,7 +113,7 @@ and uninstall only the test-owned app.
 
 The desktop Local modules tab reads native system metrics, clipboard history,
 cleaner diagnostics/previews, update plans and repository/remote-session state.
-Missing tools report unavailable. `just module-acceptance /absolute/path/to/clipboardd`
+Missing tools report unavailable. `just module-acceptance /absolute/path/to/clipboardd /private/fixture.json`
 runs actual Flutter interactions with installed providers, a fresh clipboard
 archive with capture disabled, and a temporary Git repository. It does not read
 or change the personal clipboard archive or execute cleanup/updates.

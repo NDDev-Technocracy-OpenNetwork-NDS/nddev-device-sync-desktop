@@ -23,6 +23,9 @@ enum GithubCatalogError {
   providerFailed,
   invalidResponse,
   capacityExhausted,
+  moduleDisabled,
+  modulePermissionRequired,
+  moduleConfigurationConflict,
 }
 
 class GithubCredentialReference {

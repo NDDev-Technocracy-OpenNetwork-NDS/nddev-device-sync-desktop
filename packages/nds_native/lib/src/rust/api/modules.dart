@@ -4,15 +4,19 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import '../third_party/nddev_device_sync_accounts/view.dart';
 import '../third_party/nddev_device_sync_cleaner/view.dart';
 import '../third_party/nddev_device_sync_clipboard/view.dart';
 import '../third_party/nddev_device_sync_gds/view.dart';
 import '../third_party/nddev_device_sync_rds/view.dart';
 import '../third_party/nddev_device_sync_sysinfo/view.dart';
 import '../third_party/nddev_device_sync_updater/view.dart';
+import 'identity.dart';
 import 'module_types.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+
+// These functions are ignored because they are not marked as `pub`: `check_client`, `discover`
 
 bool supportsLocalAgent() =>
     RustLib.instance.api.crateApiModulesSupportsLocalAgent();
@@ -27,33 +31,34 @@ String? updateActionPlatform({required SystemUpdateAction action}) =>
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalAgent>>
 abstract class LocalAgent implements RustOpaqueInterface {
-  Future<Diagnostics> cleanerDiagnostics();
+  Future<Diagnostics> cleanerDiagnostics({required NdsClient client});
 
-  Future<CleanerRunSummary> cleanerLastRun();
+  Future<CleanerRunSummary> cleanerLastRun({required NdsClient client});
 
-  Future<CleanerRunSummary> cleanerPreview();
+  Future<CleanerRunSummary> cleanerPreview({required NdsClient client});
 
   Future<Uint8List> clipboardContent({
+    required NdsClient client,
     required BigInt entry,
     required String mime,
   });
 
-  Future<Page> clipboardEntries({BigInt? before});
+  Future<Page> clipboardEntries({required NdsClient client, BigInt? before});
 
   void close();
 
-  static Future<LocalAgent> discover() =>
-      RustLib.instance.api.crateApiModulesLocalAgentDiscover();
-
   List<ModuleObservation> modules();
 
-  Future<RemoteSnapshot> remoteSessions();
+  Future<RemoteSnapshot> remoteSessions({required NdsClient client});
 
-  Future<Status> repositoryStatus({required String path});
+  Future<Status> repositoryStatus({
+    required NdsClient client,
+    required String path,
+  });
 
-  Future<SystemSnapshot> systemInfo();
+  Future<SystemSnapshot> systemInfo({required NdsClient client});
 
-  Future<UpdateRunSummary> updateLastRun();
+  Future<UpdateRunSummary> updateLastRun({required NdsClient client});
 
-  Future<Plan> updatePlan();
+  Future<Plan> updatePlan({required NdsClient client});
 }

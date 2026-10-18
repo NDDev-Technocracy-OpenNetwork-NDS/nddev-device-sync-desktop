@@ -2,7 +2,6 @@
 """Build or test with verified native inputs; restore the app configuration."""
 import argparse
 import os
-import hashlib
 import json
 import tempfile
 from pathlib import Path
@@ -21,6 +20,7 @@ source = Path(__file__).resolve().parents[1]
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(source / 'packages/nds_native/tool'))
 from prepare_native import build_environment
+from native_worker import package_linux_worker, deliver_linux_worker
 app = Path.cwd()
 spec = app / 'pubspec.yaml'
 original = spec.read_bytes()
@@ -54,39 +54,7 @@ try:
     worker_digest = None
     if arguments[0] == 'linux':
         worker_staging = tempfile.TemporaryDirectory(prefix='nds-gds-worker-build-')
-        manifest = source / 'packages/nds_native/rust/Cargo.toml'
-        metadata = json.loads(subprocess.check_output(
-            ['cargo', 'metadata', '--locked', '--format-version', '1', '--manifest-path', str(manifest)],
-            cwd=source, text=True, timeout=120))
-        agent = [p for p in metadata['packages'] if p['name'] == 'nddev-device-sync-agent']
-        gds = [p for p in metadata['packages'] if p['name'] == 'nddev-device-sync-gds']
-        if len(agent) != 1 or len(gds) != 1:
-            raise SystemExit('One locked Agent and GDS package required')
-        # The standalone worker retains its owning graph. Shared's native
-        # provider overrides must not rewrite the Agent/GDS lockfiles.
-        worker_environment = dict(os.environ, CARGO_HOME=os.environ['NDS_NATIVE_SOURCE_HOME'])
-        subprocess.run(
-            ['cargo', 'run', '--locked', '--manifest-path', agent[0]['manifest_path'],
-             '--bin', 'nds-package-gds-worker', '--', '--bundle', worker_staging.name],
-            cwd=source, env=worker_environment, check=True, timeout=600)
-        staging = Path(worker_staging.name)
-        receipt_path = staging / 'nds-gds-worker.build.json'
-        if receipt_path.stat().st_size > 16384:
-            raise SystemExit('Worker receipt exceeds its bound')
-        receipt = json.loads(receipt_path.read_text())
-        worker_digest = receipt['sha256']
-        worker = staging / 'nds-gds-readonly-worker'
-        if (receipt['schema_version'] != 1 or receipt['worker'] != worker.name or
-                receipt['target'] != 'x86_64-unknown-linux-gnu' or
-                receipt['source'] != gds[0]['source'] or
-                receipt['host_build_environment'] != {'NDS_GDS_WORKER_SHA256': worker_digest} or
-                not re.fullmatch('[a-f0-9]{64}', worker_digest) or
-                worker.is_symlink() or not worker.is_file() or
-                not 0 < worker.stat().st_size <= 128 * 1024 * 1024):
-            raise SystemExit('Worker package differs from locked shared source')
-        with worker.open('rb') as payload:
-            if hashlib.file_digest(payload, 'sha256').hexdigest() != worker_digest:
-                raise SystemExit('Worker package digest differs')
+        worker_digest = package_linux_worker(source, Path(worker_staging.name))
     worker_define = '' if worker_digest is None else f'      gds_worker_sha256: "{worker_digest}"\n'
     cache_define = '      native_build_cache: ' + json.dumps(os.environ['NDS_NATIVE_BUILD_HOME']) + '\n'
     python_define = '      native_build_python: ' + json.dumps(sys.executable) + '\n'
@@ -117,13 +85,7 @@ try:
     if status == 0 and worker_staging is not None:
         mode = 'debug' if '--debug' in arguments else 'profile' if '--profile' in arguments else 'release'
         bundle = app / 'build/linux/x64' / mode / 'bundle'
-        if not bundle.is_dir():
-            raise SystemExit('Expected Linux bundle for worker delivery')
-        for name in ['nds-gds-readonly-worker', 'nds-gds-worker.build.json']:
-            shutil.copy2(Path(worker_staging.name) / name, bundle / name)
-        with (bundle / 'nds-gds-readonly-worker').open('rb') as payload:
-            if hashlib.file_digest(payload, 'sha256').hexdigest() != worker_digest:
-                raise SystemExit('Delivered worker digest differs')
+        deliver_linux_worker(Path(worker_staging.name), bundle, worker_digest)
     raise SystemExit(status)
 finally:
     spec.write_bytes(original)

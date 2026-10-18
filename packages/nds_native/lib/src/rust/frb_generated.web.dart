@@ -8,6 +8,7 @@
 
 import 'api/catalog_types.dart';
 import 'api/identity.dart';
+import 'api/module_control.dart';
 import 'api/module_types.dart';
 import 'api/modules.dart';
 import 'api/organizations.dart';
@@ -299,6 +300,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   DeliveryView dco_decode_delivery_view(dynamic raw);
 
   @protected
+  DeviceModuleView dco_decode_device_module_view(dynamic raw);
+
+  @protected
   DeviceView dco_decode_device_view(dynamic raw);
 
   @protected
@@ -418,6 +422,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<Check> dco_decode_list_check(dynamic raw);
+
+  @protected
+  List<DeviceModuleView> dco_decode_list_device_module_view(dynamic raw);
 
   @protected
   List<DeviceView> dco_decode_list_device_view(dynamic raw);
@@ -888,6 +895,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   DeliveryView sse_decode_delivery_view(SseDeserializer deserializer);
 
   @protected
+  DeviceModuleView sse_decode_device_module_view(SseDeserializer deserializer);
+
+  @protected
   DeviceView sse_decode_device_view(SseDeserializer deserializer);
 
   @protected
@@ -1021,6 +1031,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<Check> sse_decode_list_check(SseDeserializer deserializer);
+
+  @protected
+  List<DeviceModuleView> sse_decode_list_device_module_view(
+    SseDeserializer deserializer,
+  );
 
   @protected
   List<DeviceView> sse_decode_list_device_view(SseDeserializer deserializer);
@@ -1560,6 +1575,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_delivery_view(DeliveryView self, SseSerializer serializer);
 
   @protected
+  void sse_encode_device_module_view(
+    DeviceModuleView self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_device_view(DeviceView self, SseSerializer serializer);
 
   @protected
@@ -1715,6 +1736,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_list_check(List<Check> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_device_module_view(
+    List<DeviceModuleView> self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_list_device_view(

@@ -25,13 +25,72 @@ fn publish(root: &Path, name: &str, value: Value) {
     std::fs::rename(temporary, root.join(name)).unwrap();
 }
 async fn prepare(client: &NdsClient) {
+    // Enrollment starts the ordinary replica owner. Wait for its real protected
+    // key provisioning before attempting encrypted module settings.
+    for attempt in 0..20 {
+        match client.vault_snapshot().await {
+            Ok(view) if view.unlocked => break,
+            Ok(_) | Err(nddev_device_sync_vault::view::VaultError::Busy) if attempt < 19 => {
+                tokio::time::sleep(Duration::from_millis(400)).await;
+            }
+            other => {
+                eprintln!("NDS_SCREEN_VAULT_NOT_READY error={}", other.err().map_or("key_unavailable".to_owned(), |e| e.code()));
+                panic!("actual protected Vault did not become ready");
+            }
+        }
+    }
+    for attempt in 0..8 {
+        let granted = async {
+            client.reconcile().await?;
+            let module = client
+                .device_modules()
+                .await?
+                .into_iter()
+                .find(|m| m.id == "rds")
+                .unwrap();
+            client
+                .configure_module(
+                    "rds".into(),
+                    true,
+                    vec!["read_only".into(), "local_network".into()],
+                    module.revision,
+                    module.pending_id,
+                )
+                .await
+        }
+        .await;
+        match granted {
+            Ok(()) => break,
+            Err(ClientError::Busy) if attempt < 7 => {
+                tokio::time::sleep(Duration::from_millis(400)).await
+            }
+            Err(error) => {
+                eprintln!("NDS_SCREEN_CONSENT_REFUSED code={}", error.code());
+                panic!("actual RDS module consent failed: {}", error.code());
+            }
+        }
+    }
     for attempt in 0..8 {
         match client.screen_prepare().await {
-            Ok(()) => return,
+            Ok(()) => break,
             Err(super::screen::ScreenFailure::Busy) if attempt < 7 => {
                 tokio::time::sleep(Duration::from_millis(400)).await
             }
             Err(_) => panic!("actual screen preparation failed"),
+        }
+    }
+    for attempt in 0..8 {
+        match client.device_modules().await {
+            Ok(modules) => {
+                let module = modules.iter().find(|m| m.id == "rds").unwrap();
+                assert_eq!(module.readiness, "ready");
+                assert!(module.checked_at_ms.is_some());
+                return;
+            }
+            Err(ClientError::Busy) if attempt < 7 => {
+                tokio::time::sleep(Duration::from_millis(400)).await
+            }
+            Err(error) => panic!("actual RDS readiness read failed: {}", error.code()),
         }
     }
 }

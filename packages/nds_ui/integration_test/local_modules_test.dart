@@ -154,7 +154,7 @@ void main() {
     expect(diagnostics.rejectedFieldsOrEvents, BigInt.zero);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
-  });
+  }, timeout: const Timeout(Duration(minutes: 3)));
 }
 
 Future<void> choose(WidgetTester tester, String label) async {

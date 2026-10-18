@@ -34,7 +34,12 @@ async fn prepare(client: &NdsClient) {
                 tokio::time::sleep(Duration::from_millis(400)).await;
             }
             other => {
-                eprintln!("NDS_SCREEN_VAULT_NOT_READY error={}", other.err().map_or("key_unavailable".to_owned(), |e| e.code()));
+                eprintln!(
+                    "NDS_SCREEN_VAULT_NOT_READY error={}",
+                    other
+                        .err()
+                        .map_or("key_unavailable".to_owned(), |e| e.code())
+                );
                 panic!("actual protected Vault did not become ready");
             }
         }

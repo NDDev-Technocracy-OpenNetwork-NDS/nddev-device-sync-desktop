@@ -5,8 +5,11 @@ use nddev_device_sync_accounts::{
     IdentityClient,
     view::{ClientError, PasskeyView, View},
 };
-use nddev_device_sync_application::lifecycle::{BatchOutcome, CapacityCheck, ReplicaSchedule};
+use nddev_device_sync_application::lifecycle::{
+    BatchOutcome, CapacityCheck, ClientLifecycle as Activity, ReplicaSchedule,
+};
 use nddev_device_sync_application::replica::CapacityProbeOutcome;
+use nddev_device_sync_domain::Platform;
 use nddev_device_sync_telemetry::view::ClientLifecycle;
 use nddev_device_sync_vault::{
     VaultClient,
@@ -33,6 +36,7 @@ pub struct NdsClient {
     pub(super) publication: Arc<Mutex<()>>,
     replica_schedule: Arc<Mutex<Arc<Mutex<ReplicaSchedule>>>>,
     active: AtomicBool,
+    replication_active: AtomicBool,
     pub(crate) screen: Mutex<Option<super::screen::ScreenSlot>>,
     // Raw lifecycle fact; admission and publication share this lifetime owner.
     pub(crate) screen_lifecycle: Mutex<ClientLifecycle>,
@@ -82,6 +86,7 @@ impl NdsClient {
             publication: Arc::default(),
             replica_schedule: Arc::default(),
             active: AtomicBool::new(true),
+            replication_active: AtomicBool::new(true),
             screen: Mutex::default(),
             screen_lifecycle: Mutex::new(ClientLifecycle::Detached),
             delivery: Mutex::default(),
@@ -100,7 +105,7 @@ impl NdsClient {
     pub async fn reconcile(&self) -> Result<View, ClientError> {
         let view = self.inner.view();
         let lifetime = self.inner.local_use_lifetime();
-        if !self.active.load(Ordering::Relaxed) || !view.flow.is_empty() {
+        if !self.replication_active.load(Ordering::Relaxed) || !view.flow.is_empty() {
             return Ok(view);
         }
         let offline = view.offline_authorized;
@@ -244,7 +249,7 @@ impl NdsClient {
                 delivery.take();
                 *delivery = super::telemetry::start_delivery(
                     self.inner.clone(),
-                    self.active.load(Ordering::Relaxed),
+                    self.replication_active.load(Ordering::Relaxed),
                 );
             }
         }
@@ -275,29 +280,34 @@ impl NdsClient {
             .lock()
             .unwrap_or_else(|e| e.into_inner()) = state;
         let active = client_work_permitted(state);
-        // Focus changes that retain permission need not interrupt an in-flight
-        // request or reset delivery. Hidden/resume transitions still wake tasks.
-        if self.active.swap(active, Ordering::Relaxed) == active {
+        let replication = client_replication_permitted(state);
+        let interactive_changed = self.active.swap(active, Ordering::Relaxed) != active;
+        let replication_changed =
+            self.replication_active.swap(replication, Ordering::Relaxed) != replication;
+        if !interactive_changed && !replication_changed {
             return;
         }
-        if active {
+        if (interactive_changed && active) || (replication_changed && replication) {
             // Wake existing owners only after closing stale online admission.
             // Offline local use remains bounded by the retained protected grant.
             self.inner.require_online_verification();
         }
-        if !active {
+        if interactive_changed && !active {
             self.cancel_screen();
             self.invalidate_catalog();
+        }
+        if !replication_changed {
+            return;
         }
         if let Some(delivery) = &*self
             .delivery
             .lock()
             .unwrap_or_else(|error| error.into_inner())
         {
-            delivery.foreground(active);
+            delivery.foreground(replication);
         }
         if let Some(replica) = &*self.replica.lock().unwrap_or_else(|e| e.into_inner()) {
-            replica.active.send_replace(active);
+            replica.active.send_replace(replication);
         }
     }
     async fn stop_replica(&self) {
@@ -399,7 +409,7 @@ impl NdsClient {
             return false;
         }
         let (active, mut enabled) =
-            tokio::sync::watch::channel(self.active.load(Ordering::Relaxed));
+            tokio::sync::watch::channel(self.replication_active.load(Ordering::Relaxed));
         let identity = self.inner.clone();
         let publication = self.publication.clone();
         let policy_slot = self.replica_schedule.clone();
@@ -445,6 +455,9 @@ impl NdsClient {
                 let result = tokio::select! {
                     changed = enabled.changed() => { if changed.is_err() { break; } delay = Duration::ZERO; continue; }
                     result = observe("sync.replica.batch", async {
+                        // Authority maintenance belongs to this same replica
+                        // lifetime even when presentation ticks are suspended.
+                        identity.maintain_authorization().await.map_err(replica_auth_error)?;
                         if probe.is_some() {
                             let attempt = vault.probe_capacity_attempt().await?;
                             attempt_history = attempt.history;
@@ -690,7 +703,7 @@ impl NdsClient {
         Ok(result)
     }
     pub(crate) fn wake_replica(&self) {
-        if self.active.load(Ordering::Relaxed)
+        if self.replication_active.load(Ordering::Relaxed)
             && let Some(replica) = &*self
                 .replica
                 .lock()
@@ -1079,19 +1092,25 @@ impl NdsClient {
     }
 }
 
-/// Presentation reports raw lifecycle once. The shared application policy decides
-/// whether this target may perform bounded replica and delivery work.
+/// Presentation reports raw lifecycle once; Core retains interactive admission.
 #[cfg_attr(feature = "flutter", frb(sync))]
 pub fn client_work_permitted(state: ClientLifecycle) -> bool {
-    use nddev_device_sync_application::lifecycle::ClientLifecycle as Activity;
-    use nddev_device_sync_domain::Platform;
+    client_activity(state).is_some_and(|(activity, platform)| activity.permits_work(platform))
+}
+
+fn client_replication_permitted(state: ClientLifecycle) -> bool {
+    client_activity(state)
+        .is_some_and(|(activity, platform)| activity.permits_replication(platform))
+}
+
+fn client_activity(state: ClientLifecycle) -> Option<(Activity, Platform)> {
     let activity = match state {
         ClientLifecycle::Detached => Activity::Detached,
         ClientLifecycle::Resumed => Activity::Resumed,
         ClientLifecycle::Inactive => Activity::Inactive,
         ClientLifecycle::Hidden => Activity::Hidden,
         ClientLifecycle::Paused => Activity::Paused,
-        ClientLifecycle::Ready => return false,
+        ClientLifecycle::Ready => return None,
     };
     let platform = if cfg!(target_arch = "wasm32") {
         Platform::Web
@@ -1106,9 +1125,9 @@ pub fn client_work_permitted(state: ClientLifecycle) -> bool {
     } else if cfg!(target_os = "ios") {
         Platform::Ios
     } else {
-        return false;
+        return None;
     };
-    activity.permits_work(platform)
+    Some((activity, platform))
 }
 
 fn replica_start_error(error: VaultError) -> ClientError {
@@ -1611,6 +1630,14 @@ mod activity_tests {
                     assert!(!client.spawn_replica(Duration::ZERO, Weak::new(), obsolete));
                 }
                 client.set_lifecycle(ClientLifecycle::Hidden);
+                assert_eq!(
+                    *active.borrow_and_update(),
+                    client_replication_permitted(ClientLifecycle::Hidden)
+                );
+                assert!(!client.catalog_active());
+                client.set_lifecycle(ClientLifecycle::Detached);
+                assert!(!*active.borrow_and_update());
+                client.wake_replica();
                 assert!(!*active.borrow_and_update());
                 client.set_lifecycle(ClientLifecycle::Resumed);
                 assert!(*active.borrow_and_update());
@@ -1647,7 +1674,11 @@ mod activity_tests {
                 assert!(matches!(client.vault_sync().await, Err(VaultError::Busy)));
                 assert!(client.replica.lock().unwrap().is_some());
                 client.set_lifecycle(ClientLifecycle::Hidden);
-                assert!(!*active.borrow_and_update());
+                assert_eq!(
+                    *active.borrow_and_update(),
+                    client_replication_permitted(ClientLifecycle::Hidden)
+                );
+                assert!(!client.catalog_active());
                 drop(control);
                 assert!(client.replica_control.try_lock().is_ok());
                 client.stop_replica().await;

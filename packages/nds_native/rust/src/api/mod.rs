@@ -10,3 +10,6 @@ pub mod telemetry;
 
 #[cfg(all(test, target_os = "linux"))]
 mod screen_acceptance;
+
+#[cfg(all(test, target_os = "linux", feature = "development-http"))]
+mod replica_acceptance;

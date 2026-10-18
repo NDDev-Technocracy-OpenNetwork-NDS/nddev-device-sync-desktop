@@ -822,24 +822,27 @@ impl NdsClient {
         .await
     }
     pub async fn incidents(&self, after: String) -> Result<IncidentPage, ClientError> {
-        let reply = self
-            .inner
-            .sync_request(nddev_device_sync_accounts::SyncRequest::Incidents { after })
-            .await?;
-        let page: nddev_device_sync_accounts::observability_wire::IncidentPage =
-            serde_json::from_slice(&reply.body).map_err(|_| ClientError::InvalidResponse)?;
-        if page.incidents.len() > 50 {
-            return Err(ClientError::InvalidResponse);
-        }
-        let mut incidents = Vec::new();
-        for incident in page.incidents {
-            incidents.push(incident_view(incident)?);
-        }
-        Ok(IncidentPage {
-            incidents,
-            next_cursor: page.next_cursor.unwrap_or_default(),
-            generated_at: page.generated_at,
+        observe_incident("observability.incidents.read", async {
+            let reply = self
+                .inner
+                .sync_request(nddev_device_sync_accounts::SyncRequest::Incidents { after })
+                .await?;
+            let page: nddev_device_sync_accounts::observability_wire::IncidentPage =
+                serde_json::from_slice(&reply.body).map_err(|_| ClientError::InvalidResponse)?;
+            if page.incidents.len() > 50 {
+                return Err(ClientError::InvalidResponse);
+            }
+            let mut incidents = Vec::new();
+            for incident in page.incidents {
+                incidents.push(incident_view(incident)?);
+            }
+            Ok(IncidentPage {
+                incidents,
+                next_cursor: page.next_cursor.unwrap_or_default(),
+                generated_at: page.generated_at,
+            })
         })
+        .await
     }
     pub async fn incident_action(
         &self,
@@ -847,43 +850,51 @@ impl NdsClient {
         revision: u64,
         silence_seconds: u32,
     ) -> Result<IncidentView, ClientError> {
-        if !(1..=9_007_199_254_740_991).contains(&revision) || silence_seconds > 86_400 {
-            return Err(ClientError::InvalidInput);
-        }
-        let operation_id = uuid::Uuid::now_v7().to_string();
-        let expected_revision = revision as i64;
-        let body = if silence_seconds == 0 {
-            serde_json::to_vec(
-                &nddev_device_sync_accounts::observability_wire::IncidentAction {
-                    operation_id,
-                    expected_revision,
-                },
-            )
+        let event = if silence_seconds == 0 {
+            "observability.incident.acknowledge"
         } else {
-            let until = (time::OffsetDateTime::now_utc()
-                + time::Duration::seconds(i64::from(silence_seconds)))
-            .format(&time::format_description::well_known::Rfc3339)
+            "observability.incident.silence"
+        };
+        observe_incident(event, async {
+            if !(1..=9_007_199_254_740_991).contains(&revision) || silence_seconds > 86_400 {
+                return Err(ClientError::InvalidInput);
+            }
+            let operation_id = uuid::Uuid::now_v7().to_string();
+            let expected_revision = revision as i64;
+            let body = if silence_seconds == 0 {
+                serde_json::to_vec(
+                    &nddev_device_sync_accounts::observability_wire::IncidentAction {
+                        operation_id,
+                        expected_revision,
+                    },
+                )
+            } else {
+                let until = (time::OffsetDateTime::now_utc()
+                    + time::Duration::seconds(i64::from(silence_seconds)))
+                .format(&time::format_description::well_known::Rfc3339)
+                .map_err(|_| ClientError::InvalidInput)?;
+                serde_json::to_vec(
+                    &nddev_device_sync_accounts::observability_wire::SilenceAction {
+                        operation_id,
+                        expected_revision,
+                        until,
+                    },
+                )
+            }
             .map_err(|_| ClientError::InvalidInput)?;
-            serde_json::to_vec(
-                &nddev_device_sync_accounts::observability_wire::SilenceAction {
-                    operation_id,
-                    expected_revision,
-                    until,
-                },
+            let reply = self
+                .inner
+                .sync_request(nddev_device_sync_accounts::SyncRequest::IncidentAction {
+                    id,
+                    silence: silence_seconds > 0,
+                    body,
+                })
+                .await?;
+            incident_view(
+                serde_json::from_slice(&reply.body).map_err(|_| ClientError::InvalidResponse)?,
             )
-        }
-        .map_err(|_| ClientError::InvalidInput)?;
-        let reply = self
-            .inner
-            .sync_request(nddev_device_sync_accounts::SyncRequest::IncidentAction {
-                id,
-                silence: silence_seconds > 0,
-                body,
-            })
-            .await?;
-        incident_view(
-            serde_json::from_slice(&reply.body).map_err(|_| ClientError::InvalidResponse)?,
-        )
+        })
+        .await
     }
     pub async fn sync_states(&self, after: String) -> Result<StatePage, VaultError> {
         observe("sync.states.read", async {
@@ -1143,6 +1154,33 @@ fn device_observations(
         }),
     ];
     Ok(values)
+}
+
+// User actions produce one terminal event outside delivery-suppressed I/O.
+fn observe_incident<T>(
+    event: &'static str,
+    work: impl std::future::Future<Output = Result<T, ClientError>>,
+) -> impl std::future::Future<Output = Result<T, ClientError>> {
+    observe_operation(
+        "observability",
+        event,
+        work,
+        ClientError::TelemetryUnavailable,
+        |error| {
+            (
+                error.code(),
+                "error",
+                matches!(
+                    error,
+                    ClientError::InvalidResponse
+                        | ClientError::Transport
+                        | ClientError::Timeout
+                        | ClientError::CredentialStore
+                        | ClientError::TelemetryUnavailable
+                ),
+            )
+        },
+    )
 }
 
 fn observe<T>(

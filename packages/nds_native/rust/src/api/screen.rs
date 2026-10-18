@@ -786,6 +786,7 @@ mod native {
             ClientError::InvalidResponse => ScreenFailure::InvalidResponse,
             ClientError::Timeout => ScreenFailure::Timeout,
             ClientError::Transport
+            | ClientError::OnlineVerificationRequired
             | ClientError::CredentialStore
             | ClientError::TelemetryUnavailable => ScreenFailure::Unavailable,
             ClientError::RevalidationRequired

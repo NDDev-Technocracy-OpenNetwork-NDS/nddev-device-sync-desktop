@@ -8,6 +8,7 @@ from pathlib import Path
 import signal
 import shutil
 import subprocess
+import time
 import uuid
 from urllib.parse import urlparse
 from integration_runner import integration_runner
@@ -23,6 +24,7 @@ parser.add_argument("--isolated-android", action="store_true",
                     help="Use a unique test applicationId on an explicitly selected Android device")
 parser.add_argument("--company", action="store_true", help="Exercise company invitation and revocation through the real UI")
 parser.add_argument("--vault", action="store_true", help="Exercise real native vault creation and encrypted sync")
+parser.add_argument("--modules", action="store_true", help="Qualify Android module consent across online/offline app processes")
 parser.add_argument("--sync-role", choices=["owner", "recipient"])
 parser.add_argument("--resume", action="store_true", help="Verify a retained desktop session after another device changed the server")
 args = parser.parse_args()
@@ -32,6 +34,9 @@ gradle_path = app / "android/app/build.gradle.kts"
 original_gradle = None
 temporary_gradle = None
 android = args.device.startswith("emulator-") or args.isolated_android
+if args.modules and (not android or not args.isolated_android or not args.cold_restart
+                     or args.company or args.vault or args.sync_role):
+    parser.error("Module acceptance requires isolated Android cold restart without other scenario flags")
 if args.isolated_android:
     if args.device in ["linux", "macos", "windows"]:
         raise SystemExit("Select the explicit ADB device id for isolated Android acceptance")
@@ -62,8 +67,12 @@ for key in ["base_url", "mailpit_url"]:
 if fixture.get("status") != "running":
     raise SystemExit("Fixture is not running")
 source = Path(__file__).resolve().parents[1] / "packages/nds_ui/integration_test" / (
+    "device_modules_test.dart" if args.modules else
     "server_replica_flow_test.dart" if args.sync_role else "identity_flow_test.dart")
 helper = app / "integration_test/fixture_identity.dart"
+module_helper = app / "integration_test/local_modules_test.dart" if args.modules else None
+if module_helper is not None and module_helper.exists():
+    raise SystemExit("Refuse to overwrite existing module fixture helpers")
 if helper.exists(): raise SystemExit("Refuse to overwrite existing fixture helper")
 target = app / "integration_test/identity_acceptance_generated_test.dart"
 # flutter test forwards Dart test events, not the complete native stdout stream.
@@ -78,12 +87,29 @@ log = args.fixture.with_name(args.fixture.stem + "-flutter-" + args.device + ".l
 if args.sync_role:
     log = log.with_stem(log.stem + "-sync-" + args.sync_role)
 runner = ExitStack()
+
+def fixture_mode(mode):
+    control = args.fixture.resolve().with_suffix(".control.json")
+    if Path(fixture["control_file"]).resolve() != control:
+        raise RuntimeError("Expected the receipt's exact owned control file")
+    temporary = control.with_name(control.name + "." + uuid.uuid4().hex + ".tmp")
+    temporary.write_text(json.dumps({"mode": mode}))
+    temporary.replace(control)
+    deadline = time.monotonic() + 15
+    wanted = "offline" if mode == "offline" else "running"
+    while json.loads(args.fixture.read_text())["status"] != wanted:
+        if time.monotonic() >= deadline:
+            raise RuntimeError("Owned fixture did not reach requested mode")
+        time.sleep(.1)
+
 try:
     if temporary_gradle is not None:
         gradle_path.write_bytes(temporary_gradle)
     runner.enter_context(integration_runner(app, development_http=True))
     shutil.copyfile(source.with_name("fixture_identity.dart"), helper)
     shutil.copyfile(source, target)
+    if module_helper is not None:
+        shutil.copyfile(source.with_name("local_modules_test.dart"), module_helper)
     if driver is not None:
         shutil.copyfile(source.with_name("driver.dart"), driver)
     if android:
@@ -115,11 +141,16 @@ try:
     environment = os.environ.copy()
     environment["CARGO_BUILD_JOBS"] = "4"
     status = 0
-    for phase in (["persist", "restore"] if args.cold_restart else ["restore"] if args.resume else ["complete"]):
+    phases = (["persist", "offline", "restore"] if args.modules else
+              ["persist", "restore"] if args.cold_restart else
+              ["restore"] if args.resume else ["complete"])
+    for phase in phases:
+        if args.modules and phase in ["offline", "restore"]:
+            fixture_mode("offline" if phase == "offline" else "online")
         phase_log = log.with_stem(log.stem + "-" + phase) if args.cold_restart else log
         with phase_log.open("w") as output:
             phase_command = command + ["--dart-define=NDS_TEST_PHASE=" + phase]
-            if phase == "persist":
+            if phase != phases[-1]:
                 phase_command.append("--no-uninstall")
             process = subprocess.Popen(phase_command,
                 cwd=app, env=environment, stdout=output,
@@ -138,6 +169,9 @@ try:
         if status == 0 and passed not in phase_log.read_text():
             status = 1
             print("Flutter exited without a completed passing test receipt")
+        if args.modules and status == 0 and f"NDS_ANDROID_MODULE_PHASE_PASS phase={phase}" not in phase_log.read_text():
+            status = 1
+            print("Flutter did not confirm the selected module scenario")
         print(f"Actual identity UI acceptance phase={phase} exit={status}; private log: {phase_log}")
         if status:
             break
@@ -152,6 +186,8 @@ try:
 finally:
     target.unlink(missing_ok=True)
     helper.unlink(missing_ok=True)
+    if module_helper is not None:
+        module_helper.unlink(missing_ok=True)
     if driver is not None:
         driver.unlink(missing_ok=True)
     try:
@@ -168,3 +204,5 @@ finally:
             for port in ports:
                 subprocess.run(["adb", "-s", args.device, "reverse", "--remove", "tcp:" + port],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+        if args.modules and json.loads(args.fixture.read_text())["status"] == "offline":
+            fixture_mode("online")

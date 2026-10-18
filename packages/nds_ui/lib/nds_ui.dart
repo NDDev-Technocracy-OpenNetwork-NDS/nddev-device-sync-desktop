@@ -227,7 +227,10 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && !_paused) {
         setState(() => _view = _client?.snapshot());
-        if (++_reconcileTick % 5 == 0) _reconcile();
+        if (++_reconcileTick % 5 == 0) {
+          _reconcile();
+          if (!_busy && _client != null) widget.onClient?.call(_client);
+        }
       }
     });
   }

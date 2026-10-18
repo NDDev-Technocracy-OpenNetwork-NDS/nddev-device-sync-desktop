@@ -36,6 +36,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
   List<native.DeviceModuleView> _modules = [];
   String? _scope;
   bool _metadataError = false;
+  bool _refreshing = false;
   String _selected = 'sysinfo';
   Object? _result;
   String? _error;
@@ -108,14 +109,18 @@ class _ModulesScreenState extends State<ModulesScreen> {
       _modules = [];
       _result = null;
       _error = null;
+      _refreshing = false;
       _discover();
+    } else if (!_busy && _metadataError) {
+      _refreshModules();
     }
   }
 
   Future<void> _refreshModules() async {
     final client = widget.client;
     final epoch = _epoch;
-    if (client == null) return;
+    if (client == null || _refreshing) return;
+    _refreshing = true;
     try {
       final modules = await client.deviceModules();
       if (mounted && epoch == _epoch && identical(client, widget.client)) {
@@ -127,6 +132,8 @@ class _ModulesScreenState extends State<ModulesScreen> {
     } catch (error) {
       if (error is native.ClientError) error.dispose();
       if (mounted && epoch == _epoch) setState(() => _metadataError = true);
+    } finally {
+      if (mounted && epoch == _epoch) _refreshing = false;
     }
   }
 

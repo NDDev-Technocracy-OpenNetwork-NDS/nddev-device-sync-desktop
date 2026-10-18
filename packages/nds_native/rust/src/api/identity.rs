@@ -15,7 +15,7 @@ use nddev_device_sync_telemetry::view::ClientLifecycle;
 #[cfg(test)]
 use nddev_device_sync_vault::replication::recovered_policy;
 use nddev_device_sync_vault::replication::{
-    ReplicaContext, ReplicaTask as Replica, batch_outcome, device_observations,
+    ReplicaContext, ReplicaTask as Replica, batch_outcome, device_observations, replica_auth_error,
 };
 use nddev_device_sync_vault::{
     VaultClient,
@@ -996,18 +996,6 @@ fn replica_start_error(error: VaultError) -> ClientError {
         // Constructing a local replica performs no server request.
         VaultError::Unavailable => ClientError::Server("vault_storage_unavailable".into()),
         other => ClientError::Server(other.code()),
-    }
-}
-
-fn replica_auth_error(error: ClientError) -> VaultError {
-    match error {
-        ClientError::Busy | ClientError::OnlineVerificationRequired => VaultError::Busy,
-        ClientError::Server(code) if code == "server_busy" => VaultError::Busy,
-        ClientError::Server(code) if code == "sync_capacity_exhausted" => {
-            VaultError::CapacityExhausted
-        }
-        ClientError::DeviceRevoked | ClientError::RevalidationRequired => VaultError::Locked,
-        _ => VaultError::Unavailable,
     }
 }
 

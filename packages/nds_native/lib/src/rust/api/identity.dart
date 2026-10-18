@@ -17,7 +17,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 import 'screen.dart';
 
-// These functions are ignored because they are not marked as `pub`: `cancel_work`, `capacity_blocked`, `catalog_active`, `clear_replica_fenced`, `client_activity`, `client_replication_permitted`, `clipboard_error`, `data_directory`, `ensure_delivery`, `incident_view`, `observe_cleanup`, `observe_in_span`, `observe_incident`, `observe_operation`, `observe`, `publish_state_inner`, `replica_auth_error`, `replica_start_error`, `reset_replica_schedule`, `reset_replica_session`, `schedule`, `shared_identity`, `spawn_replica`, `start_replica_fenced`, `start_replica_for_schedule`, `stop_replica`, `vault`, `wake_replica`, `write_clipboard`
+// These functions are ignored because they are not marked as `pub`: `cancel_work`, `capacity_blocked`, `catalog_active`, `clear_replica_fenced`, `client_activity`, `client_replication_permitted`, `clipboard_error`, `data_directory`, `ensure_delivery`, `incident_view`, `observe_cleanup`, `observe_in_span`, `observe_incident`, `observe_operation`, `observe`, `publish_state_inner`, `replica_start_error`, `reset_replica_schedule`, `reset_replica_session`, `schedule`, `shared_identity`, `spawn_replica`, `start_replica_fenced`, `start_replica_for_schedule`, `stop_replica`, `vault`, `wake_replica`, `write_clipboard`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `ClipboardReservation`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `drop`
 

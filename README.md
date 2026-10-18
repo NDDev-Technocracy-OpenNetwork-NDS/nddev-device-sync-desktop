@@ -181,8 +181,8 @@ Secrets are copied by the Rust clipboard
 adapter, never returned as presentation values. Fixed React/browser failure
 classes use the shared telemetry SDK without exception text or stacks.
 Install `wasm32-unknown-unknown` for the pinned compiler and run `just browser-check`.
-This boundary does not establish React workflow or offline-upgrade acceptance;
-the browser replacement remains in progress.
+The React application lives in `nddev-device-sync-web`; its source-matched
+workflow and offline-upgrade acceptance are separate from this binding check.
 
 The UI distinguishes cached offline authorization, local pending operation IDs,
 committed revisions and complete sync time. Foreground reconciliation observes
@@ -190,6 +190,12 @@ shared logout decisions and retries a pending remote logout. Storage persistence
 reports the browser's actual grant; it does not prevent explicit site-data
 removal. Browser clipboard requests reserve user activation before asynchronous
 secret access. Qualify the full browser assembly separately from native gates.
+
+The same Rust reconciliation owner maintains Accounts' bounded seven-day
+authorization and protected clock observations. Resume closes online admission
+until signed device verification; valid local data stays available offline.
+Reconnection wakes the existing replica, preserving pending operation IDs and
+bytes. No Flutter/React timer owns authorization policy or extends a cached grant.
 
 Company management uses the standalone Organizations Rust client, the existing
 Accounts session/signing owner and Core policies. Shared presentation supports

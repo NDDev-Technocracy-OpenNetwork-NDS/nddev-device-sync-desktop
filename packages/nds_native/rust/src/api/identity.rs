@@ -101,8 +101,19 @@ impl NdsClient {
         if !self.active.load(Ordering::Relaxed) || !view.flow.is_empty() {
             return Ok(view);
         }
-        if view.logout_pending {
-            return self.inner.refresh().await;
+        let offline = view.offline_authorized;
+        let view = match self.inner.maintain_authorization().await {
+            Ok(view) => view,
+            Err(ClientError::Busy | ClientError::OnlineVerificationRequired) => {
+                return Ok(self.inner.view());
+            }
+            Err(error) => {
+                self.clear_replica_fenced(&lifetime).await;
+                return Err(error);
+            }
+        };
+        if offline && view.session_verified {
+            self.wake_replica();
         }
         let revoked = view
             .devices
@@ -265,6 +276,11 @@ impl NdsClient {
         // request or reset delivery. Hidden/resume transitions still wake tasks.
         if self.active.swap(active, Ordering::Relaxed) == active {
             return;
+        }
+        if active {
+            // Wake existing owners only after closing stale online admission.
+            // Offline local use remains bounded by the retained protected grant.
+            self.inner.require_online_verification();
         }
         if !active {
             self.cancel_screen();
@@ -1065,7 +1081,7 @@ fn replica_start_error(error: VaultError) -> ClientError {
 
 fn replica_auth_error(error: ClientError) -> VaultError {
     match error {
-        ClientError::Busy => VaultError::Busy,
+        ClientError::Busy | ClientError::OnlineVerificationRequired => VaultError::Busy,
         ClientError::Server(code) if code == "server_busy" => VaultError::Busy,
         ClientError::Server(code) if code == "sync_capacity_exhausted" => {
             VaultError::CapacityExhausted

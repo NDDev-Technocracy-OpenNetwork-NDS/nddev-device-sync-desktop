@@ -4,6 +4,8 @@ import 'package:integration_test/integration_test.dart';
 import 'package:nds_ui/nds_ui.dart';
 import 'package:nds_native/nds_native.dart' as native;
 
+import 'fixture_identity.dart' as identity;
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets('actual local modules and isolated native clipboard archive', (
@@ -11,14 +13,56 @@ void main() {
   ) async {
     await runNdsApp();
     await tester.pumpAndSettle();
+    const server = String.fromEnvironment('NDS_TEST_SERVER');
+    const mailbox = String.fromEnvironment('NDS_TEST_MAILPIT');
+    const owner = String.fromEnvironment('NDS_TEST_OWNER');
+    expect(Uri.parse(server).host, '127.0.0.1');
+    expect(owner.endsWith('.invalid'), isTrue);
+    await tester.enterText(find.byKey(const Key('server-address')), server);
+    await tester.tap(find.byKey(const Key('connect')));
+    await identity.waitFor(tester, find.byKey(const Key('email')));
+    await tester.enterText(find.byKey(const Key('email')), owner);
+    final prior = await identity.localMessageIds(mailbox);
+    await tester.tap(find.byKey(const Key('send-code')));
+    await identity.waitFor(tester, find.byKey(const Key('otp')));
+    await tester.enterText(
+      find.byKey(const Key('otp')),
+      await identity.readLocalCode(mailbox, owner, prior),
+    );
+    await tester.tap(find.byKey(const Key('verify')));
+    await identity.waitFor(tester, find.byKey(const Key('logout')));
     await tester.tap(find.text('Local modules'));
     await tester.pumpAndSettle();
     await waitFor(tester, find.byKey(const Key('module-selector')));
+    await tester.tap(find.byKey(const Key('read-system-info')));
+    await waitFor(tester, find.byKey(const Key('module-error')));
+    expect(
+      tester.widget<Text>(find.byKey(const Key('module-error'))).data,
+      'Enable this module to use its features.',
+    );
+    await configure(tester, enabled: true, permissions: []);
+    await tester.tap(find.byKey(const Key('read-system-info')));
+    await waitFor(tester, find.byKey(const Key('module-error')));
+    expect(
+      tester.widget<Text>(find.byKey(const Key('module-error'))).data,
+      'Choose the required NDS permissions before using this feature.',
+    );
+    await configure(
+      tester,
+      enabled: true,
+      permissions: ['read_only', 'local_network'],
+    );
+    await tester.ensureVisible(find.byKey(const Key('read-system-info')));
     await tester.tap(find.byKey(const Key('read-system-info')));
     await waitFor(tester, find.text('CPU usage:'));
     expect(find.byKey(const Key('module-error')), findsNothing);
 
     await choose(tester, 'Clipboard history');
+    await configure(
+      tester,
+      enabled: true,
+      permissions: ['clipboard', 'local_network'],
+    );
     await tester.tap(find.text('Refresh'));
     await waitFor(tester, find.byTooltip('Read text'));
     await tester.tap(find.byTooltip('Read text'));
@@ -33,16 +77,31 @@ void main() {
     expect(find.byKey(const Key('module-error')), findsNothing);
 
     await choose(tester, 'Cleaner');
+    await configure(
+      tester,
+      enabled: true,
+      permissions: ['read_only', 'process_execution'],
+    );
     await tester.tap(find.text('Diagnostics'));
     await waitFor(tester, find.text('Errors:'));
     expect(find.byKey(const Key('module-error')), findsNothing);
 
     await choose(tester, 'Updates');
+    await configure(
+      tester,
+      enabled: true,
+      permissions: ['read_only', 'process_execution'],
+    );
     await tester.tap(find.text('Update plan'));
     await waitFor(tester, find.textContaining('Channel:'));
     expect(find.byKey(const Key('module-error')), findsNothing);
 
     await choose(tester, 'GDS');
+    await configure(
+      tester,
+      enabled: true,
+      permissions: ['read_only', 'process_execution'],
+    );
     const repository = String.fromEnvironment('NDS_TEST_REPOSITORY');
     expect(repository.startsWith('/tmp/nds-ui-providers.'), isTrue);
     await tester.enterText(
@@ -55,13 +114,22 @@ void main() {
 
     if (const bool.fromEnvironment('NDS_TEST_RDS_UNAVAILABLE')) {
       await choose(tester, 'RDS');
-      await tester.tap(find.text('Refresh'));
-      await waitFor(tester, find.byKey(const Key('module-error')));
       expect(
-        tester.widget<Text>(find.byKey(const Key('module-error'))).data,
-        'The local tool is unavailable.',
+        tester
+            .widget<FilledButton>(find.widgetWithText(FilledButton, 'Refresh'))
+            .onPressed,
+        isNull,
       );
     }
+    await choose(tester, 'System information');
+    await configure(tester, enabled: false, permissions: []);
+    await tester.ensureVisible(find.byKey(const Key('read-system-info')));
+    await tester.tap(find.byKey(const Key('read-system-info')));
+    await waitFor(tester, find.byKey(const Key('module-error')));
+    expect(
+      tester.widget<Text>(find.byKey(const Key('module-error'))).data,
+      'Enable this module to use its features.',
+    );
     expect(native.clientDiagnostics().sinkInitialized, isTrue);
     final deadline = DateTime.now().add(const Duration(seconds: 5));
     while (native.clientDiagnostics().pendingEvents != BigInt.zero) {
@@ -102,5 +170,36 @@ Future<void> waitFor(WidgetTester tester, Finder finder) async {
     await tester.pump(const Duration(milliseconds: 100));
     await Future<void>.delayed(const Duration(milliseconds: 100));
   }
+  await tester.pumpAndSettle();
+}
+
+Future<void> configure(
+  WidgetTester tester, {
+  required bool enabled,
+  required List<String> permissions,
+}) async {
+  final toggle = find.byKey(const Key('module-enabled'));
+  await tester.ensureVisible(toggle);
+  if (tester.widget<SwitchListTile>(toggle).value != enabled) {
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+  }
+  for (final checkbox in find.byType(CheckboxListTile).evaluate().toList()) {
+    final widget = checkbox.widget as CheckboxListTile;
+    final name = (widget.key! as ValueKey<String>).value.replaceFirst(
+      'module-permission-',
+      '',
+    );
+    final target = find.byKey(widget.key!);
+    if (widget.value != permissions.contains(name)) {
+      await tester.ensureVisible(target);
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+    }
+  }
+  final save = find.byKey(const Key('module-settings-save'));
+  await tester.ensureVisible(save);
+  await tester.tap(save);
+  await waitFor(tester, find.byKey(const Key('module-settings-saved')));
   await tester.pumpAndSettle();
 }

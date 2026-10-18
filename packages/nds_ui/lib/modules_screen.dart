@@ -513,6 +513,12 @@ class _ModulesScreenState extends State<ModulesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(l.moduleManagementHelp),
+                  if (widget.client != null)
+                    OutlinedButton(
+                      key: const Key('module-settings-refresh'),
+                      onPressed: _refreshModules,
+                      child: Text(l.moduleReloadDraft),
+                    ),
                   if (_metadataError) Text(l.moduleMetadataError),
                   if (widget.client?.snapshot().currentDeviceId.isNotEmpty ==
                       true) ...[

@@ -14,11 +14,18 @@ from integration_runner import integration_runner
 from contextlib import ExitStack
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--fixture', type=Path, required=True)
 parser.add_argument('--clipboard-daemon', type=Path, required=True)
 args = parser.parse_args()
 if not args.clipboard_daemon.is_absolute() or not args.clipboard_daemon.is_file():
     raise SystemExit('An absolute installed native daemon path is required')
+fixture_identity = json.loads(args.fixture.read_text())
+from urllib.parse import urlparse
+if fixture_identity.get('status') != 'running' or any(urlparse(fixture_identity[key]).scheme != 'http' or urlparse(fixture_identity[key]).hostname != '127.0.0.1' for key in ['base_url','mailpit_url']):
+    raise SystemExit('An explicitly owned running loopback identity fixture is required')
 root = Path(__file__).resolve().parents[1]
+helper = root / 'integration_test/fixture_identity.dart'
+if helper.exists(): raise SystemExit('Refuse to overwrite existing fixture helper')
 target = root / 'integration_test/local_modules_generated_test.dart'
 driver = root / 'integration_test/driver_generated.dart'
 if target.exists() or driver.exists():
@@ -41,7 +48,7 @@ with tempfile.TemporaryDirectory(prefix='nds-ui-providers.', dir='/tmp') as dire
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     runner = ExitStack()
     try:
-        runner.enter_context(integration_runner(root))
+        runner.enter_context(integration_runner(root, development_http=True))
         deadline = time.monotonic() + 10
         while True:
             try:
@@ -68,11 +75,15 @@ with tempfile.TemporaryDirectory(prefix='nds-ui-providers.', dir='/tmp') as dire
             payload = 'NDS isolated archive: Русский / English'.encode()
             assert request({'op':'part','req':2,'draft':draft,'mime':'text/plain;charset=utf-8','bytes':len(payload)}, payload)['ev'] == 'ok'
             assert request({'op':'commit','req':3,'draft':draft})['entry'] > 0
+        shutil.copyfile(root / 'packages/nds_ui/integration_test/fixture_identity.dart', helper)
         shutil.copyfile(root / 'packages/nds_ui/integration_test/local_modules_test.dart', target)
         shutil.copyfile(root / 'packages/nds_ui/integration_test/driver.dart', driver)
         with log.open('w') as output:
             command = ['flutter','drive','--target='+str(target),'--driver='+str(driver),
                        '-d','linux','--no-pub','--verbose',
+                       '--dart-define=NDS_TEST_SERVER='+fixture_identity['base_url'],
+                       '--dart-define=NDS_TEST_MAILPIT='+fixture_identity['mailpit_url'],
+                       '--dart-define=NDS_TEST_OWNER='+fixture_identity['owner_email'],
                        '--dart-define=NDS_TEST_REPOSITORY='+str(repository),
                        '--dart-define=NDS_TEST_RDS_UNAVAILABLE='+str(shutil.which('rds') is None).lower()]
             process = subprocess.Popen(command, cwd=root, env=environment, stdout=output,
@@ -92,6 +103,7 @@ with tempfile.TemporaryDirectory(prefix='nds-ui-providers.', dir='/tmp') as dire
         raise SystemExit(status)
     finally:
         target.unlink(missing_ok=True)
+        helper.unlink(missing_ok=True)
         driver.unlink(missing_ok=True)
         try:
             runner.close()

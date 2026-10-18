@@ -37,5 +37,5 @@ build-linux:
 identity-acceptance receipt device="linux":
     python3 scripts/identity-acceptance.py --fixture "{{receipt}}" --device "{{device}}"
 
-module-acceptance daemon:
-    python3 scripts/module-acceptance.py --clipboard-daemon "{{daemon}}"
+module-acceptance daemon receipt:
+    python3 scripts/module-acceptance.py --clipboard-daemon "{{daemon}}" --fixture "{{receipt}}"

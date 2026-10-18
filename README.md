@@ -113,7 +113,7 @@ and uninstall only the test-owned app.
 
 The desktop Local modules tab reads native system metrics, clipboard history,
 cleaner diagnostics/previews, update plans and repository/remote-session state.
-Missing tools report unavailable. `just module-acceptance /absolute/path/to/clipboardd`
+Missing tools report unavailable. `just module-acceptance /absolute/path/to/clipboardd /private/fixture.json`
 runs actual Flutter interactions with installed providers, a fresh clipboard
 archive with capture disabled, and a temporary Git repository. It does not read
 or change the personal clipboard archive or execute cleanup/updates.

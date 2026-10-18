@@ -63,6 +63,8 @@ if fixture.get("status") != "running":
     raise SystemExit("Fixture is not running")
 source = Path(__file__).resolve().parents[1] / "packages/nds_ui/integration_test" / (
     "server_replica_flow_test.dart" if args.sync_role else "identity_flow_test.dart")
+helper = app / "integration_test/fixture_identity.dart"
+if helper.exists(): raise SystemExit("Refuse to overwrite existing fixture helper")
 target = app / "integration_test/identity_acceptance_generated_test.dart"
 # flutter test forwards Dart test events, not the complete native stdout stream.
 # Keep the existing mobile and multi-replica runners; capture this ordinary Linux
@@ -80,6 +82,7 @@ try:
     if temporary_gradle is not None:
         gradle_path.write_bytes(temporary_gradle)
     runner.enter_context(integration_runner(app, development_http=True))
+    shutil.copyfile(source.with_name("fixture_identity.dart"), helper)
     shutil.copyfile(source, target)
     if driver is not None:
         shutil.copyfile(source.with_name("driver.dart"), driver)
@@ -148,6 +151,7 @@ try:
     raise SystemExit(status)
 finally:
     target.unlink(missing_ok=True)
+    helper.unlink(missing_ok=True)
     if driver is not None:
         driver.unlink(missing_ok=True)
     try:

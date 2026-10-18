@@ -25,6 +25,7 @@ parser.add_argument("--isolated-android", action="store_true",
 parser.add_argument("--company", action="store_true", help="Exercise company invitation and revocation through the real UI")
 parser.add_argument("--vault", action="store_true", help="Exercise real native vault creation and encrypted sync")
 parser.add_argument("--modules", action="store_true", help="Qualify Android module consent across online/offline app processes")
+parser.add_argument("--offline-pub", action="store_true", help="Resolve temporary test dependencies from a prewarmed cache; retain lockfile verification")
 parser.add_argument("--sync-role", choices=["owner", "recipient"])
 parser.add_argument("--resume", action="store_true", help="Verify a retained desktop session after another device changed the server")
 args = parser.parse_args()
@@ -105,7 +106,7 @@ def fixture_mode(mode):
 try:
     if temporary_gradle is not None:
         gradle_path.write_bytes(temporary_gradle)
-    runner.enter_context(integration_runner(app, development_http=True))
+    runner.enter_context(integration_runner(app, development_http=True, offline_pub=args.offline_pub))
     shutil.copyfile(source.with_name("fixture_identity.dart"), helper)
     shutil.copyfile(source, target)
     if module_helper is not None:

@@ -33,7 +33,7 @@ def native_source_commit(app: Path):
     return commit
 
 @contextmanager
-def integration_runner(app: Path, *, development_http=False, worker_digest=None):
+def integration_runner(app: Path, *, development_http=False, worker_digest=None, offline_pub=False):
     spec, lock = app / 'pubspec.yaml', app / 'pubspec.lock'
     original, original_lock = spec.read_bytes(), lock.read_bytes()
     source = original.decode()
@@ -62,7 +62,7 @@ def integration_runner(app: Path, *, development_http=False, worker_digest=None)
     handlers = {sig: signal.signal(sig, interrupted) for sig in [signal.SIGTERM, signal.SIGINT]}
     try:
         spec.write_text(source)
-        subprocess.run(['flutter', 'pub', 'get'], cwd=app, check=True,
+        subprocess.run(['flutter', 'pub', 'get', *(['--offline'] if offline_pub else [])], cwd=app, check=True,
                        stdout=subprocess.DEVNULL, timeout=120)
         # Resolve the package actually selected by this app, not the checkout
         # containing the acceptance runner. Only our temporary app files differ.
@@ -73,7 +73,7 @@ def integration_runner(app: Path, *, development_http=False, worker_digest=None)
         spec.write_bytes(original)
         lock.write_bytes(original_lock)
         try:
-            subprocess.run(['flutter', 'pub', 'get', '--enforce-lockfile'], cwd=app,
+            subprocess.run(['flutter', 'pub', 'get', '--enforce-lockfile', *(['--offline'] if offline_pub else [])], cwd=app,
                            check=True, stdout=subprocess.DEVNULL, timeout=120)
         finally:
             for sig, handler in handlers.items():

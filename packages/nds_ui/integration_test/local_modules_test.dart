@@ -169,7 +169,15 @@ Future<void> waitFor(WidgetTester tester, Finder finder) async {
   final deadline = DateTime.now().add(const Duration(seconds: 35));
   while (finder.evaluate().isEmpty) {
     if (DateTime.now().isAfter(deadline)) {
-      final error = find.byKey(const Key('module-error'));
+      final error = find.byWidgetPredicate(
+        (widget) =>
+            widget is Text &&
+            {
+              const Key('module-error'),
+              const Key('module-metadata-error'),
+              const Key('module-settings-error'),
+            }.contains(widget.key),
+      );
       final text = error.evaluate().isEmpty
           ? 'no displayed error'
           : tester.widget<Text>(error).data;

@@ -268,6 +268,7 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     } finally {
       if (mounted && identical(client, _client)) {
         setState(() => _view = client.snapshot());
+        widget.onClient?.call(client);
       }
     }
   }

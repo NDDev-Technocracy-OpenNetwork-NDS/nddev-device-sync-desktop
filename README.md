@@ -97,6 +97,9 @@ this selection does not enable software rendering.
 `flutter run -d linux` opens the client. Enter the HTTPS origin of an NDS server
 with compatible control-plane and encrypted-sync endpoints. Native credential
 storage must be available and unlocked.
+On Linux, closing the window keeps NDS running in the desktop session. Launch
+NDS again to reopen the existing window; use Ctrl+Q to quit, or the standard
+`gapplication action ai.nddev.nds.nddev_device_sync_desktop quit` command.
 GitHub sign-in requires the server's actual provider configuration and explicit
 browser approval; an unavailable provider stays unavailable.
 

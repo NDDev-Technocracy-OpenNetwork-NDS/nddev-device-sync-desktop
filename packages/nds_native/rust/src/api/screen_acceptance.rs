@@ -26,12 +26,53 @@ fn publish(root: &Path, name: &str, value: Value) {
 }
 async fn prepare(client: &NdsClient) {
     for attempt in 0..8 {
+        let granted = async {
+            let module = client
+                .device_modules()
+                .await?
+                .into_iter()
+                .find(|m| m.id == "rds")
+                .unwrap();
+            client
+                .configure_module(
+                    "rds".into(),
+                    true,
+                    vec!["read_only".into(), "local_network".into()],
+                    module.revision,
+                    module.pending_id,
+                )
+                .await
+        }
+        .await;
+        match granted {
+            Ok(()) => break,
+            Err(ClientError::Busy) if attempt < 7 => {
+                tokio::time::sleep(Duration::from_millis(400)).await
+            }
+            Err(error) => panic!("actual RDS module consent failed: {}", error.code()),
+        }
+    }
+    for attempt in 0..8 {
         match client.screen_prepare().await {
-            Ok(()) => return,
+            Ok(()) => break,
             Err(super::screen::ScreenFailure::Busy) if attempt < 7 => {
                 tokio::time::sleep(Duration::from_millis(400)).await
             }
             Err(_) => panic!("actual screen preparation failed"),
+        }
+    }
+    for attempt in 0..8 {
+        match client.device_modules().await {
+            Ok(modules) => {
+                let module = modules.iter().find(|m| m.id == "rds").unwrap();
+                assert_eq!(module.readiness, "ready");
+                assert!(module.checked_at_ms.is_some());
+                return;
+            }
+            Err(ClientError::Busy) if attempt < 7 => {
+                tokio::time::sleep(Duration::from_millis(400)).await
+            }
+            Err(error) => panic!("actual RDS readiness read failed: {}", error.code()),
         }
     }
 }

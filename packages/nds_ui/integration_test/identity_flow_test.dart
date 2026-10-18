@@ -9,6 +9,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:nds_ui/nds_ui.dart';
 
 import 'fixture_identity.dart';
+import 'local_modules_test.dart' as modules;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -102,6 +103,15 @@ void main() {
         expect(Platform.isLinux, isTrue);
         expect(screenPeer.endsWith('@example.invalid'), isTrue);
         expect(Directory(screenHandoff).isAbsolute, isTrue);
+        await modules.tapVisible(tester, find.text('Local modules'));
+        await modules.waitFor(tester, find.byKey(const Key('module-selector')));
+        await modules.choose(tester, 'RDS');
+        await modules.configure(
+          tester,
+          enabled: true,
+          permissions: ['read_only', 'local_network'],
+        );
+        await modules.tapVisible(tester, find.text('NDS session'));
         await writeScreenFact(screenHandoff, 'viewer-ui-ready.json', {
           'ready': true,
         });

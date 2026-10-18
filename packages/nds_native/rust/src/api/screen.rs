@@ -740,6 +740,15 @@ impl NdsClient {
             Ok(())
         }
         .await;
+        module.observe(&result.as_ref().map(|_| ()).map_err(|error| {
+            use nddev_device_sync_domain::modules::ModuleError;
+            match error {
+                ScreenFailure::Busy => ModuleError::Busy,
+                ScreenFailure::Timeout => ModuleError::Timeout,
+                ScreenFailure::Closed => ModuleError::Cancelled,
+                _ => ModuleError::Unavailable,
+            }
+        }));
         if let Err(error) = result {
             if let Some(role) = &role {
                 role.stop.cancel();

@@ -227,7 +227,7 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && !_paused) {
         setState(() => _view = _client?.snapshot());
-        if (++_reconcileTick % 5 == 0) _reconcile(notifyModules: true);
+        if (++_reconcileTick % 5 == 0) _reconcile();
       }
     });
   }
@@ -244,18 +244,14 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     }
   }
 
-  void _reconcile({bool notifyModules = false}) {
+  void _reconcile() {
     if (_paused || _busy || _reconciliation != null || _client == null) return;
-    _reconciliation = _reconcileInner(_client!, notifyModules: notifyModules)
-        .whenComplete(() {
-          _reconciliation = null;
-        });
+    _reconciliation = _reconcileInner(_client!).whenComplete(() {
+      _reconciliation = null;
+    });
   }
 
-  Future<void> _reconcileInner(
-    native.NdsClient client, {
-    required bool notifyModules,
-  }) async {
+  Future<void> _reconcileInner(native.NdsClient client) async {
     try {
       await client.reconcile();
       if (kIsWeb &&
@@ -272,7 +268,6 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     } finally {
       if (mounted && identical(client, _client)) {
         setState(() => _view = client.snapshot());
-        if (notifyModules) widget.onClient?.call(client);
       }
     }
   }

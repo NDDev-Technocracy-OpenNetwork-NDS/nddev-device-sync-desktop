@@ -6,11 +6,19 @@ use nddev_device_sync_vault::view::VaultError;
 use serde_json::{Value, json};
 use std::{path::Path, time::Duration};
 
-async fn ready(client: &NdsClient, pending: u32) {
+async fn ready(client: &NdsClient) {
     tokio::time::timeout(Duration::from_secs(60), async {
         loop {
             match client.vault_snapshot().await {
-                Ok(view) if view.unlocked && view.pending == pending => return,
+                Ok(view)
+                    if view.unlocked
+                        && view.pending == 0
+                        && !view.catching_up
+                        && view.last_sync_at > 0
+                        && view.sync_error.is_empty() =>
+                {
+                    return;
+                }
                 Ok(_) | Err(VaultError::Busy) => {}
                 Err(error) => panic!("ordinary replica read failed: {}", error.code()),
             }
@@ -112,7 +120,7 @@ fn detached_desktop_replays_without_presentation_owner() {
             .await
             .unwrap();
             assert!(lifetime.ptr_eq(&std::sync::Arc::downgrade(&same)));
-            ready(&reopened, 0).await;
+            ready(&reopened).await;
             let synced = reopened.vault_snapshot().await.unwrap();
             assert!(
                 synced.last_sync_at > 0 && synced.sync_error.is_empty() && synced.conflicts == 0
@@ -206,7 +214,7 @@ async fn admit_fixture(client: &NdsClient, receipt: &Path, name: &str) {
     })
     .await
     .unwrap();
-    ready(client, 0).await;
+    ready(client).await;
 }
 
 // The native window acceptance runs these helpers in separate real processes.

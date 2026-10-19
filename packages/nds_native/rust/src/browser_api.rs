@@ -91,7 +91,11 @@ pub fn record_client_lifecycle(state: Ts<ClientLifecycle>) -> Result<bool, JsErr
 }
 #[wasm_bindgen]
 pub async fn shutdown_telemetry() -> Result<Ts<LocalDiagnostics>, JsError> {
-    present(telemetry::shutdown_telemetry().await)
+    present(
+        telemetry::shutdown_telemetry()
+            .await
+            .map_err(|error| JsError::new(&error.to_string()))?,
+    )
 }
 #[wasm_bindgen]
 pub fn configure_debug(scope: Ts<DebugScope>, seconds: js_sys::Number) -> Result<(), JsError> {

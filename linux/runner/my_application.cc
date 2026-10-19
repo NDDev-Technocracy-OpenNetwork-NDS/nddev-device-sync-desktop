@@ -10,9 +10,65 @@
 struct _MyApplication {
   GtkApplication parent_instance;
   char** dart_entrypoint_arguments;
+  bool quit_requested;
 };
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
+
+// Use Flutter's existing exit listener so Rust drains its owned work before
+// GTK exits. Send through the public messenger without replacing its platform
+// channel handler. JSONMethodCodec uses one result in a JSON list envelope.
+static void quit_response_cb(GObject* object, GAsyncResult* result,
+                             gpointer user_data) {
+  g_autoptr(MyApplication) self = MY_APPLICATION(user_data);
+  self->quit_requested = false;
+  g_autoptr(GError) error = nullptr;
+  g_autoptr(GBytes) message = fl_binary_messenger_send_on_channel_finish(
+      FL_BINARY_MESSENGER(object), result, &error);
+  g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
+  g_autoptr(FlValue) envelope = message == nullptr ? nullptr :
+      fl_message_codec_decode_message(FL_MESSAGE_CODEC(codec), message, &error);
+  if (envelope == nullptr || fl_value_get_type(envelope) != FL_VALUE_TYPE_LIST ||
+      fl_value_get_length(envelope) != 1) {
+    g_warning("NDS application exit request failed");
+    return;
+  }
+  FlValue* response = fl_value_get_list_value(envelope, 0);
+  FlValue* decision = fl_value_get_type(response) == FL_VALUE_TYPE_MAP
+      ? fl_value_lookup_string(response, "response") : nullptr;
+  if (decision == nullptr || fl_value_get_type(decision) != FL_VALUE_TYPE_STRING) {
+    g_warning("NDS application exit response invalid");
+    return;
+  }
+  if (g_strcmp0(fl_value_get_string(decision), "exit") == 0) {
+    g_application_quit(G_APPLICATION(self));
+  }
+}
+
+static void request_quit(GApplication* application) {
+  MyApplication* self = MY_APPLICATION(application);
+  if (self->quit_requested) return;
+  GList* windows = gtk_application_get_windows(GTK_APPLICATION(application));
+  if (windows == nullptr) {
+    g_application_quit(application);
+    return;
+  }
+  GtkWidget* view = gtk_bin_get_child(GTK_BIN(windows->data));
+  if (!FL_IS_VIEW(view)) return;
+  g_autoptr(FlValue) call = fl_value_new_map();
+  fl_value_set_string_take(call, "method", fl_value_new_string("System.requestAppExit"));
+  g_autoptr(FlValue) args = fl_value_new_map();
+  fl_value_set_string_take(args, "type", fl_value_new_string("cancelable"));
+  fl_value_set_string_take(call, "args", fl_value_ref(args));
+  g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
+  g_autoptr(GBytes) message = fl_message_codec_encode_message(
+      FL_MESSAGE_CODEC(codec), call, nullptr);
+  if (message == nullptr) return;
+  self->quit_requested = true;
+  fl_binary_messenger_send_on_channel(
+      fl_engine_get_binary_messenger(fl_view_get_engine(FL_VIEW(view))),
+      "flutter/platform", message, nullptr, quit_response_cb, g_object_ref(self));
+}
 
 // Called when first Flutter frame received.
 static void first_frame_cb(MyApplication* self, FlView* view) {
@@ -119,7 +175,7 @@ static void my_application_startup(GApplication* application) {
   G_APPLICATION_CLASS(my_application_parent_class)->startup(application);
 
   g_autoptr(GSimpleAction) quit = g_simple_action_new("quit", nullptr);
-  g_signal_connect_swapped(quit, "activate", G_CALLBACK(g_application_quit),
+  g_signal_connect_swapped(quit, "activate", G_CALLBACK(request_quit),
                            application);
   g_action_map_add_action(G_ACTION_MAP(application), G_ACTION(quit));
   const gchar* quit_accelerators[] = {"<Primary>q", nullptr};
@@ -152,7 +208,9 @@ static void my_application_class_init(MyApplicationClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = my_application_dispose;
 }
 
-static void my_application_init(MyApplication* self) {}
+static void my_application_init(MyApplication* self) {
+  self->quit_requested = false;
+}
 
 MyApplication* my_application_new() {
   // Set the program name to the application ID, which helps various systems

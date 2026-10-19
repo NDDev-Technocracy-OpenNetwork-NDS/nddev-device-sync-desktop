@@ -6,11 +6,17 @@ use nddev_device_sync_accounts::{
     view::{ClientError, PasskeyView, View},
 };
 use nddev_device_sync_application::lifecycle::{
-    BatchOutcome, CapacityCheck, ClientLifecycle as Activity, ReplicaSchedule,
+    BatchOutcome, ClientLifecycle as Activity, ReplicaSchedule,
 };
+#[cfg(test)]
 use nddev_device_sync_application::replica::CapacityProbeOutcome;
 use nddev_device_sync_domain::Platform;
 use nddev_device_sync_telemetry::view::ClientLifecycle;
+#[cfg(test)]
+use nddev_device_sync_vault::replication::recovered_policy;
+use nddev_device_sync_vault::replication::{
+    ReplicaContext, ReplicaTask as Replica, batch_outcome, device_observations, replica_auth_error,
+};
 use nddev_device_sync_vault::{
     VaultClient,
     view::{RecordPage, StatePage, VaultError, VaultView},
@@ -45,23 +51,12 @@ pub struct NdsClient {
     clipboard: nddev_device_sync_clipboard::os::TextClipboard,
 }
 
-struct Replica {
-    active: tokio::sync::watch::Sender<bool>,
-    task: Option<runtime::Task>,
-}
 struct ClipboardReservation(Option<String>);
 impl Drop for ClipboardReservation {
     fn drop(&mut self) {
         #[cfg(target_arch = "wasm32")]
         if let Some(id) = &self.0 {
             nddev_device_sync_clipboard::browser::cancel_write(id);
-        }
-    }
-}
-impl Drop for Replica {
-    fn drop(&mut self) {
-        if let Some(task) = &self.task {
-            task.abort();
         }
     }
 }
@@ -307,7 +302,7 @@ impl NdsClient {
             delivery.foreground(replication);
         }
         if let Some(replica) = &*self.replica.lock().unwrap_or_else(|e| e.into_inner()) {
-            replica.active.send_replace(replication);
+            replica.set_active(replication);
         }
     }
     async fn stop_replica(&self) {
@@ -317,9 +312,8 @@ impl NdsClient {
             .unwrap_or_else(|e| e.into_inner())
             .take();
         if let Some(mut replica) = replica
-            && let Some(task) = replica.task.take()
+            && let Some(task) = replica.cancel()
         {
-            task.abort();
             task.join().await;
         }
     }
@@ -352,16 +346,11 @@ impl NdsClient {
                 .unwrap_or_else(|e| e.into_inner())
                 .take();
             vault.take();
-            let task = self
-                .replica
+            self.replica
                 .lock()
                 .unwrap_or_else(|e| e.into_inner())
                 .take()
-                .and_then(|mut replica| replica.task.take());
-            if let Some(task) = &task {
-                task.abort();
-            }
-            task
+                .and_then(|mut replica| replica.cancel())
         };
         if let Some(task) = task {
             task.join().await;
@@ -408,150 +397,23 @@ impl NdsClient {
         if !Arc::ptr_eq(&schedule, &self.schedule()) {
             return false;
         }
-        let (active, mut enabled) =
-            tokio::sync::watch::channel(self.replication_active.load(Ordering::Relaxed));
-        let identity = self.inner.clone();
-        let publication = self.publication.clone();
-        let policy_slot = self.replica_schedule.clone();
         let mut slot = self.replica.lock().unwrap_or_else(|e| e.into_inner());
-        if slot.as_ref().is_some_and(|replica| {
-            replica
-                .task
-                .as_ref()
-                .is_some_and(|task| !task.is_finished())
-        }) {
+        if slot.as_ref().is_some_and(Replica::is_running) {
             return true;
         }
         slot.take();
-        let task = runtime::spawn(async move {
-            let mut schedule = schedule;
-            let mut delay = initial_delay;
-            let mut published = false;
-            loop {
-                if !*enabled.borrow() {
-                    if enabled.changed().await.is_err() {
-                        break;
-                    }
-                    delay = Duration::ZERO;
-                    continue;
-                }
-                tokio::select! {
-                    changed = enabled.changed() => { if changed.is_err() { break; } delay = Duration::ZERO; continue; }
-                    _ = runtime::sleep(delay) => {}
-                }
-                let (capacity_check, probe) = {
-                    let policy = schedule.lock().unwrap_or_else(|e| e.into_inner());
-                    (policy.capacity_check(), policy.capacity_probe())
-                };
-                let inbox_only = capacity_check.is_some() && probe.is_none();
-                let mut inbox_at_head = None;
-                let mut inbox_empty = false;
-                let mut capacity_outcome = None;
-                let mut attempt_history = None;
-                let lifetime = identity.local_use_lifetime();
-                let Some(vault) = weak.upgrade() else {
-                    break;
-                };
-                let result = tokio::select! {
-                    changed = enabled.changed() => { if changed.is_err() { break; } delay = Duration::ZERO; continue; }
-                    result = observe("sync.replica.batch", async {
-                        // Authority maintenance belongs to this same replica
-                        // lifetime even when presentation ticks are suspended.
-                        identity.maintain_authorization().await.map_err(replica_auth_error)?;
-                        if probe.is_some() {
-                            let attempt = vault.probe_capacity_attempt().await?;
-                            attempt_history = attempt.history;
-                            capacity_outcome = attempt.result?;
-                            return vault.refresh_local().await;
-                        }
-                        if inbox_only {
-                            let attempt = vault.synchronize_attempt(true).await?;
-                            attempt_history = attempt.history;
-                            let progress = attempt.result?;
-                            inbox_at_head = Some(progress.inbox_at_head);
-                            inbox_empty = progress.caught_up;
-                            return Ok(progress.view);
-                        }
-                        let attempt = vault.synchronize_attempt(false).await?;
-                        attempt_history = attempt.history;
-                        let progress = attempt.result?;
-                        inbox_at_head = Some(progress.inbox_at_head);
-                        let view = progress.view;
-                        if !published && !view.catching_up && !schedule.lock().unwrap_or_else(|e| e.into_inner()).is_capacity_blocked() {
-                            let attempt = vault.publish_states_attempt(device_observations(&identity)?).await?;
-                            attempt_history = attempt.history;
-                            let view = attempt.result?;
-                            published = true;
-                            return Ok(view);
-                        }
-                        Ok(view)
-                    }) => result
-                };
-                {
-                    let mut policy = schedule.lock().unwrap_or_else(|e| e.into_inner());
-                    if let Some(history) = attempt_history {
-                        policy.observe_history(history);
-                        if inbox_only
-                            && result.is_ok()
-                            && inbox_at_head == Some(true)
-                            && let Some(check) = &capacity_check
-                        {
-                            policy.observe_capacity_inbox(check, history);
-                        }
-                    }
-                    if inbox_only && inbox_at_head == Some(true) && inbox_empty && result.is_ok() {
-                        capacity_outcome = Some(CapacityProbeOutcome::NoEligibleWork);
-                    }
-                }
-                if let (Some(check), Some(completed)) = (&capacity_check, capacity_outcome)
-                    && let Ok(fence) = identity.local_use_fence_from(&lifetime).await
-                {
-                    let replacement = {
-                        let _publication = publication.lock().unwrap_or_else(|e| e.into_inner());
-                        if identity.check_local_use_lifetime(&fence).is_ok() {
-                            recovered_policy(&policy_slot, &schedule, check, completed)
-                        } else {
-                            None
-                        }
-                    };
-                    if let Some(next) = replacement {
-                        schedule = next;
-                        tracing::info!(
-                            event.name = "sync.capacity.recovered",
-                            module = "vault",
-                            outcome = "ok"
-                        );
-                    }
-                }
-                let outcome = match (result.is_ok(), inbox_at_head) {
-                    (true, Some(true))
-                        if inbox_only
-                            || result.as_ref().is_ok_and(|v| !v.sync_error.is_empty()) =>
-                    {
-                        BatchOutcome::InboxHead
-                    }
-                    (true, Some(false)) if inbox_only => BatchOutcome::InboxMore,
-                    _ => batch_outcome(&result),
-                };
-                let sample = if matches!(outcome, BatchOutcome::Retryable) {
-                    uuid::Uuid::new_v4().as_u128() as u16
-                } else {
-                    0
-                };
-                let Some(next) = schedule
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .after_with_sample(outcome, sample)
-                else {
-                    break;
-                };
-                delay = next;
-            }
-        });
-        *slot = Some(Replica {
-            active,
-            task: Some(task),
-        });
+        *slot = Some(Replica::spawn(
+            ReplicaContext {
+                identity: self.inner.clone(),
+                vault: weak,
+                publication: self.publication.clone(),
+                policy_slot: self.replica_schedule.clone(),
+                schedule,
+                client_version: Some(env!("CARGO_PKG_VERSION").into()),
+            },
+            initial_delay,
+            self.replication_active.load(Ordering::Relaxed),
+        ));
         true
     }
     #[cfg_attr(feature = "flutter", frb(ignore))]
@@ -709,7 +571,7 @@ impl NdsClient {
                 .lock()
                 .unwrap_or_else(|error| error.into_inner())
         {
-            replica.active.send_replace(true);
+            replica.set_active(true);
         }
     }
     pub async fn clipboard_snapshot(
@@ -1003,7 +865,7 @@ impl NdsClient {
                 .refresh_devices()
                 .await
                 .map_err(|_| VaultError::Unavailable)?;
-            let mut values = device_observations(&self.inner)?;
+            let mut values = device_observations(&self.inner, env!("CARGO_PKG_VERSION"))?;
             let observed_at_ms = values[0].observed_at_ms;
             let capture = |data| Snapshot {
                 schema_version: 1,
@@ -1079,10 +941,7 @@ impl NdsClient {
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .take()
-            .and_then(|mut replica| replica.task.take());
-        if let Some(task) = &task {
-            task.abort();
-        }
+            .and_then(|mut replica| replica.cancel());
         if clear_sign_in {
             self.inner.cancel_sign_in();
         } else {
@@ -1140,97 +999,9 @@ fn replica_start_error(error: VaultError) -> ClientError {
     }
 }
 
-fn replica_auth_error(error: ClientError) -> VaultError {
-    match error {
-        ClientError::Busy | ClientError::OnlineVerificationRequired => VaultError::Busy,
-        ClientError::Server(code) if code == "server_busy" => VaultError::Busy,
-        ClientError::Server(code) if code == "sync_capacity_exhausted" => {
-            VaultError::CapacityExhausted
-        }
-        ClientError::DeviceRevoked | ClientError::RevalidationRequired => VaultError::Locked,
-        _ => VaultError::Unavailable,
-    }
-}
-
-// Caller holds publication and has checked the original Accounts lifetime.
-#[cfg_attr(feature = "flutter", frb(ignore))]
-fn recovered_policy(
-    slot: &Mutex<Arc<Mutex<ReplicaSchedule>>>,
-    expected: &Arc<Mutex<ReplicaSchedule>>,
-    check: &CapacityCheck,
-    outcome: CapacityProbeOutcome,
-) -> Option<Arc<Mutex<ReplicaSchedule>>> {
-    let mut current = slot.lock().unwrap_or_else(|e| e.into_inner());
-    if !Arc::ptr_eq(&current, expected) {
-        return None;
-    }
-    let replacement = expected
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .recovered_capacity(check, outcome)?;
-    let replacement = Arc::new(Mutex::new(replacement));
-    *current = replacement.clone();
-    Some(replacement)
-}
-
-fn batch_outcome(result: &Result<VaultView, VaultError>) -> BatchOutcome {
-    match result {
-        Ok(view) if view.catching_up => BatchOutcome::CatchingUp,
-        Ok(_) => BatchOutcome::CaughtUp,
-        Err(VaultError::CapacityExhausted) => BatchOutcome::CapacityExhausted,
-        Err(VaultError::Locked) => BatchOutcome::Locked,
-        Err(_) => BatchOutcome::Retryable,
-    }
-}
-
 fn clipboard_error(error: nddev_device_sync_clipboard::os::Error) -> VaultError {
     tracing::event!(target:"nds_native",tracing::Level::WARN,{event.name="clipboard.delivery.failed",module="clipboard",scope="io",error.type=%error,outcome="error"});
     VaultError::Unavailable
-}
-
-fn device_observations(
-    identity: &IdentityClient,
-) -> Result<Vec<nddev_device_sync_domain::state::Snapshot>, VaultError> {
-    use nddev_device_sync_domain::state::{Snapshot, State};
-    let view = identity.view();
-    let device = view
-        .devices
-        .into_iter()
-        .find(|value| value.is_current && !value.revoked)
-        .ok_or(VaultError::Locked)?;
-    let observed_at_ms = (time::OffsetDateTime::now_utc().unix_timestamp_nanos() / 1_000_000)
-        .try_into()
-        .map_err(|_| VaultError::Invalid)?;
-    let capture = |data| Snapshot {
-        schema_version: 1,
-        observed_at_ms,
-        data,
-    };
-    let expires = time::OffsetDateTime::parse(
-        &view.expires_at,
-        &time::format_description::well_known::Rfc3339,
-    )
-    .map_err(|_| VaultError::Invalid)?
-    .unix_timestamp();
-    let millis = |seconds: i64| {
-        u64::try_from(seconds)
-            .ok()
-            .and_then(|value| value.checked_mul(1000))
-            .ok_or(VaultError::Invalid)
-    };
-    let values = vec![
-        capture(State::Device {
-            display_name: device.display_name,
-            platform: device.platform,
-            client_version: env!("CARGO_PKG_VERSION").into(),
-        }),
-        capture(State::Account {
-            auth_method: view.auth_method,
-            checked_at_ms: millis(view.session_checked_at)?,
-            expires_at_ms: millis(expires)?,
-        }),
-    ];
-    Ok(values)
 }
 
 // User actions produce one terminal event outside delivery-suppressed I/O.
@@ -1610,20 +1381,13 @@ mod activity_tests {
             .block_on(async {
                 let client = NdsClient::new("https://example.invalid".into()).unwrap();
                 let obsolete = client.schedule();
-                let mut active = {
+                let updates = {
                     let _publication = client.publication.lock().unwrap();
                     let current = client.reset_replica_schedule();
                     assert!(!client.spawn_replica(Duration::ZERO, Weak::new(), obsolete.clone(),));
                     assert!(client.replica.lock().unwrap().is_none());
                     assert!(client.spawn_replica(Duration::from_secs(3600), Weak::new(), current,));
-                    client
-                        .replica
-                        .lock()
-                        .unwrap()
-                        .as_ref()
-                        .unwrap()
-                        .active
-                        .subscribe()
+                    client.replica.lock().unwrap().as_ref().unwrap().updates()
                 };
                 {
                     let _publication = client.publication.lock().unwrap();
@@ -1631,18 +1395,18 @@ mod activity_tests {
                 }
                 client.set_lifecycle(ClientLifecycle::Hidden);
                 assert_eq!(
-                    *active.borrow_and_update(),
+                    client.replica.lock().unwrap().as_ref().unwrap().is_active(),
                     client_replication_permitted(ClientLifecycle::Hidden)
                 );
                 assert!(!client.catalog_active());
                 client.set_lifecycle(ClientLifecycle::Detached);
-                assert!(!*active.borrow_and_update());
+                assert!(!client.replica.lock().unwrap().as_ref().unwrap().is_active());
                 client.wake_replica();
-                assert!(!*active.borrow_and_update());
+                assert!(!client.replica.lock().unwrap().as_ref().unwrap().is_active());
                 client.set_lifecycle(ClientLifecycle::Resumed);
-                assert!(*active.borrow_and_update());
+                assert!(client.replica.lock().unwrap().as_ref().unwrap().is_active());
                 client.stop_replica().await;
-                assert!(active.has_changed().is_err());
+                assert!(updates.has_changed().is_err());
             });
     }
 
@@ -1654,28 +1418,21 @@ mod activity_tests {
             .unwrap()
             .block_on(async {
                 let client = NdsClient::new("https://example.invalid".into()).unwrap();
-                let mut active = {
+                let _updates = {
                     let _publication = client.publication.lock().unwrap();
                     assert!(client.spawn_replica(
                         Duration::from_secs(3600),
                         Weak::new(),
                         client.schedule(),
                     ));
-                    client
-                        .replica
-                        .lock()
-                        .unwrap()
-                        .as_ref()
-                        .unwrap()
-                        .active
-                        .subscribe()
+                    client.replica.lock().unwrap().as_ref().unwrap().updates()
                 };
                 let control = client.replica_control.lock().await;
                 assert!(matches!(client.vault_sync().await, Err(VaultError::Busy)));
                 assert!(client.replica.lock().unwrap().is_some());
                 client.set_lifecycle(ClientLifecycle::Hidden);
                 assert_eq!(
-                    *active.borrow_and_update(),
+                    client.replica.lock().unwrap().as_ref().unwrap().is_active(),
                     client_replication_permitted(ClientLifecycle::Hidden)
                 );
                 assert!(!client.catalog_active());

@@ -127,16 +127,23 @@ pub fn record_client_lifecycle(state: ClientLifecycle) -> bool {
 
 /// Native flushing runs outside Flutter's frame thread; browser timers and
 /// console output are owned by the browser runtime.
-pub async fn shutdown_telemetry() -> LocalDiagnostics {
+pub async fn shutdown_telemetry() -> Result<LocalDiagnostics, DiagnosticsError> {
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+    if let Err(error) =
+        nddev_device_sync_vault::replication::native::NativeReplica::shutdown().await
+    {
+        tracing::error!(event.name = "sync.runtime.stop_failed", module = "vault", outcome = "error", error.type = error.code());
+        return Err(DiagnosticsError::Unavailable);
+    }
     #[cfg(not(target_arch = "wasm32"))]
     {
-        tokio::task::spawn_blocking(shutdown_local)
+        Ok(tokio::task::spawn_blocking(shutdown_local)
             .await
-            .unwrap_or_else(|_| LocalDiagnostics::unavailable())
+            .unwrap_or_else(|_| LocalDiagnostics::unavailable()))
     }
     #[cfg(target_arch = "wasm32")]
     {
-        shutdown_local()
+        Ok(shutdown_local())
     }
 }
 fn shutdown_local() -> LocalDiagnostics {

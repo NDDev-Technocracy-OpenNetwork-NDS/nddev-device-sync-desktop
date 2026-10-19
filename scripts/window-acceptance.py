@@ -1,4 +1,4 @@
-"""Real GTK/Flutter hidden-window replay in a private X11/DBus/credential scope."""
+"""Real GTK/Flutter and CLI replica ownership in a private X11/DBus/credential scope."""
 
 import argparse, ctypes as C, hashlib, json, os, re, secrets, sqlite3, subprocess, sys, tempfile, time, urllib.request
 from pathlib import Path
@@ -10,15 +10,25 @@ P.add_argument("--bundle", type=Path, required=True)
 P.add_argument("--helper", type=Path, required=True)
 P.add_argument("--evidence", type=Path, required=True)
 P.add_argument("--source", required=True)
+P.add_argument("--cli", type=Path, required=True)
+P.add_argument("--cli-source", required=True)
 P.add_argument("--worker", type=Path, help=argparse.SUPPRESS)
 OPTIONS = P.parse_args()
 ROOT = Path(__file__).resolve().parents[1]
-for path in [OPTIONS.fixture, OPTIONS.bundle, OPTIONS.helper, OPTIONS.evidence]:
+for path in [
+    OPTIONS.fixture,
+    OPTIONS.bundle,
+    OPTIONS.helper,
+    OPTIONS.evidence,
+    OPTIONS.cli,
+]:
     if not path.is_absolute() or path.resolve().is_relative_to(ROOT):
         P.error(
             "Use explicit owned fixture/artifact/evidence paths outside this repository"
         )
-if not re.fullmatch("[a-f0-9]{40}", OPTIONS.source):
+if not all(
+    re.fullmatch("[a-f0-9]{40}", sha) for sha in [OPTIONS.source, OPTIONS.cli_source]
+):
     P.error("An immutable source SHA is required")
 W = OPTIONS.evidence
 FIXTURE = OPTIONS.fixture
@@ -306,6 +316,69 @@ def worker(root):
                 assert len(ids) == 1
                 window = next(iter(ids))
                 pid = gui.pid
+
+                def cli_read(name, expect_record):
+                    path = W / name
+                    with path.open("wb") as output:
+                        result = subprocess.run(
+                            [
+                                str(OPTIONS.cli),
+                                "--server",
+                                f["base_url"],
+                                "vault",
+                                "list",
+                            ],
+                            env=env,
+                            stdout=output,
+                            stderr=subprocess.STDOUT,
+                            timeout=150,
+                        )
+                    assert (
+                        result.returncode == 0
+                    ), "Concurrent CLI failed; inspect owned log"
+                    assert path.stat().st_size <= 2 * 1024 * 1024
+                    text = path.read_text(errors="replace")
+                    assert "SYNTHETIC_WINDOW_SECRET" not in text
+                    outputs = []
+                    for line in text.splitlines():
+                        try:
+                            value = json.loads(line)
+                        except ValueError:
+                            continue
+                        if (
+                            isinstance(value, dict)
+                            and value.get("operation") == "vault.list"
+                        ):
+                            outputs.append(value)
+                    assert len(outputs) == 1
+                    value = outputs[0]
+                    assert (
+                        not value["offline"]
+                        and value["pending"] == 0
+                        and value["last_sync_at"] > 0
+                    )
+                    assert (
+                        any(
+                            row["title"] == "Owned closed-window replay"
+                            for row in value["records"]
+                        )
+                        == expect_record
+                    )
+                    rows = events(path)
+                    assert rows and {row["source.commit"] for row in rows} == {
+                        OPTIONS.cli_source
+                    }
+                    assert not any(
+                        row["event.name"] == "sync.replica.owner" for row in rows
+                    )
+                    assert any(
+                        row["event.name"] == "agent.operation.completed"
+                        and row.get("outcome") == "ok"
+                        for row in rows
+                    )
+                    assert gui.poll() is None
+
+                cli_read("cli-visible.log", False)
                 control("offline")
                 with (W / "stage.log").open("wb") as stage:
                     subprocess.run(
@@ -339,6 +412,14 @@ def worker(root):
                     ),
                     30,
                 )
+                cli_read("cli-hidden.log", True)
+                assert (
+                    sum(
+                        row["event.name"] == "sync.replica.owner"
+                        for row in events(gui_log)
+                    )
+                    == 1
+                )
                 with (W / "secondary.log").open("wb") as second:
                     result = subprocess.run(
                         [str(binary)],
@@ -358,6 +439,10 @@ def worker(root):
                 run(["xdotool", "windowfocus", "--sync", window])
                 run(["xdotool", "key", "--clearmodifiers", "ctrl+q"])
                 assert gui.wait(timeout=15) == 0
+                assert any(
+                    row["event.name"] == "sync.runtime.stopped"
+                    for row in events(gui_log)
+                )
             assert "SYNTHETIC_WINDOW_SECRET" not in gui_log.read_text(errors="replace")
             with (W / "restarted-gui-runtime.log").open("wb") as log:
                 gui = subprocess.Popen(
@@ -380,6 +465,10 @@ def worker(root):
                 assert pending() == 0 and len(windows(True)) == 1
                 run(["gapplication", "action", APP, "quit"])
                 assert gui.wait(timeout=15) == 0
+                assert any(
+                    row["event.name"] == "sync.runtime.stopped"
+                    for row in events(W / "restarted-gui-runtime.log")
+                )
             assert "SYNTHETIC_WINDOW_SECRET" not in (
                 W / "restarted-gui-runtime.log"
             ).read_text(errors="replace")
@@ -400,7 +489,14 @@ def worker(root):
                 "helper_binary_sha256": hashlib.sha256(
                     Path(helper).read_bytes()
                 ).hexdigest(),
-                "scope": "Linux window/process integration only; retained Rust owner after UI-engine disposal and CLI duplicate-owner arbitration remain unqualified.",
+                "cli_source": OPTIONS.cli_source,
+                "cli_binary_sha256": hashlib.sha256(
+                    OPTIONS.cli.read_bytes()
+                ).hexdigest(),
+                "concurrent_cli_visible_and_hidden": True,
+                "cli_acquired_replica_owner": False,
+                "explicit_quit_drained_rust_owner": True,
+                "scope": "Actual Linux GUI/CLI process ownership, authenticated follower reads, hidden replay and explicit shutdown. Other platforms and indexed telemetry remain separate acceptance.",
             }
             for name in [
                 "seed.log",
@@ -415,7 +511,7 @@ def worker(root):
                 )
             (W / "window-proof.json").write_text(json.dumps(proof, indent=2) + "\n")
             print(
-                "PASS: actual hidden GUI alone replayed encrypted pending; reopen reused PID/window and Ctrl+Q quit normally."
+                "PASS: GUI retained one Rust replica owner while visible/hidden CLI reads stayed fresh; hidden replay, reopen and both drained quit paths completed."
             )
         finally:
             for child in [gui, daemon]:
@@ -429,7 +525,12 @@ def worker(root):
 
 
 def main():
-    assert FIXTURE.is_file() and HELPER.is_file() and BUNDLE.is_dir()
+    assert (
+        FIXTURE.is_file()
+        and HELPER.is_file()
+        and BUNDLE.is_dir()
+        and OPTIONS.cli.is_file()
+    )
     f = json.loads(FIXTURE.read_text())
     assert f["status"] == "running" and f["owner_email"].endswith("@example.invalid")
     for key in ["base_url", "mailpit_url"]:
@@ -471,7 +572,7 @@ def main():
             ],
             env=env,
             check=True,
-            timeout=330,
+            timeout=510,
         )
 
 

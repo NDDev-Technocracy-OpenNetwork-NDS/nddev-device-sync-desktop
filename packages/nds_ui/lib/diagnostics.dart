@@ -30,6 +30,7 @@ class ApplicationDiagnostics {
             await native.shutdownTelemetry();
           } catch (_) {
             _unavailable();
+            return AppExitResponse.cancel;
           }
         }
         return AppExitResponse.exit;

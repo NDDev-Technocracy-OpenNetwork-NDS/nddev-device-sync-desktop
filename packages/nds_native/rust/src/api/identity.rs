@@ -12,18 +12,32 @@ use nddev_device_sync_application::lifecycle::{
 use nddev_device_sync_application::replica::CapacityProbeOutcome;
 use nddev_device_sync_domain::Platform;
 use nddev_device_sync_telemetry::view::ClientLifecycle;
+#[cfg(any(
+    not(any(target_os = "linux", target_os = "macos", target_os = "windows")),
+    test
+))]
+use nddev_device_sync_vault::replication::ReplicaContext;
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+use nddev_device_sync_vault::replication::batch_outcome;
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+use nddev_device_sync_vault::replication::native::NativeReplica;
 #[cfg(test)]
 use nddev_device_sync_vault::replication::recovered_policy;
 use nddev_device_sync_vault::replication::{
-    ReplicaContext, ReplicaTask as Replica, batch_outcome, device_observations, replica_auth_error,
+    ReplicaTask as Replica, device_observations, replica_auth_error,
 };
 use nddev_device_sync_vault::{
     VaultClient,
     view::{RecordPage, StatePage, VaultError, VaultView},
 };
+#[cfg(any(
+    not(any(target_os = "linux", target_os = "macos", target_os = "windows")),
+    test
+))]
+use std::sync::Weak;
 use std::{
     sync::{
-        Arc, Mutex, Weak,
+        Arc, Mutex,
         atomic::{AtomicBool, Ordering},
     },
     time::Duration,
@@ -37,6 +51,8 @@ pub struct NdsClient {
     pub(crate) catalog: Mutex<super::catalog::CatalogState>,
     pub(crate) module_control: Arc<super::module_control::ModuleControl>,
     vault: tokio::sync::Mutex<Option<Arc<VaultClient>>>,
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+    native_runtime: Mutex<Option<Arc<NativeReplica>>>,
     replica: Mutex<Option<Replica>>,
     replica_control: tokio::sync::Mutex<()>,
     pub(super) publication: Arc<Mutex<()>>,
@@ -76,6 +92,8 @@ impl NdsClient {
             catalog: Mutex::default(),
             module_control: Arc::default(),
             vault: tokio::sync::Mutex::new(None),
+            #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+            native_runtime: Mutex::default(),
             replica: Mutex::default(),
             replica_control: tokio::sync::Mutex::default(),
             publication: Arc::default(),
@@ -88,6 +106,36 @@ impl NdsClient {
             #[cfg(not(target_arch = "wasm32"))]
             clipboard: Default::default(),
         })
+    }
+    #[cfg_attr(feature = "flutter", frb(ignore))]
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+    fn native_runtime(&self) -> Option<Arc<NativeReplica>> {
+        self.native_runtime
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .clone()
+    }
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+    async fn stop_native_runtime(&self) -> Result<(), ClientError> {
+        if let Some(owner) = self.native_runtime() {
+            self.stop_native_owner(owner).await?;
+        }
+        Ok(())
+    }
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+    async fn stop_native_owner(&self, owner: Arc<NativeReplica>) -> Result<(), ClientError> {
+        owner.stop().await.map_err(replica_start_error)?;
+        let mut slot = self
+            .native_runtime
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        if slot
+            .as_ref()
+            .is_some_and(|current| Arc::ptr_eq(current, &owner))
+        {
+            slot.take();
+        }
+        Ok(())
     }
     pub async fn refresh(&self) -> Result<View, ClientError> {
         if let Some(task) = self.cancel_work(false) {
@@ -174,8 +222,14 @@ impl NdsClient {
         self.inner.passkeys().await
     }
     pub async fn revoke_passkey(&self, id: String) -> Result<View, ClientError> {
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        let native_owner = self.native_runtime();
         let view = self.inner.revoke_passkey(id).await?;
         if !view.authenticated {
+            #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+            if let Some(owner) = native_owner {
+                self.stop_native_owner(owner).await?;
+            }
             self.invalidate_catalog();
             self.delivery
                 .lock()
@@ -206,6 +260,10 @@ impl NdsClient {
         self.module_control.stop();
         self.cancel_screen();
         self.invalidate_catalog();
+        let lifetime = self.inner.local_use_lifetime();
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        self.stop_native_runtime().await?;
+        self.inner.check_captured_local_use_lifetime(&lifetime)?;
         self.delivery
             .lock()
             .unwrap_or_else(|error| error.into_inner())
@@ -235,6 +293,11 @@ impl NdsClient {
         Ok(view)
     }
     fn ensure_delivery(&self) {
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        if let Some(owner) = self.native_runtime() {
+            owner.ensure_delivery(|identity| super::telemetry::start_delivery(identity, true));
+            return;
+        }
         {
             let mut delivery = self
                 .delivery
@@ -250,6 +313,8 @@ impl NdsClient {
         }
     }
     pub async fn revoke_device(&self, id: String) -> Result<View, ClientError> {
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        let native_owner = self.native_runtime();
         self.cancel_screen();
         let view = self.inner.revoke_device(id).await?;
         if view
@@ -257,6 +322,10 @@ impl NdsClient {
             .iter()
             .any(|device| device.is_current && device.revoked)
         {
+            #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+            if let Some(owner) = native_owner {
+                self.stop_native_owner(owner).await?;
+            }
             self.delivery
                 .lock()
                 .unwrap_or_else(|error| error.into_inner())
@@ -318,6 +387,10 @@ impl NdsClient {
         }
     }
     async fn reset_replica_session(&self) {
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        if let Err(error) = self.stop_native_runtime().await {
+            tracing::warn!(event.name = "sync.runtime.stop_failed", module = "vault", outcome = "error", error.type = error.code());
+        }
         self.module_control.stop();
         self.cancel_screen();
         self.invalidate_catalog();
@@ -328,6 +401,8 @@ impl NdsClient {
         self.reset_replica_schedule();
     }
     async fn clear_replica_fenced(&self, lifetime: &nddev_device_sync_accounts::LocalUseLifetime) {
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        let native_owner;
         let task = {
             let mut vault = self.vault.lock().await;
             let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
@@ -337,6 +412,10 @@ impl NdsClient {
                 .is_err()
             {
                 return;
+            }
+            #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+            {
+                native_owner = self.native_runtime();
             }
             self.module_control.stop();
             self.cancel_screen();
@@ -354,6 +433,12 @@ impl NdsClient {
         };
         if let Some(task) = task {
             task.join().await;
+        }
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        if let Some(owner) = native_owner
+            && let Err(error) = self.stop_native_owner(owner).await
+        {
+            tracing::warn!(event.name = "sync.runtime.stop_failed", module = "vault", outcome = "error", error.type = error.code());
         }
     }
     async fn start_replica_fenced(
@@ -376,18 +461,50 @@ impl NdsClient {
         fence: &nddev_device_sync_accounts::LocalUseFence,
         schedule: Arc<Mutex<ReplicaSchedule>>,
     ) -> Result<(), ClientError> {
-        let vault = self.vault().await.map_err(replica_start_error)?;
-        self.inner.validate_local_use(fence).await?;
-        // Protected I/O is complete before this brief cancellation/publication boundary.
-        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
-        self.inner.check_local_use_lifetime(fence)?;
-        if self.spawn_replica(initial_delay, Arc::downgrade(&vault), schedule) {
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        {
+            let _ = (initial_delay, schedule);
+            let owner = NativeReplica::attach(
+                &self.inner,
+                data_directory().map_err(replica_start_error)?,
+                Some(env!("CARGO_PKG_VERSION").into()),
+            )
+            .await
+            .map_err(replica_start_error)?;
+            self.inner.validate_local_use(fence).await?;
+            {
+                let _publication = self
+                    .publication
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner());
+                self.inner.check_local_use_lifetime(fence)?;
+                *self
+                    .native_runtime
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner()) = Some(owner);
+            }
             self.ensure_delivery();
+            Ok(())
         }
-        Ok(())
+        #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+        {
+            let vault = self.vault().await.map_err(replica_start_error)?;
+            self.inner.validate_local_use(fence).await?;
+            // Protected I/O is complete before this brief cancellation/publication boundary.
+            let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+            self.inner.check_local_use_lifetime(fence)?;
+            if self.spawn_replica(initial_delay, Arc::downgrade(&vault), schedule) {
+                self.ensure_delivery();
+            }
+            Ok(())
+        }
     }
     // Caller holds publication: policy replacement and task publication cannot
     // interleave after this check. The task retains this exact policy identity.
+    #[cfg(any(
+        not(any(target_os = "linux", target_os = "macos", target_os = "windows")),
+        test
+    ))]
     fn spawn_replica(
         &self,
         initial_delay: Duration,
@@ -430,62 +547,96 @@ impl NdsClient {
         observe("vault.refresh", self.vault_snapshot()).await
     }
     pub async fn vault_snapshot(&self) -> Result<VaultView, VaultError> {
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        let mut view = if let Some(owner) = self.native_runtime() {
+            let fence = self
+                .inner
+                .local_use_fence()
+                .await
+                .map_err(replica_auth_error)?;
+            let view = owner.snapshot().await?;
+            self.inner
+                .validate_local_use(&fence)
+                .await
+                .map_err(replica_auth_error)?;
+            view
+        } else {
+            self.vault().await?.refresh_local().await?
+        };
+        #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
         let mut view = self.vault().await?.refresh_local().await?;
-        if self.capacity_blocked() {
-            // Preserve a real current read/auth error; healthy inbox reads still
-            // display the retained upload-capacity reason.
-            if view.sync_error.is_empty() {
-                view.sync_error = VaultError::CapacityExhausted.code();
-            }
-            view.catching_up = true;
-        }
+        nddev_device_sync_vault::replication::project_policy(
+            &mut view,
+            &self
+                .schedule()
+                .lock()
+                .unwrap_or_else(|error| error.into_inner()),
+        );
         Ok(view)
     }
     pub async fn vault_sync(&self) -> Result<VaultView, VaultError> {
-        let lifetime = self.inner.local_use_lifetime();
-        observe("vault.sync", async {
-            let _control = self
-                .replica_control
-                .try_lock()
-                .map_err(|_| VaultError::Busy)?;
-            self.stop_replica().await;
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        {
+            let owner = self.native_runtime().ok_or(VaultError::Busy)?;
             let fence = self
                 .inner
-                .local_use_fence_from(&lifetime)
+                .local_use_fence()
                 .await
                 .map_err(replica_auth_error)?;
-            let schedule = {
-                let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
-                self.inner
-                    .check_local_use_lifetime(&fence)
-                    .map_err(replica_auth_error)?;
-                // An explicit retry owns fresh policy. Already running state
-                // publishers may finish, but can only update their old policy.
-                self.reset_replica_schedule()
-            };
-            let mut history = None;
-            let result = async {
-                let vault = self.vault().await?;
-                let attempt = vault.synchronize_attempt(false).await?;
-                history = attempt.history;
-                attempt.result.map(|progress| progress.view)
-            }
-            .await;
-            let next = {
-                let mut policy = schedule.lock().unwrap_or_else(|e| e.into_inner());
-                if let Some(history) = history {
-                    policy.observe_history(history);
-                }
-                policy.after(batch_outcome(&result))
-            };
-            if let Some(delay) = next {
-                self.start_replica_for_schedule(delay, &fence, schedule)
+            let result = observe("vault.sync", owner.synchronize()).await;
+            self.inner
+                .validate_local_use(&fence)
+                .await
+                .map_err(replica_auth_error)?;
+            result
+        }
+        #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+        {
+            let lifetime = self.inner.local_use_lifetime();
+            observe("vault.sync", async {
+                let _control = self
+                    .replica_control
+                    .try_lock()
+                    .map_err(|_| VaultError::Busy)?;
+                self.stop_replica().await;
+                let fence = self
+                    .inner
+                    .local_use_fence_from(&lifetime)
                     .await
                     .map_err(replica_auth_error)?;
-            }
-            result
-        })
-        .await
+                let schedule = {
+                    let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+                    self.inner
+                        .check_local_use_lifetime(&fence)
+                        .map_err(replica_auth_error)?;
+                    // An explicit retry owns fresh policy. Already running state
+                    // publishers may finish, but can only update their old policy.
+                    self.reset_replica_schedule()
+                };
+                let mut history = None;
+                let result = async {
+                    let vault = self.vault().await?;
+                    let attempt = vault.retry_synchronize_attempt().await?;
+                    history = attempt.history;
+                    attempt.result.map(|progress| progress.view)
+                }
+                .await;
+                let next = {
+                    let mut policy = schedule.lock().unwrap_or_else(|e| e.into_inner());
+                    if let Some(history) = history {
+                        policy.observe_history(history);
+                    }
+                    policy.after(batch_outcome(&result))
+                };
+                if let Some(delay) = next {
+                    self.start_replica_for_schedule(delay, &fence, schedule)
+                        .await
+                        .map_err(replica_auth_error)?;
+                }
+                result
+            })
+            .await
+        }
     }
     pub async fn vault_records(&self, after: String) -> Result<RecordPage, VaultError> {
         observe("vault.records", async {
@@ -565,6 +716,11 @@ impl NdsClient {
         Ok(result)
     }
     pub(crate) fn wake_replica(&self) {
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        if let Some(owner) = self.native_runtime() {
+            owner.wake();
+            return;
+        }
         if self.replication_active.load(Ordering::Relaxed)
             && let Some(replica) = &*self
                 .replica
@@ -876,6 +1032,14 @@ impl NdsClient {
                 values.push(capture(module.state()));
             }
             attempted = true;
+            #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+            if self.native_runtime().is_some() {
+                let result = vault.stage_states(values).await;
+                if result.is_ok() {
+                    self.wake_replica();
+                }
+                return result;
+            }
             let attempt = vault.publish_states_attempt(values).await?;
             history = attempt.history;
             attempt.result
@@ -890,6 +1054,7 @@ impl NdsClient {
         }
         result
     }
+    #[cfg(test)]
     fn capacity_blocked(&self) -> bool {
         self.schedule()
             .lock()
@@ -897,6 +1062,10 @@ impl NdsClient {
             .is_capacity_blocked()
     }
     fn schedule(&self) -> Arc<Mutex<ReplicaSchedule>> {
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        if let Some(owner) = self.native_runtime() {
+            return owner.schedule();
+        }
         self.replica_schedule
             .lock()
             .unwrap_or_else(|e| e.into_inner())
@@ -917,6 +1086,10 @@ impl NdsClient {
     }
     #[cfg_attr(feature = "flutter", frb(sync))]
     pub fn delivery_snapshot(&self) -> super::telemetry::DeliveryView {
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        if let Some(owner) = self.native_runtime() {
+            return owner.delivery_snapshot();
+        }
         self.delivery
             .lock()
             .unwrap_or_else(|error| error.into_inner())

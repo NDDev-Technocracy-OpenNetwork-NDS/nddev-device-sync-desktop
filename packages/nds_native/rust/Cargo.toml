@@ -12,27 +12,27 @@ flutter = ["dep:flutter_rust_bridge"]
 browser-bindings = ["dep:tsify", "serde/derive", "nddev-device-sync-accounts/browser-bindings", "nddev-device-sync-organizations/browser-bindings", "nddev-device-sync-vault/browser-bindings", "nddev-device-sync-telemetry/browser-bindings"]
 development-http = ["nddev-device-sync-accounts/development-http"]
 [dependencies]
-nddev-device-sync-organizations = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations", rev = "9cd5078c3d17056a3e3181617807c04b664a71e9" }
-nddev-device-sync-application = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-core.git", rev = "ce2a2a632f16d854ba83c7a3db3d2e41a6d8694c" }
-nddev-device-sync-vault = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault", rev = "7cd1daa526a6b82176b7a1dac8f9f1322b5fec43" }
+nddev-device-sync-organizations = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations", rev = "a1a91a5e19e390293591007a8da03563e7acc683" }
+nddev-device-sync-application = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-core.git", rev = "f628a85bee38b837351e8621f5711d4b2958934c" }
+nddev-device-sync-vault = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault", rev = "4d4d0c6300efd17b90963c2a6153e6b6198dbfa8" }
 tokio = { version = "1.53", features = ["sync", "rt", "time"] }
 zeroize = "1.8"
 tokio-util = { version = "0.7", features = ["rt"] }
 flutter_rust_bridge = { optional=true, version="=2.13.0",default-features=false,features=["anyhow","dart-opaque","portable-atomic","rust-async","thread-pool"] }
-nddev-device-sync-accounts = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts", rev = "0b4fd98b13c74cb744ce52c085f3ef0bef03ae5c" }
-nddev-device-sync-domain = {git="https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-core.git", rev="ce2a2a632f16d854ba83c7a3db3d2e41a6d8694c"}
+nddev-device-sync-accounts = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts", rev = "4adcc8bde6cd4e527b3543bd349d8855896ce844" }
+nddev-device-sync-domain = {git="https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-core.git", rev="f628a85bee38b837351e8621f5711d4b2958934c"}
 time = {version="0.3",features=["parsing","wasm-bindgen"]}
 tracing = "0.1"
 serde_json = "1"
 serde = "1"
 uuid = { version="1.27", features=["v4", "v7"] }
-nddev-device-sync-agent = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent", rev = "9cbf83329cd7f7a3c64279bf93b5a120fe3b129c" }
+nddev-device-sync-agent = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent", rev = "555d9ef844b59ce2179876dd3f598996a9c67688" }
 nddev-device-sync-sysinfo = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-sysinfo", rev = "e03cf1c588cc1e50fdc91d2adb8af8460f89ef52" }
-nddev-device-sync-clipboard = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-clipboard", rev = "0bb67334bcd765ecf06c623077975d212113f4ac" }
+nddev-device-sync-clipboard = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-clipboard", rev = "d22d008e7fb6501c04faca4b25694e71eb74dbad" }
 nddev-device-sync-cleaner = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-cleaner", rev = "37e6fa14ae7c66a44029ccf700fed39fee34531a" }
 nddev-device-sync-updater = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-updater", rev = "1fd65d33ed999a736cd0227e9616cf9600b529a9" }
-nddev-device-sync-gds = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds", rev = "3b9cdbf7abd255c1db958cb60cbfbfbfa371c05c", features = ["github-catalog"] }
-nddev-device-sync-rds = { version = "=0.0.1-alpha.2", git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-rds", rev = "f269a3be7be62e14844af13af14286ed09992b2b", features = ["owned-screen"] }
+nddev-device-sync-gds = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds", rev = "99b3274dbb16e881af401657ff61edfc35ab2baa", features = ["github-catalog"] }
+nddev-device-sync-rds = { version = "=0.0.1-alpha.2", git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-rds", rev = "ea2a8241d17b0434ce0940d1911ec4478144448e", features = ["owned-screen"] }
 nddev-device-sync-telemetry = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability", rev = "32f21f8a8f9c313bee9dcd1769c042133b5520da", features = ["client-traces"] }
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }

@@ -5532,10 +5532,9 @@ fn wire__crate__api__telemetry__shutdown_telemetry_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             deserializer.end();
             move |context| async move {
-                transform_result_sse::<_, ()>(
+                transform_result_sse::<_, nddev_device_sync_telemetry::view::DiagnosticsError>(
                     (move || async move {
-                        let output_ok =
-                            Ok::<_, ()>(crate::api::telemetry::shutdown_telemetry().await)?;
+                        let output_ok = crate::api::telemetry::shutdown_telemetry().await?;
                         std::result::Result::Ok(output_ok)
                     })()
                     .await,

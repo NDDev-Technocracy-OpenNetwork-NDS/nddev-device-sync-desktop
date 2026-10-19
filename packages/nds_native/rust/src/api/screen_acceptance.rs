@@ -198,6 +198,6 @@ fn actual_company_screen_revalidation_closes_native_stream() {
                 Err(_) => panic!("owned native session cleanup failed"),
             }
         }
-        telemetry::shutdown_telemetry().await;
+        telemetry::shutdown_telemetry().await.unwrap();
     });
 }

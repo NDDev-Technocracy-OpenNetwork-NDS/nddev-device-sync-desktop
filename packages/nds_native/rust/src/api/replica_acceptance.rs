@@ -6,11 +6,19 @@ use nddev_device_sync_vault::view::VaultError;
 use serde_json::{Value, json};
 use std::{path::Path, time::Duration};
 
-async fn ready(client: &NdsClient, pending: u32) {
+async fn ready(client: &NdsClient) {
     tokio::time::timeout(Duration::from_secs(60), async {
         loop {
             match client.vault_snapshot().await {
-                Ok(view) if view.unlocked && view.pending == pending => return,
+                Ok(view)
+                    if view.unlocked
+                        && view.pending == 0
+                        && !view.catching_up
+                        && view.last_sync_at > 0
+                        && view.sync_error.is_empty() =>
+                {
+                    return;
+                }
                 Ok(_) | Err(VaultError::Busy) => {}
                 Err(error) => panic!("ordinary replica read failed: {}", error.code()),
             }
@@ -22,8 +30,9 @@ async fn ready(client: &NdsClient, pending: u32) {
 }
 
 #[test]
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 #[ignore = "requires an explicitly owned loopback PG/SMTP fixture and isolated native credentials"]
-fn hidden_desktop_replays_without_presentation_ticks() {
+fn detached_desktop_replays_without_presentation_owner() {
     tokio::runtime::Builder::new_multi_thread()
         .worker_threads(2)
         .enable_all()
@@ -62,52 +71,150 @@ fn hidden_desktop_replays_without_presentation_ticks() {
             std::fs::remove_file(otp).unwrap();
             assert!(code.len() == 8 && code.bytes().all(|b| b.is_ascii_digit()));
             assert!(client.verify_email(code).await.unwrap().authenticated);
-            client.prepare_device("Owned replica".into()).await.unwrap();
+            let receipt = Path::new(config["receipt"].as_str().expect("owned receipt required"));
+            admit_fixture(&client, receipt, "Owned replica").await;
             client.set_lifecycle(ClientLifecycle::Resumed);
-            ready(&client, 0).await;
-
-            // Detached has no granted process lifetime. Stage real encrypted
-            // work locally; no presentation reconcile or manual sync follows.
+            std::fs::write(directory.join("offline-requested"), b"ready").unwrap();
+            wait_marker(directory, "offline-ready").await;
             client.set_lifecycle(ClientLifecycle::Detached);
-            tokio::time::sleep(Duration::from_millis(500)).await;
             let queued = client
                 .vault_save(
                     None,
                     0,
                     None,
-                    "Hidden replica".into(),
+                    "Detached replica".into(),
                     String::new(),
                     "SYNTHETIC_REPLICA_VALUE".into(),
                 )
                 .await
                 .unwrap();
             assert_eq!(queued.pending, 1);
-            tokio::time::sleep(Duration::from_secs(1)).await;
-            ready(&client, 1).await;
-
-            client.set_lifecycle(ClientLifecycle::Hidden);
             assert!(!client.catalog_active());
-            ready(&client, 0).await;
-            let synced = client.vault_snapshot().await.unwrap();
-            assert!(synced.last_sync_at > 0);
-            assert!(synced.sync_error.is_empty());
-            assert_eq!(synced.conflicts, 0);
-            assert!(client.snapshot().session_verified);
+            let retained = nddev_device_sync_vault::replication::native::NativeReplica::attach(
+                client.shared_identity(),
+                nddev_device_sync_accounts::private_data_directory().unwrap(),
+                None,
+            )
+            .await
+            .unwrap();
+            let lifetime = std::sync::Arc::downgrade(&retained);
+            drop(retained);
+            client.cancel();
+            drop(client);
+            assert!(lifetime.upgrade().is_some_and(|owner| owner.is_running()));
+            std::fs::write(directory.join("facade-detached"), b"ready").unwrap();
+            // The controller restores the actual server and observes durable
+            // pending0 before any replacement client is constructed.
+            wait_marker(directory, "replayed").await;
+            let reopened = NdsClient::new(endpoint.into()).unwrap();
+            assert!(reopened.refresh().await.unwrap().authenticated);
+            reopened
+                .prepare_device("Owned replica".into())
+                .await
+                .unwrap();
+            let same = nddev_device_sync_vault::replication::native::NativeReplica::attach(
+                reopened.shared_identity(),
+                nddev_device_sync_accounts::private_data_directory().unwrap(),
+                None,
+            )
+            .await
+            .unwrap();
+            assert!(lifetime.ptr_eq(&std::sync::Arc::downgrade(&same)));
+            ready(&reopened).await;
+            let synced = reopened.vault_snapshot().await.unwrap();
+            assert!(
+                synced.last_sync_at > 0 && synced.sync_error.is_empty() && synced.conflicts == 0
+            );
+            let records = reopened.vault_records(String::new()).await.unwrap();
+            assert!(
+                records
+                    .items
+                    .iter()
+                    .any(|record| record.title == "Detached replica"
+                        && record.pending_id.is_none()
+                        && record.observed_seq > 0)
+            );
             std::fs::write(
                 directory.join("proof.json"),
                 serde_json::to_vec(&json!({
                     "detached_pending": queued.pending,
-                    "hidden_pending": synced.pending,
-                    "conflicts": synced.conflicts,
-                    "interactive_admitted": client.catalog_active(),
-                    "session_verified_without_ui_tick": client.snapshot().session_verified,
-                    "manual_sync": false
+                    "replayed_pending": synced.pending,
+                    "owner_reused": true,
+                    "replacement_created_after_replay": true,
+                    "manual_sync": false,
+                    "interactive_admitted_while_detached": false
                 }))
                 .unwrap(),
             )
             .unwrap();
-            client.cancel();
+            reopened.cancel();
+            telemetry::shutdown_telemetry().await.unwrap();
         });
+}
+
+async fn wait_marker(directory: &Path, name: &str) {
+    tokio::time::timeout(Duration::from_secs(90), async {
+        while !directory.join(name).is_file() {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+    })
+    .await
+    .expect("owned controller did not reach the expected state");
+}
+
+async fn admit_fixture(client: &NdsClient, receipt: &Path, name: &str) {
+    let fixture: Value = serde_json::from_slice(&std::fs::read(receipt).unwrap()).unwrap();
+    assert_eq!(
+        fixture["base_url"].as_str().unwrap(),
+        client.shared_identity().origin().trim_end_matches('/')
+    );
+    client
+        .shared_identity()
+        .prepare_device(name.into())
+        .await
+        .unwrap();
+    assert_eq!(
+        client
+            .shared_identity()
+            .sync_request(nddev_device_sync_accounts::SyncRequest::CapabilitiesV3)
+            .await
+            .unwrap()
+            .status,
+        200
+    );
+    tokio::time::timeout(Duration::from_secs(10), async {
+        loop {
+            if let Ok(bytes) = std::fs::read(receipt)
+                && let Ok(state) = serde_json::from_slice::<Value>(&bytes)
+                && state["new_operation_version"] == 3
+            {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+    })
+    .await
+    .unwrap();
+    client.prepare_device(name.into()).await.unwrap();
+    // Both actual startup observations must be committed before offline staging.
+    tokio::time::timeout(Duration::from_secs(60), async {
+        loop {
+            if let Ok(page) = client.sync_states(String::new()).await {
+                let has = |kind| {
+                    page.items
+                        .iter()
+                        .any(|state| state.kind == kind && state.pending_id.is_none())
+                };
+                if has("device_state") && has("account_state") {
+                    break;
+                }
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+    })
+    .await
+    .unwrap();
+    ready(client).await;
 }
 
 // The native window acceptance runs these helpers in separate real processes.
@@ -175,36 +282,8 @@ fn window_case(seed: bool) {
                     .verify_email(code["code"].as_str().unwrap().into())
                     .await
                     .unwrap();
-                client
-                    .prepare_device("Owned window acceptance".into())
-                    .await
-                    .unwrap();
-                // Detached has no replica opportunity. Initialize the empty
-                // counter and wait for the fixture operator before negotiation.
-                use nddev_device_sync_accounts::SyncRequest;
-                assert_eq!(
-                    client
-                        .shared_identity()
-                        .sync_request(SyncRequest::CapabilitiesV3)
-                        .await
-                        .unwrap()
-                        .status,
-                    200
-                );
-                tokio::time::timeout(Duration::from_secs(10), async {
-                    loop {
-                        if let Ok(bytes) = std::fs::read(receipt)
-                            && let Ok(state) = serde_json::from_slice::<Value>(&bytes)
-                            && state["new_operation_version"] == 3
-                        {
-                            break;
-                        }
-                        tokio::time::sleep(Duration::from_millis(100)).await;
-                    }
-                })
-                .await
-                .unwrap();
-                let view = client.vault_sync().await.unwrap();
+                admit_fixture(&client, Path::new(receipt), "Owned window acceptance").await;
+                let view = client.vault_snapshot().await.unwrap();
                 assert!(view.unlocked && view.pending == 0 && !view.catching_up);
                 assert!(view.last_sync_at > 0 && view.sync_error.is_empty());
                 std::fs::write(root.join("seeded"), b"ready").unwrap();

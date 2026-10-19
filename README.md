@@ -97,6 +97,9 @@ this selection does not enable software rendering.
 `flutter run -d linux` opens the client. Enter the HTTPS origin of an NDS server
 with compatible control-plane and encrypted-sync endpoints. Native credential
 storage must be available and unlocked.
+On Linux, closing the window keeps NDS running in the desktop session. Launch
+NDS again to reopen the existing window; use Ctrl+Q to quit, or the standard
+`gapplication action ai.nddev.nds.nddev_device_sync_desktop quit` command.
 GitHub sign-in requires the server's actual provider configuration and explicit
 browser approval; an unavailable provider stays unavailable.
 
@@ -175,6 +178,13 @@ X11 session for Linux clipboard acceptance, for example
 `xvfb-run -a env -u WAYLAND_DISPLAY GDK_BACKEND=x11 python3 scripts/identity-acceptance.py --fixture /private/fixture.json --vault`.
 The test must observe the native operation completing before reading the OS
 clipboard. Production UI confirmation uses the same native completion receipt.
+
+`python3 scripts/window-acceptance.py --help` describes the Linux window check.
+Supply an owned PostgreSQL/SMTP `--fixture-sync3` fixture, its built loopback
+test bundle, a native test executable built with `development-http`, the exact
+artifact source SHA and a new evidence directory outside the repository. It
+uses a private X11/DBus/credential profile to check close, automatic encrypted
+replay, single-instance reopen, explicit quit and session restoration.
 
 The browser assembly uses the same UI and a stable, single-threaded Rust/WASM
 bundle. `initializeNdsBridge` supplies the preloaded ES module to FRB without

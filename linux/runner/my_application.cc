@@ -22,8 +22,17 @@ static void first_frame_cb(MyApplication* self, FlView* view) {
 // Implements GApplication::activate.
 static void my_application_activate(GApplication* application) {
   MyApplication* self = MY_APPLICATION(application);
+  GList* windows = gtk_application_get_windows(GTK_APPLICATION(application));
+  if (windows != nullptr) {
+    gtk_window_present(GTK_WINDOW(windows->data));
+    return;
+  }
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
+  // Closing presentation leaves the existing Flutter engine and Rust runtime
+  // alive. Activation reuses this same window instead of starting another one.
+  g_signal_connect(window, "delete-event",
+                   G_CALLBACK(gtk_widget_hide_on_delete), nullptr);
   gtk_window_set_title(window, "NDDev OpenNetwork");
 
   // Use a header bar when running in GNOME as this is the common style used
@@ -107,11 +116,15 @@ static gboolean my_application_local_command_line(GApplication* application,
 
 // Implements GApplication::startup.
 static void my_application_startup(GApplication* application) {
-  // MyApplication* self = MY_APPLICATION(object);
-
-  // Perform any actions required at application startup.
-
   G_APPLICATION_CLASS(my_application_parent_class)->startup(application);
+
+  g_autoptr(GSimpleAction) quit = g_simple_action_new("quit", nullptr);
+  g_signal_connect_swapped(quit, "activate", G_CALLBACK(g_application_quit),
+                           application);
+  g_action_map_add_action(G_ACTION_MAP(application), G_ACTION(quit));
+  const gchar* quit_accelerators[] = {"<Primary>q", nullptr};
+  gtk_application_set_accels_for_action(GTK_APPLICATION(application), "app.quit",
+                                        quit_accelerators);
 }
 
 // Implements GApplication::shutdown.
@@ -150,5 +163,5 @@ MyApplication* my_application_new() {
 
   return MY_APPLICATION(g_object_new(my_application_get_type(),
                                      "application-id", APPLICATION_ID, "flags",
-                                     G_APPLICATION_NON_UNIQUE, nullptr));
+                                     G_APPLICATION_DEFAULT_FLAGS, nullptr));
 }

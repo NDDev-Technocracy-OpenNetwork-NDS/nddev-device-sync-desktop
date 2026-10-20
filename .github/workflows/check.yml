@@ -76,6 +76,17 @@ jobs:
           NDS_NATIVE_BUILD_HOME: ${{ runner.temp }}/nds-native
       - run: python scripts/check-artifact.py '${{ matrix.artifact }}' --native-source-commit '${{ github.sha }}'
       - run: python scripts/build-provenance.py '${{ matrix.artifact }}' --output build/nds-build-provenance.json
+      - name: Native macOS ARM window lifetime
+        if: matrix.os == 'macos-15'
+        run: python scripts/macos-window-acceptance.py '${{ matrix.artifact }}' --source '${{ github.sha }}' --evidence "$RUNNER_TEMP/nds-window-acceptance"
+      - name: macOS window evidence
+        if: always() && matrix.os == 'macos-15'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: nds-macos-window-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/nds-window-acceptance
+          if-no-files-found: ignore
+          retention-days: 7
   contracts:
     runs-on: ubuntu-24.04
     timeout-minutes: 35

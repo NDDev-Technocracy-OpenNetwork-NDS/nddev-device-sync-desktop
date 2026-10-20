@@ -27,7 +27,7 @@ pub fn supports_local_agent() -> bool {
 
 impl LocalAgent {
     #[cfg_attr(feature = "flutter", frb(ignore))]
-    async fn discover(
+    pub(super) async fn discover(
         owner: std::sync::Weak<super::module_control::ModuleControl>,
         identity_lifetime: nddev_device_sync_accounts::LocalUseLifetime,
     ) -> Result<Self, ModuleError> {
@@ -50,7 +50,7 @@ impl LocalAgent {
         }
     }
     #[cfg_attr(feature = "flutter", frb(ignore))]
-    fn check_client(&self, client: &NdsClient) -> Result<(), ClientError> {
+    pub(super) fn check_client(&self, client: &NdsClient) -> Result<(), ClientError> {
         if self
             .owner
             .upgrade()

@@ -82,46 +82,61 @@ snapshot_expression = '''({
     @"visible": @([w isVisible]), @"mini": @([w isMiniaturized])
   } options:0 error:NULL] encoding:NSUTF8StringEncoding];
 })'''.replace('\n', ' ')
-idle_guard = 'script exec(' + json.dumps('''
+appkit_controller = '''
+import lldb
+def command(text):
+    result = lldb.SBCommandReturnObject()
+    lldb.debugger.GetCommandInterpreter().HandleCommand(text, result)
+    print(result.GetOutput() or '', end='', flush=True)
+    if not result.Succeeded():
+        print(result.GetError() or '', end='', flush=True)
+        raise RuntimeError('Owned debugger command failed')
+
 thread = lldb.debugger.GetSelectedTarget().GetProcess().GetSelectedThread()
 names = [thread.GetFrameAtIndex(i).GetFunctionName() or '' for i in range(12)]
 idle = names[0].startswith('mach_msg') and any('__CFRunLoopServiceMachPort' in name for name in names)
-if not idle:
-    print('NDS: main thread is busy; detach before executing any expression')
-    lldb.debugger.HandleCommand('thread backtrace --count 12')
-    lldb.debugger.HandleCommand('process detach')
-    lldb.debugger.HandleCommand('quit 42')
-''') + ')'
+outcome = 'NDS_MAIN_BUSY'
+try:
+    if idle:
+        command('expression --language objective-c++ -- @import AppKit;')
+        command('expression --language objective-c++ --object-description -- ' + expression)
+        outcome = 'NDS_APPKIT_DONE'
+    else:
+        command('thread backtrace --count 12')
+finally:
+    command('process detach')
+print(outcome, flush=True)
+'''
 number = 0
 
 
-def appkit(expression, *, quitting=False):
+def appkit(expression):
     global number
     assert app.poll() is None
     number += 1
     transcript = evidence / f'appkit-{number}.log'
     deadline = time.monotonic() + 90
+    control = 'script exec(' + json.dumps('expression = ' + repr(expression) + '\n' + appkit_controller) + ')'
     with transcript.open('w') as output:
         # Each fresh debugger resolves symbols and imports the AppKit module.
         # Keep its setup budget separate from the actual window/Quit deadlines,
         # and retain partial diagnostics even when the debugger times out.
         for _ in range(3):
+            offset = transcript.stat().st_size
             result = subprocess.run([
                 'xcrun', 'lldb', '--batch', '--no-lldbinit',
                 '-o', f'process attach --pid {app.pid}',
                 '-o', 'thread select 1',
-                '-o', idle_guard,
-                '-o', 'expression --language objective-c++ -- @import AppKit;',
-                '-o', 'expression --language objective-c++ --object-description -- ' + expression,
-                '-o', 'process detach',
+                '-o', control,
             ], stdout=output, stderr=subprocess.STDOUT, text=True,
                 timeout=max(.1, deadline - time.monotonic()))
-            if result.returncode != 42:
+            observed = transcript.read_bytes()[offset:].decode().splitlines()
+            if result.returncode != 0 or 'NDS_MAIN_BUSY' not in observed:
                 break
             # A busy observation detached without running the action/query.
             # Never retry an executed expression or a failed lifecycle action.
             time.sleep(.2)
-    assert result.returncode == 0 or quitting and app.poll() == 0, 'AppKit debugger command failed; inspect owned evidence'
+    assert result.returncode == 0 and 'NDS_APPKIT_DONE' in observed, 'AppKit debugger command failed; inspect owned evidence'
     return transcript.read_text()
 
 
@@ -144,7 +159,7 @@ env = {key: value for key, value in os.environ.items()
 with log.open('w') as output:
     app = subprocess.Popen([str(binary)], stdout=output, stderr=output, env=env)
     try:
-        wait(lambda: any(e['event.name'] == 'process.started' for e in events()), 60)
+        wait(lambda: any(e['event.name'] == 'client.ready' for e in events()), 60)
         original = snapshot()
         assert original['visible'] and all(original[key] for key in ('window', 'controller', 'engine'))
         # Run lifecycle actions on the normal main run loop after detaching;
@@ -160,7 +175,7 @@ with log.open('w') as output:
         wait(lambda: same_window()['mini'])
         run(['open', '-a', str(bundle)])
         wait(lambda: (state := same_window())['visible'] and not state['mini'])
-        appkit('(void)[NSApp performSelector:@selector(terminate:) withObject:nil afterDelay:0];', quitting=True)
+        appkit('(void)[NSApp performSelector:@selector(terminate:) withObject:nil afterDelay:0];')
         assert app.wait(timeout=20) == 0, 'Explicit Quit did not exit normally'
         rows = events()
         assert sum(e['event.name'] == 'process.started' for e in rows) == 1

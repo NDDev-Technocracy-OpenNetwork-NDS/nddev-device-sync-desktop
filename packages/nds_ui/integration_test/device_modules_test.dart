@@ -142,6 +142,19 @@ void main() {
           .singleWhere((module) => module.id == 'clipboard');
       expect(observed.readiness, 'ready');
       expect(observed.checkedAtMs, isNotNull);
+      await settled(client.publishDeviceState);
+      await drained(client);
+      final states = await settled(() => client.syncStates(after: ''));
+      final published = states.items.singleWhere(
+        (value) =>
+            value.kind == 'module_state' &&
+            value.id == '${client.snapshot().currentDeviceId}:clipboard',
+      );
+      expect(published.configured, isTrue);
+      expect(published.reachability, 'reachable');
+      expect(published.checkedAtMs, observed.checkedAtMs);
+      expect(published.revision, greaterThan(BigInt.zero));
+      expect(published.pendingId, isNull);
       if (phase == 'restore') {
         await controls.configure(tester, enabled: false, permissions: []);
         await denied(client, 'module_disabled');

@@ -995,20 +995,16 @@ impl NdsClient {
         .await
     }
     pub async fn publish_device_state(&self) -> Result<VaultView, VaultError> {
-        self.publish_state_inner(Vec::new()).await
+        self.publish_state_inner().await
     }
     pub async fn publish_local_state(
         &self,
         agent: &super::modules::LocalAgent,
     ) -> Result<VaultView, VaultError> {
         agent.check_client(self).map_err(|_| VaultError::Locked)?;
-        self.publish_state_inner(agent.modules().map_err(|_| VaultError::Unavailable)?)
-            .await
+        self.publish_state_inner().await
     }
-    async fn publish_state_inner(
-        &self,
-        modules: Vec<nddev_device_sync_domain::modules::ModuleObservation>,
-    ) -> Result<VaultView, VaultError> {
+    async fn publish_state_inner(&self) -> Result<VaultView, VaultError> {
         use nddev_device_sync_domain::state::Snapshot;
         let schedule = self.schedule();
         let mut attempted = false;
@@ -1026,6 +1022,10 @@ impl NdsClient {
                 .refresh_devices()
                 .await
                 .map_err(|_| VaultError::Unavailable)?;
+            let modules = self
+                .module_observations()
+                .await
+                .map_err(replica_auth_error)?;
             let mut values = device_observations(&self.inner, env!("CARGO_PKG_VERSION"))?;
             let observed_at_ms = values[0].observed_at_ms;
             let capture = |data| Snapshot {

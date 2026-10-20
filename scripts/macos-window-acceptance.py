@@ -89,17 +89,22 @@ def appkit(expression, *, quitting=False):
     global number
     assert app.poll() is None
     number += 1
-    result = subprocess.run([
-        'xcrun', 'lldb', '--batch', '--no-lldbinit',
-        '-o', f'process attach --pid {app.pid}',
-        '-o', 'thread select 1',
-        '-o', 'expression --language objective-c++ -- @import AppKit;',
-        '-o', 'expression --language objective-c++ --object-description -- ' + expression,
-        '-o', 'process detach',
-    ], capture_output=True, text=True, timeout=25)
-    (evidence / f'appkit-{number}.log').write_text(result.stdout + result.stderr)
+    transcript = evidence / f'appkit-{number}.log'
+    with transcript.open('w') as output:
+        # First attachment also resolves symbols and imports the AppKit module.
+        # Keep its setup budget separate from the actual window/Quit deadlines,
+        # and retain partial diagnostics even when the debugger times out.
+        result = subprocess.run([
+            'xcrun', 'lldb', '--batch', '--no-lldbinit',
+            '-o', f'process attach --pid {app.pid}',
+            '-o', 'thread select 1',
+            '-o', 'expression --language objective-c++ -- @import AppKit;',
+            '-o', 'expression --language objective-c++ --object-description -- ' + expression,
+            '-o', 'process detach',
+        ], stdout=output, stderr=subprocess.STDOUT, text=True,
+            timeout=90 if number == 1 else 25)
     assert result.returncode == 0 or quitting and app.poll() == 0, 'AppKit debugger command failed; inspect owned evidence'
-    return result.stdout
+    return transcript.read_text()
 
 
 def snapshot():

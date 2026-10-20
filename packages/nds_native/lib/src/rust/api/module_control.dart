@@ -7,7 +7,7 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `attach`, `capabilities`, `descriptor`, `detach`, `edit_basis_matches`, `module_access_inner`, `module_access`, `module_changed`, `native_module_observations`, `observe_configuration`, `observe`, `observe`, `platform`, `read_device_modules`, `shared_permissions`, `stop`, `tag`, `validate`, `vault_error`
+// These functions are ignored because they are not marked as `pub`: `attach`, `capabilities`, `descriptor`, `detach`, `edit_basis_matches`, `module_access_inner`, `module_access`, `module_changed`, `module_observations`, `native_module_observations`, `observe_configuration`, `observe`, `observe`, `platform`, `read_device_modules`, `read_module_state`, `shared_permissions`, `stop`, `tag`, `validate`, `vault_error`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `Adapter`, `ModuleControl`, `ModuleUseGuard`, `Slot`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`
 // These functions are ignored (category: IgnoreBecauseOwnerTyShouldIgnore): `default`

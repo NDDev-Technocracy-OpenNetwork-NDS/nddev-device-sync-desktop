@@ -13,6 +13,10 @@ state and NDS permissions use the existing encrypted per-device Vault journal
 with displayed revision/pending-ID CAS. The original operation and frozen local
 revision fence authorization across acknowledgement, delayed results and
 withdrawal/reapproval. Provider observations cannot overwrite consent.
+Device-state publication uses the same Rust observation selection as module
+readiness on every platform, including shared adapters. Unchecked or disabled
+adapters cannot publish fresh successful health. Local-agent publication also
+checks the originating client and cancellation lifetime before reading its state.
 
 Core owns admission and readiness. The composition reports actual supported
 adapters, discovered local dependencies and last query results separately;

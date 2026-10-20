@@ -8,8 +8,6 @@ use nddev_device_sync_accounts::{
 use nddev_device_sync_application::lifecycle::{
     BatchOutcome, ClientLifecycle as Activity, ReplicaSchedule,
 };
-#[cfg(test)]
-use nddev_device_sync_application::replica::CapacityProbeOutcome;
 use nddev_device_sync_domain::Platform;
 use nddev_device_sync_telemetry::view::ClientLifecycle;
 #[cfg(any(
@@ -21,8 +19,6 @@ use nddev_device_sync_vault::replication::ReplicaContext;
 use nddev_device_sync_vault::replication::batch_outcome;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 use nddev_device_sync_vault::replication::native::NativeReplica;
-#[cfg(test)]
-use nddev_device_sync_vault::replication::recovered_policy;
 use nddev_device_sync_vault::replication::{
     ReplicaTask as Replica, device_observations, replica_auth_error,
 };
@@ -1054,13 +1050,6 @@ impl NdsClient {
         }
         result
     }
-    #[cfg(test)]
-    fn capacity_blocked(&self) -> bool {
-        self.schedule()
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .is_capacity_blocked()
-    }
     fn schedule(&self) -> Arc<Mutex<ReplicaSchedule>> {
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         if let Some(owner) = self.native_runtime() {
@@ -1387,6 +1376,17 @@ pub fn new_vault_record_id() -> String {
 ))]
 mod activity_tests {
     use super::*;
+    use nddev_device_sync_application::replica::CapacityProbeOutcome;
+    use nddev_device_sync_vault::replication::recovered_policy;
+
+    impl NdsClient {
+        fn capacity_blocked(&self) -> bool {
+            self.schedule()
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .is_capacity_blocked()
+        }
+    }
 
     #[test]
     fn public_operation_futures_fit_the_mobile_stack_budget() {

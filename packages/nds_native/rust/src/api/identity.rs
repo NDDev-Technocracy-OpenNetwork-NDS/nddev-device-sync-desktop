@@ -543,32 +543,40 @@ impl NdsClient {
         observe("vault.refresh", self.vault_snapshot()).await
     }
     pub async fn vault_snapshot(&self) -> Result<VaultView, VaultError> {
-        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
-        let mut view = if let Some(owner) = self.native_runtime() {
-            let fence = self
-                .inner
-                .local_use_fence()
-                .await
-                .map_err(replica_auth_error)?;
-            let view = owner.snapshot().await?;
-            self.inner
-                .validate_local_use(&fence)
-                .await
-                .map_err(replica_auth_error)?;
-            view
-        } else {
-            self.vault().await?.refresh_local().await?
-        };
-        #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
-        let mut view = self.vault().await?.refresh_local().await?;
-        nddev_device_sync_vault::replication::project_policy(
-            &mut view,
-            &self
-                .schedule()
-                .lock()
-                .unwrap_or_else(|error| error.into_inner()),
-        );
-        Ok(view)
+        // Polling is one protected read. Its credential checks share this trace
+        // instead of filling the export queue with unrelated standalone spans.
+        let span = nddev_device_sync_telemetry::operation_span("vault", "process")
+            .map_err(|_| VaultError::Unavailable)?;
+        Box::pin(async {
+            #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+            let mut view = if let Some(owner) = self.native_runtime() {
+                let fence = self
+                    .inner
+                    .local_use_fence()
+                    .await
+                    .map_err(replica_auth_error)?;
+                let view = owner.snapshot().await?;
+                self.inner
+                    .validate_local_use(&fence)
+                    .await
+                    .map_err(replica_auth_error)?;
+                view
+            } else {
+                self.vault().await?.refresh_local().await?
+            };
+            #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+            let mut view = self.vault().await?.refresh_local().await?;
+            nddev_device_sync_vault::replication::project_policy(
+                &mut view,
+                &self
+                    .schedule()
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner()),
+            );
+            Ok(view)
+        })
+        .instrument(span)
+        .await
     }
     pub async fn vault_sync(&self) -> Result<VaultView, VaultError> {
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]

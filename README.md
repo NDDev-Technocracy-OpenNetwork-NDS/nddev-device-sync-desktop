@@ -31,6 +31,8 @@ and root-isolate async failures pass only a fixed error class through the genera
 bridge; raw exception text/stacks are omitted from both logs and error widgets.
 Diagnostics work before sign-in. Network and local-I/O debug scopes expire
 after five minutes or 100 debug events. Normal security/error logging continues.
+Protected Vault snapshot reads correlate their credential checks under one Rust
+operation span, keeping routine polling from multiplying standalone read traces.
 The SDK emits process startup and controlled shutdown; a cancelable desktop exit
 waits for bounded shutdown, while mobile background/detach never terminates it.
 Forced termination cannot promise a final event. Missing native initialization

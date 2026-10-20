@@ -50,8 +50,9 @@ Startup capture belongs only to the first verified client subscription.
 
 One Flutter lifecycle adapter feeds the core activity policy. Visible desktop
 and browser clients keep bounded synchronization and delivery when input focus
-moves elsewhere. Hidden clients pause and reconcile on resume; mobile activity
-restrictions follow the same core policy. Screens consume that shared decision.
+moves elsewhere. Hidden browser/mobile clients pause and reconcile on resume;
+the retained desktop process continues replication. Screens consume the same
+core activity decision for interactive work.
 Manual synchronization owns one stop/retry/restart sequence; overlapping calls
 report busy. An authorized manual retry replaces its capacity policy, so late
 results from earlier work cannot block it again or restart an obsolete replica.
@@ -100,6 +101,9 @@ storage must be available and unlocked.
 On Linux, closing the window keeps NDS running in the desktop session. Launch
 NDS again to reopen the existing window; use Ctrl+Q to quit, or the standard
 `gapplication action ai.nddev.nds.nddev_device_sync_desktop quit` command.
+On macOS, closing the window also keeps NDS running. Reopen it from the Dock or
+Finder to restore the same window and engine, including a minimized window.
+Use Quit (Cmd+Q) for the existing bounded Rust shutdown.
 Desktop presentation attaches to the retained Rust runtime; cancelling or
 disposing its facade leaves synchronization running. Native processes share the
 journal's replica admission: one owner reconciles, while CLI followers verify

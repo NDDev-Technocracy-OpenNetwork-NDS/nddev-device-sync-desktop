@@ -82,6 +82,16 @@ snapshot_expression = '''({
     @"visible": @([w isVisible]), @"mini": @([w isMiniaturized])
   } options:0 error:NULL] encoding:NSUTF8StringEncoding];
 })'''.replace('\n', ' ')
+idle_guard = 'script exec(' + json.dumps('''
+thread = lldb.debugger.GetSelectedTarget().GetProcess().GetSelectedThread()
+names = [thread.GetFrameAtIndex(i).GetFunctionName() or '' for i in range(12)]
+idle = names[0].startswith('mach_msg') and any('__CFRunLoopServiceMachPort' in name for name in names)
+if not idle:
+    print('NDS: main thread is busy; detach before executing any expression')
+    lldb.debugger.HandleCommand('thread backtrace --count 12')
+    lldb.debugger.HandleCommand('process detach')
+    lldb.debugger.HandleCommand('quit 42')
+''') + ')'
 number = 0
 
 
@@ -90,19 +100,27 @@ def appkit(expression, *, quitting=False):
     assert app.poll() is None
     number += 1
     transcript = evidence / f'appkit-{number}.log'
+    deadline = time.monotonic() + 90
     with transcript.open('w') as output:
         # Each fresh debugger resolves symbols and imports the AppKit module.
         # Keep its setup budget separate from the actual window/Quit deadlines,
         # and retain partial diagnostics even when the debugger times out.
-        result = subprocess.run([
-            'xcrun', 'lldb', '--batch', '--no-lldbinit',
-            '-o', f'process attach --pid {app.pid}',
-            '-o', 'thread select 1',
-            '-o', 'expression --language objective-c++ -- @import AppKit;',
-            '-o', 'expression --language objective-c++ --object-description -- ' + expression,
-            '-o', 'process detach',
-        ], stdout=output, stderr=subprocess.STDOUT, text=True,
-            timeout=90)
+        for _ in range(3):
+            result = subprocess.run([
+                'xcrun', 'lldb', '--batch', '--no-lldbinit',
+                '-o', f'process attach --pid {app.pid}',
+                '-o', 'thread select 1',
+                '-o', idle_guard,
+                '-o', 'expression --language objective-c++ -- @import AppKit;',
+                '-o', 'expression --language objective-c++ --object-description -- ' + expression,
+                '-o', 'process detach',
+            ], stdout=output, stderr=subprocess.STDOUT, text=True,
+                timeout=max(.1, deadline - time.monotonic()))
+            if result.returncode != 42:
+                break
+            # A busy observation detached without running the action/query.
+            # Never retry an executed expression or a failed lifecycle action.
+            time.sleep(.2)
     assert result.returncode == 0 or quitting and app.poll() == 0, 'AppKit debugger command failed; inspect owned evidence'
     return transcript.read_text()
 

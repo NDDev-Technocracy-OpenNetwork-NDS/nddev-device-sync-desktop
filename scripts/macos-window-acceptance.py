@@ -91,7 +91,7 @@ def appkit(expression, *, quitting=False):
     number += 1
     transcript = evidence / f'appkit-{number}.log'
     with transcript.open('w') as output:
-        # First attachment also resolves symbols and imports the AppKit module.
+        # Each fresh debugger resolves symbols and imports the AppKit module.
         # Keep its setup budget separate from the actual window/Quit deadlines,
         # and retain partial diagnostics even when the debugger times out.
         result = subprocess.run([
@@ -102,7 +102,7 @@ def appkit(expression, *, quitting=False):
             '-o', 'expression --language objective-c++ --object-description -- ' + expression,
             '-o', 'process detach',
         ], stdout=output, stderr=subprocess.STDOUT, text=True,
-            timeout=90 if number == 1 else 25)
+            timeout=90)
     assert result.returncode == 0 or quitting and app.poll() == 0, 'AppKit debugger command failed; inspect owned evidence'
     return transcript.read_text()
 
@@ -129,18 +129,20 @@ with log.open('w') as output:
         wait(lambda: any(e['event.name'] == 'process.started' for e in events()), 60)
         original = snapshot()
         assert original['visible'] and all(original[key] for key in ('window', 'controller', 'engine'))
+        # Run lifecycle actions on the normal main run loop after detaching;
+        # Flutter's other threads must be free to handle the window callbacks.
         for _ in range(2):
-            appkit('(void)[(NSWindow *)[(id)[NSApp delegate] valueForKey:@"mainFlutterWindow"] performClose:nil];')
+            appkit('(void)[(NSWindow *)[(id)[NSApp delegate] valueForKey:@"mainFlutterWindow"] performSelector:@selector(performClose:) withObject:nil afterDelay:0];')
             time.sleep(1)
             assert not same_window()['visible']
             assert not any(e['event.name'] == 'process.stopped' for e in events()), 'Closing the window shut down the Rust SDK'
             run(['open', '-a', str(bundle)])
             wait(lambda: same_window()['visible'])
-        appkit('(void)[(NSWindow *)[(id)[NSApp delegate] valueForKey:@"mainFlutterWindow"] performMiniaturize:nil];')
+        appkit('(void)[(NSWindow *)[(id)[NSApp delegate] valueForKey:@"mainFlutterWindow"] performSelector:@selector(performMiniaturize:) withObject:nil afterDelay:0];')
         wait(lambda: same_window()['mini'])
         run(['open', '-a', str(bundle)])
         wait(lambda: (state := same_window())['visible'] and not state['mini'])
-        appkit('(void)[NSApp terminate:nil];', quitting=True)
+        appkit('(void)[NSApp performSelector:@selector(terminate:) withObject:nil afterDelay:0];', quitting=True)
         assert app.wait(timeout=20) == 0, 'Explicit Quit did not exit normally'
         rows = events()
         assert sum(e['event.name'] == 'process.started' for e in rows) == 1

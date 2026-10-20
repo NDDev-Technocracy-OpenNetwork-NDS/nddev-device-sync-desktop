@@ -528,7 +528,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get syncedState => 'Synced device and module state';
 
   @override
-  String get publishDeviceState => 'Publish this device and NDS session';
+  String get publishDeviceState => 'Publish device, session and module state';
+
+  @override
+  String get stateObserved => 'Observed at';
+
+  @override
+  String get stateChecked => 'Last checked';
 
   @override
   String get publishModuleState => 'Publish observed module state';

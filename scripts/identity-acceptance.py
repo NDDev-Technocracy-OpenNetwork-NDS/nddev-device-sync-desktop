@@ -31,7 +31,7 @@ parser.add_argument("--sync-role", choices=["owner", "recipient"])
 parser.add_argument("--resume", action="store_true", help="Verify a retained desktop session after another device changed the server")
 args = parser.parse_args()
 if args.catalog_source and (not args.vault or args.cold_restart or args.resume or args.modules or args.company or args.sync_role):
-    parser.error("Catalog source acceptance requires the complete standalone --vault scenario")
+    parser.error("Catalog source acceptance requires a standalone --vault setup without other scenarios")
 app = args.app.resolve()
 app_id = None
 gradle_path = app / "android/app/build.gradle.kts"

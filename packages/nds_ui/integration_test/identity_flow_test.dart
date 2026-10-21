@@ -27,7 +27,9 @@ void main() {
   );
 
   testWidgets(
-    'actual identity, device enrollment, native restore and revocation',
+    catalogSource
+        ? 'actual saved GitHub choice, screen recreation and encrypted convergence'
+        : 'actual identity, device enrollment, native restore and revocation',
     (tester) async {
       expect(Uri.parse(server).host, '127.0.0.1');
       expect(Uri.parse(mailbox).host, '127.0.0.1');
@@ -439,6 +441,11 @@ void main() {
           await tester.pageBack();
           await tester.pumpAndSettle();
         }
+        await modules.tapVisible(tester, find.byKey(const Key('open-vault')));
+        await waitFor(tester, find.text('Pending: 0 · Conflicts: 0'));
+        // This explicit scenario owns source selection and convergence. General
+        // identity/tool scenarios retain their separate consent requirements.
+        return;
       }
       if (vault) {
         await tester.ensureVisible(find.byKey(const Key('open-utilities')));

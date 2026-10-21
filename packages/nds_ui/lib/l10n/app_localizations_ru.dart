@@ -529,7 +529,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get publishDeviceState =>
-      'Отправить состояние устройства и NDS-сессии';
+      'Отправить состояние устройства, сессии и модулей';
+
+  @override
+  String get stateObserved => 'Время наблюдения';
+
+  @override
+  String get stateChecked => 'Последняя проверка';
 
   @override
   String get publishModuleState => 'Отправить наблюдаемое состояние модулей';

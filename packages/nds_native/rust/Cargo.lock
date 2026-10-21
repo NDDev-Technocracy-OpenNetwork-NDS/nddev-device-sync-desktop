@@ -3780,7 +3780,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-accounts"
 version = "0.0.1-alpha.24"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts?rev=6265fcfa15180664c2621c284a261fcee6f14847#6265fcfa15180664c2621c284a261fcee6f14847"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts?rev=4cf77c7ba9a8091d8981bb24c98e1d9bffcb08dc#4cf77c7ba9a8091d8981bb24c98e1d9bffcb08dc"
 dependencies = [
  "android-native-keyring-store",
  "apple-native-keyring-store",
@@ -3850,7 +3850,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-agent"
 version = "0.0.1-alpha.8"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent?rev=6361f551dd1bfdecc1cc772ced1275d159316621#6361f551dd1bfdecc1cc772ced1275d159316621"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent?rev=31cd4f40f307e0439012f6f280a031398082d7a3#31cd4f40f307e0439012f6f280a031398082d7a3"
 dependencies = [
  "base16ct",
  "nddev-device-sync-adapter-io",
@@ -3887,7 +3887,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-clipboard"
 version = "0.0.1-alpha.7"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-clipboard?rev=481f2716921b9022074d36d3d3243549bf2ddbad#481f2716921b9022074d36d3d3243549bf2ddbad"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-clipboard?rev=c6f7907a2c0e8ec7b10b02de3033a48a73343f44#c6f7907a2c0e8ec7b10b02de3033a48a73343f44"
 dependencies = [
  "arboard",
  "jni 0.21.1",
@@ -3955,7 +3955,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-organizations"
 version = "0.0.1-alpha.1"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations?rev=63f4ae956cbc8a54e786c2abb992f131c9bf5005#63f4ae956cbc8a54e786c2abb992f131c9bf5005"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations?rev=8954a4997c1aae4643a021b7acd2b111ba01f2a6#8954a4997c1aae4643a021b7acd2b111ba01f2a6"
 dependencies = [
  "nddev-device-sync-accounts",
  "nddev-device-sync-domain",
@@ -4042,7 +4042,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-vault"
 version = "0.0.1-alpha.11"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault?rev=badf1a72fef8ecbaf64a6cd997c8db22579d7e2c#badf1a72fef8ecbaf64a6cd997c8db22579d7e2c"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault?rev=0bfc5d7c7491752184427200ddb19899f3584506#0bfc5d7c7491752184427200ddb19899f3584506"
 dependencies = [
  "base16ct",
  "base64 0.23.1",
@@ -5591,9 +5591,9 @@ checksum = "eec689c0bc40ff2458a5977b6619cb718087084a18e02a131c599b62d05e1a5f"
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.15"
+version = "0.103.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3c3cf1d8b1e7d4927e2d154c3fcb02979afb9939629c62cd9048d4f07b60ac2"
+checksum = "4443b1b6d39d7c663139942cc4558262562d2c84123bb6282ef177009ca8b281"
 dependencies = [
  "ring",
  "rustls-pki-types",
@@ -6895,18 +6895,18 @@ dependencies = [
 
 [[package]]
 name = "webpki-root-certs"
-version = "1.0.9"
+version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b96554aa2acc8ccdb7e1c9a58a7a68dd5d13bccc69cd124cb09406db612a1c9b"
+checksum = "58ec80e73fd8baf57bf0d9615554c75348bda990d6d5bbeab964dd068319fecb"
 dependencies = [
  "rustls-pki-types",
 ]
 
 [[package]]
 name = "webpki-roots"
-version = "1.0.9"
+version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dcd9d09a39985f5344844e66b0c530a33843579125f23e21e9f0f220850f22a"
+checksum = "1c1c8e20c8a38fc7d65abfe74eb7280e4aa667e8eec8bc84996d2874810748d9"
 dependencies = [
  "rustls-pki-types",
 ]

@@ -209,7 +209,9 @@
     }
   },
   "syncedState": "Synced device and module state",
-  "publishDeviceState": "Publish this device and NDS session",
+  "publishDeviceState": "Publish device, session and module state",
+  "stateObserved": "Observed at",
+  "stateChecked": "Last checked",
   "publishModuleState": "Publish observed module state",
   "stateHelp": "These are encrypted observations from signed devices. Their timestamps describe when they were observed, not current reachability. Sync does not execute tools on another device.",
   "statePublishError": "State could not be synchronized. Check the session, device and vault connection.",

@@ -151,9 +151,15 @@ unknown operation waits for its actual outcome. A conflicted scope is captured
 before restarting the first page; its decision is made only from the genuine
 terminal traversal summary. Changed scope proof restarts the traversal while
 preserving saved observations. Conflicts remain visible until Applied receipts.
-Traversal selection/cursors are currently process-local; restart-safe automatic
-traversal/cadence and Git materialization/autosync remain incomplete. End-to-end
-provider/client acceptance remains separate.
+The explicit GitHub choice is encrypted owner-wide intent, restored when the
+repository screen opens. It does not grant device consent or provider access.
+Reads and durable publications retain the original saved source, selected
+credential and this installation's consent; changing one rejects old work.
+Source-setting conflicts remain blocked. Traversal cursors are process-local;
+restart-safe automatic traversal/cadence and Git materialization/autosync remain
+incomplete. End-to-end provider/client acceptance remains separate. Owned UI
+acceptance uses `identity-acceptance.py --vault --catalog-source` with a fresh
+`--fixture-sync3` fixture.
 
 Screen requests and viewing use the shared Rust owner, Accounts authorization
 and Core contracts. The current viewer backend is Linux X11; other targets

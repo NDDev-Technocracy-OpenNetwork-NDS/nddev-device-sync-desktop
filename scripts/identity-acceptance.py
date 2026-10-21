@@ -24,11 +24,14 @@ parser.add_argument("--isolated-android", action="store_true",
                     help="Use a unique test applicationId on an explicitly selected Android device")
 parser.add_argument("--company", action="store_true", help="Exercise company invitation and revocation through the real UI")
 parser.add_argument("--vault", action="store_true", help="Exercise real native vault creation and encrypted sync")
+parser.add_argument("--catalog-source", action="store_true", help="Also qualify saved GitHub choice through the real UI (requires --vault and --fixture-sync3)")
 parser.add_argument("--modules", action="store_true", help="Qualify Android module consent across online/offline app processes")
 parser.add_argument("--offline-pub", action="store_true", help="Resolve temporary test dependencies from a prewarmed cache; retain lockfile verification")
 parser.add_argument("--sync-role", choices=["owner", "recipient"])
 parser.add_argument("--resume", action="store_true", help="Verify a retained desktop session after another device changed the server")
 args = parser.parse_args()
+if args.catalog_source and (not args.vault or args.cold_restart or args.resume or args.modules or args.company or args.sync_role):
+    parser.error("Catalog source acceptance requires a standalone --vault setup without other scenarios")
 app = args.app.resolve()
 app_id = None
 gradle_path = app / "android/app/build.gradle.kts"
@@ -137,6 +140,8 @@ try:
         command.append("--dart-define=NDS_TEST_COMPANY=true")
     if args.vault:
         command.append("--dart-define=NDS_TEST_VAULT=true")
+    if args.catalog_source:
+        command.append("--dart-define=NDS_TEST_CATALOG_SOURCE=true")
     if args.sync_role:
         command.append("--dart-define=NDS_TEST_SYNC_ROLE=" + args.sync_role)
     environment = os.environ.copy()

@@ -42,6 +42,11 @@ abstract class NdsClient implements RustOpaqueInterface {
 
   void cancelGithubCatalog();
 
+  Future<void> clearGithubCatalogSource({
+    required String expectedRevision,
+    String? expectedPending,
+  });
+
   Future<void> clipboardCopy({String? ticket});
 
   Future<String> clipboardPublishArchive({
@@ -92,6 +97,8 @@ abstract class NdsClient implements RustOpaqueInterface {
   Future<GithubCredentialReferencePage> githubCatalogCredentials({
     required String after,
   });
+
+  Future<GithubSourceView> githubCatalogSource();
 
   Future<GithubRepositoryPageView> githubRepositoryPage({
     required bool nextPage,
@@ -166,10 +173,12 @@ abstract class NdsClient implements RustOpaqueInterface {
   /// and the target endpoint; registration is never capture consent or presence.
   Future<List<ScreenTargetView>> screenTargets({required String user});
 
-  void selectGithubCredential({
+  Future<void> selectGithubCredential({
     required String recordRef,
     required String revision,
     String? pendingId,
+    required String expectedSourceRevision,
+    String? expectedSourcePending,
   });
 
   void setLifecycle({required ClientLifecycle state});

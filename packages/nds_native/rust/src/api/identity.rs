@@ -1021,7 +1021,7 @@ impl NdsClient {
             self.inner
                 .refresh_devices()
                 .await
-                .map_err(|_| VaultError::Unavailable)?;
+                .map_err(replica_auth_error)?;
             let modules = self
                 .module_observations()
                 .await

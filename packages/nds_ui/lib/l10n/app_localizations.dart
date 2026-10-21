@@ -1036,8 +1036,20 @@ abstract class AppLocalizations {
   /// No description provided for @publishDeviceState.
   ///
   /// In en, this message translates to:
-  /// **'Publish this device and NDS session'**
+  /// **'Publish device, session and module state'**
   String get publishDeviceState;
+
+  /// No description provided for @stateObserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed at'**
+  String get stateObserved;
+
+  /// No description provided for @stateChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Last checked'**
+  String get stateChecked;
 
   /// No description provided for @publishModuleState.
   ///

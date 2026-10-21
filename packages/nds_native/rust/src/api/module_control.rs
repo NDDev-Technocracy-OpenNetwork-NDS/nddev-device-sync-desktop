@@ -412,6 +412,14 @@ impl NdsClient {
         observe("agent", "module.readiness.read", self.read_device_modules()).await
     }
     async fn read_device_modules(&self) -> Result<Vec<DeviceModuleView>, ClientError> {
+        self.read_module_state().await.map(|(views, _)| views)
+    }
+    pub(super) async fn module_observations(&self) -> Result<Vec<ModuleObservation>, ClientError> {
+        self.read_module_state().await.map(|(_, values)| values)
+    }
+    async fn read_module_state(
+        &self,
+    ) -> Result<(Vec<DeviceModuleView>, Vec<ModuleObservation>), ClientError> {
         let vault = self.vault().await.map_err(vault_error)?;
         let identity = self.shared_identity();
         let fence = identity.local_use_fence().await?;
@@ -419,6 +427,7 @@ impl NdsClient {
         let graph =
             nddev_device_sync_agent::module_graph().map_err(|_| ClientError::InvalidResponse)?;
         let mut result = Vec::new();
+        let mut observations = Vec::new();
         for descriptor in graph.iter() {
             let id = descriptor.id.as_str();
             let setting = vault.module_configuration(id).await.map_err(vault_error)?;
@@ -481,6 +490,14 @@ impl NdsClient {
             })
             .max_by_key(|(_, _, _, value)| value.and_then(|v| v.observed_at_ms));
             let observation = admitted.and_then(|(_, _, _, value)| value);
+            observations.push(observation.cloned().unwrap_or_else(|| ModuleObservation {
+                id: id.into(),
+                version: descriptor.version.clone(),
+                configured: installed.unwrap_or(false),
+                reachability: Reachability::NotChecked,
+                observed_at_ms: None,
+                error: None,
+            }));
             let readiness = if setting.conflicted {
                 "conflicted".into()
             } else {
@@ -520,7 +537,7 @@ impl NdsClient {
             });
         }
         identity.validate_local_use(&fence).await?;
-        Ok(result)
+        Ok((result, observations))
     }
     pub async fn configure_module(
         &self,

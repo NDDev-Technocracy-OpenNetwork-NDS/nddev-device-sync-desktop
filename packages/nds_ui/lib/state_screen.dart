@@ -158,7 +158,9 @@ class _StateScreenState extends State<StateScreen> {
                           if (item.platform.isNotEmpty) Text(item.platform),
                           if (item.version.isNotEmpty) Text(item.version),
                           Text('${l.stateDevice}: ${item.deviceId}'),
-                          Text('${l.verified}: ${_date(item.observedAtMs)}'),
+                          Text(
+                            '${l.stateObserved}: ${_date(item.observedAtMs)}',
+                          ),
                           if (item.kind == 'module_state')
                             Text(
                               !item.configured
@@ -178,7 +180,9 @@ class _StateScreenState extends State<StateScreen> {
                               Text(modulePermissionLabel(l, permission)),
                           ],
                           if (item.checkedAtMs != BigInt.zero)
-                            Text('${l.lastRun}: ${_date(item.checkedAtMs)}'),
+                            Text(
+                              '${l.stateChecked}: ${_date(item.checkedAtMs)}',
+                            ),
                           if (item.expiresAtMs != BigInt.zero)
                             Text('${l.expires}: ${_date(item.expiresAtMs)}'),
                           Text(l.vaultRevision(item.revision.toString())),

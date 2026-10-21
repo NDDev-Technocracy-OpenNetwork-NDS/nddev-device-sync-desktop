@@ -142,6 +142,19 @@ void main() {
           .singleWhere((module) => module.id == 'clipboard');
       expect(observed.readiness, 'ready');
       expect(observed.checkedAtMs, isNotNull);
+      await settled(client.publishDeviceState);
+      await drained(client);
+      final states = await settled(() => client.syncStates(after: ''));
+      final published = states.items.singleWhere(
+        (value) =>
+            value.kind == 'module_state' &&
+            value.id == '${client.snapshot().currentDeviceId}:clipboard',
+      );
+      expect(published.configured, isTrue);
+      expect(published.reachability, 'reachable');
+      expect(published.checkedAtMs, observed.checkedAtMs);
+      expect(published.revision, greaterThan(BigInt.zero));
+      expect(published.pendingId, isNull);
       if (phase == 'restore') {
         await controls.configure(tester, enabled: false, permissions: []);
         await denied(client, 'module_disabled');
@@ -153,6 +166,26 @@ void main() {
     expect(diagnostics.writeFailures, BigInt.zero);
     expect(diagnostics.droppedEvents, BigInt.zero);
     expect(diagnostics.rejectedFieldsOrEvents, BigInt.zero);
+    if (phase != 'offline' &&
+        client.deliverySnapshot().policy == native.ExportPolicy.enabled) {
+      // The supervisor deliberately replaces this process between phases.
+      // Wait for the actual sender before discarding its native RAM queues.
+      final deadline = DateTime.now().add(const Duration(seconds: 30));
+      while (true) {
+        final delivery = client.deliverySnapshot();
+        expect(delivery.dropped, BigInt.zero);
+        expect(delivery.spansDropped, BigInt.zero);
+        if (delivery.pending == 0 && delivery.spansPending == 0) {
+          expect(delivery.delivered, greaterThan(BigInt.zero));
+          expect(delivery.spansDelivered, greaterThan(BigInt.zero));
+          break;
+        }
+        if (DateTime.now().isAfter(deadline)) {
+          throw StateError('Module telemetry was not acknowledged before exit');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      }
+    }
     expect(tester.takeException(), isNull);
     debugPrint('NDS_ANDROID_MODULE_PHASE_PASS phase=$phase');
   }, timeout: const Timeout(Duration(minutes: 3)));

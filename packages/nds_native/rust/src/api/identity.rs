@@ -995,19 +995,16 @@ impl NdsClient {
         .await
     }
     pub async fn publish_device_state(&self) -> Result<VaultView, VaultError> {
-        self.publish_state_inner(Vec::new()).await
+        self.publish_state_inner().await
     }
     pub async fn publish_local_state(
         &self,
         agent: &super::modules::LocalAgent,
     ) -> Result<VaultView, VaultError> {
-        self.publish_state_inner(agent.modules().map_err(|_| VaultError::Unavailable)?)
-            .await
+        agent.check_client(self).map_err(|_| VaultError::Locked)?;
+        self.publish_state_inner().await
     }
-    async fn publish_state_inner(
-        &self,
-        modules: Vec<nddev_device_sync_domain::modules::ModuleObservation>,
-    ) -> Result<VaultView, VaultError> {
+    async fn publish_state_inner(&self) -> Result<VaultView, VaultError> {
         use nddev_device_sync_domain::state::Snapshot;
         let schedule = self.schedule();
         let mut attempted = false;
@@ -1024,7 +1021,11 @@ impl NdsClient {
             self.inner
                 .refresh_devices()
                 .await
-                .map_err(|_| VaultError::Unavailable)?;
+                .map_err(replica_auth_error)?;
+            let modules = self
+                .module_observations()
+                .await
+                .map_err(replica_auth_error)?;
             let mut values = device_observations(&self.inner, env!("CARGO_PKG_VERSION"))?;
             let observed_at_ms = values[0].observed_at_ms;
             let capture = |data| Snapshot {
@@ -1386,6 +1387,39 @@ mod activity_tests {
     use super::*;
     use nddev_device_sync_application::replica::CapacityProbeOutcome;
     use nddev_device_sync_vault::replication::recovered_policy;
+
+    #[tokio::test]
+    async fn module_publication_rejects_foreign_and_cancelled_agent_before_capacity_preflight() {
+        let client = NdsClient::new("https://example.invalid".into()).unwrap();
+        let other = NdsClient::new("https://example.invalid".into()).unwrap();
+        let agent = super::super::modules::LocalAgent::discover(
+            Arc::downgrade(&client.module_control),
+            client.inner.local_use_lifetime(),
+        )
+        .await
+        .unwrap();
+        for owner in [&client, &other] {
+            owner
+                .schedule()
+                .lock()
+                .unwrap()
+                .after(BatchOutcome::CapacityExhausted);
+        }
+        assert!(matches!(
+            client.publish_local_state(&agent).await,
+            Err(VaultError::CapacityExhausted)
+        ));
+        assert!(matches!(
+            other.publish_local_state(&agent).await,
+            Err(VaultError::Locked)
+        ));
+        client.cancel();
+        assert!(matches!(
+            client.publish_local_state(&agent).await,
+            Err(VaultError::Locked)
+        ));
+        agent.close();
+    }
 
     impl NdsClient {
         fn capacity_blocked(&self) -> bool {

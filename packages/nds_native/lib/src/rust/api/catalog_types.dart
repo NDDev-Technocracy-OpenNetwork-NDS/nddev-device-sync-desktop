@@ -326,3 +326,39 @@ class GithubSavedRepositoryView {
           repository == other.repository &&
           observation == other.observation;
 }
+
+/// Saved owner intent, not provider access or this device's consent.
+class GithubSourceView {
+  final GithubCredentialReference? credential;
+  final String revision;
+  final String? pendingId;
+  final String localRevision;
+  final bool conflicted;
+
+  const GithubSourceView({
+    this.credential,
+    required this.revision,
+    this.pendingId,
+    required this.localRevision,
+    required this.conflicted,
+  });
+
+  @override
+  int get hashCode =>
+      credential.hashCode ^
+      revision.hashCode ^
+      pendingId.hashCode ^
+      localRevision.hashCode ^
+      conflicted.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GithubSourceView &&
+          runtimeType == other.runtimeType &&
+          credential == other.credential &&
+          revision == other.revision &&
+          pendingId == other.pendingId &&
+          localRevision == other.localRevision &&
+          conflicted == other.conflicted;
+}

@@ -17,6 +17,7 @@ void main() {
   const mailbox = String.fromEnvironment('NDS_TEST_MAILPIT');
   const owner = String.fromEnvironment('NDS_TEST_OWNER');
   const vault = bool.fromEnvironment('NDS_TEST_VAULT');
+  const catalogSource = bool.fromEnvironment('NDS_TEST_CATALOG_SOURCE');
   const company = bool.fromEnvironment('NDS_TEST_COMPANY');
   const screenPeer = String.fromEnvironment('NDS_TEST_SCREEN_PEER');
   const screenHandoff = String.fromEnvironment('NDS_TEST_SCREEN_HANDOFF');
@@ -26,7 +27,9 @@ void main() {
   );
 
   testWidgets(
-    'actual identity, device enrollment, native restore and revocation',
+    catalogSource
+        ? 'actual saved GitHub choice, screen recreation and encrypted convergence'
+        : 'actual identity, device enrollment, native restore and revocation',
     (tester) async {
       expect(Uri.parse(server).host, '127.0.0.1');
       expect(Uri.parse(mailbox).host, '127.0.0.1');
@@ -357,13 +360,19 @@ void main() {
             ),
           );
           await tester.tap(find.byKey(const Key('publish-local-state')));
-          await waitFor(tester, find.text('Pending: 0 · Conflicts: 0'));
+          await waitFor(
+            tester,
+            find.text('Local states queued for synchronization.'),
+          );
           await tester.tap(find.text('NDS session'));
           await tester.pumpAndSettle();
           await tester.ensureVisible(find.byKey(const Key('open-vault')));
           await tester.pumpAndSettle();
           await tester.tap(find.byKey(const Key('open-vault')));
           await waitFor(tester, find.byKey(const Key('open-synced-state')));
+          // The module action acknowledges its local queue. Actual convergence
+          // is observed separately through the live Rust-owned Vault view.
+          await waitFor(tester, find.text('Pending: 0 · Conflicts: 0'));
           await tester.ensureVisible(
             find.byKey(const Key('open-synced-state')),
           );
@@ -376,6 +385,67 @@ void main() {
           await tester.pageBack();
           await tester.pumpAndSettle();
         }
+      }
+      if (catalogSource) {
+        final picker = find.byType(DropdownButtonFormField<String>);
+        final readyPicker = find.byWidgetPredicate(
+          (widget) =>
+              widget is DropdownButtonFormField<String> &&
+              widget.onChanged != null,
+        );
+        for (var opening = 0; opening < 2; opening++) {
+          await modules.tapVisible(
+            tester,
+            find.byKey(const Key('open-github-catalog')),
+          );
+          await modules.tapVisible(
+            tester,
+            find.byKey(const Key('catalog-mode-provider')),
+          );
+          await waitFor(tester, readyPicker);
+          if (opening == 0) {
+            expect(
+              tester
+                  .widget<DropdownButtonFormField<String>>(picker)
+                  .initialValue,
+              isNull,
+            );
+            await tester.tap(picker);
+            await tester.pumpAndSettle();
+            await tester.tap(find.text('UI encrypted record').last);
+            await waitFor(
+              tester,
+              find.byKey(const Key('catalog-source-clear')),
+            );
+          }
+          await waitFor(tester, readyPicker);
+          expect(
+            tester.widget<DropdownButtonFormField<String>>(picker).initialValue,
+            isNotNull,
+          );
+          expect(find.text('PRIVATE_UI_VAULT_VALUE'), findsNothing);
+          if (opening == 1) {
+            await modules.tapVisible(
+              tester,
+              find.byKey(const Key('catalog-source-clear')),
+            );
+            await waitFor(tester, readyPicker);
+            expect(
+              tester
+                  .widget<DropdownButtonFormField<String>>(picker)
+                  .initialValue,
+              isNull,
+            );
+            expect(find.byKey(const Key('catalog-source-clear')), findsNothing);
+          }
+          await tester.pageBack();
+          await tester.pumpAndSettle();
+        }
+        await modules.tapVisible(tester, find.byKey(const Key('open-vault')));
+        await waitFor(tester, find.text('Pending: 0 · Conflicts: 0'));
+        // This explicit scenario owns source selection and convergence. General
+        // identity/tool scenarios retain their separate consent requirements.
+        return;
       }
       if (vault) {
         await tester.ensureVisible(find.byKey(const Key('open-utilities')));

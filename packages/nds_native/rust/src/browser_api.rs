@@ -3,7 +3,7 @@
 use crate::api::{
     catalog_types::{
         GithubCatalogError, GithubCredentialReferencePage, GithubRepositoryPageView,
-        GithubSavedRepositoryPageView,
+        GithubSavedRepositoryPageView, GithubSourceView,
     },
     identity::{IncidentPage, IncidentView, NdsClient},
     module_control::DeviceModuleView,
@@ -241,14 +241,41 @@ impl BrowserClient {
     pub fn cancel_github_catalog(&self) {
         self.inner.cancel_github_catalog();
     }
-    pub fn select_github_credential(
+    pub async fn github_catalog_source(&self) -> Result<Ts<GithubSourceView>, JsError> {
+        present(
+            self.inner
+                .github_catalog_source()
+                .await
+                .map_err(catalog_error)?,
+        )
+    }
+    pub async fn clear_github_catalog_source(
+        &self,
+        expected_revision: String,
+        expected_pending: Option<String>,
+    ) -> Result<(), JsError> {
+        self.inner
+            .clear_github_catalog_source(expected_revision, expected_pending)
+            .await
+            .map_err(catalog_error)
+    }
+    pub async fn select_github_credential(
         &self,
         record_ref: String,
         revision: String,
         pending_id: Option<String>,
+        expected_source_revision: String,
+        expected_source_pending: Option<String>,
     ) -> Result<(), JsError> {
         self.inner
-            .select_github_credential(record_ref, revision, pending_id)
+            .select_github_credential(
+                record_ref,
+                revision,
+                pending_id,
+                expected_source_revision,
+                expected_source_pending,
+            )
+            .await
             .map_err(catalog_error)
     }
     pub async fn github_catalog_credentials(

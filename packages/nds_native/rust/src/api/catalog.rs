@@ -29,6 +29,7 @@ use reconciliation::{ResolutionBatch, ScopeResolution};
 #[cfg_attr(feature = "flutter", frb(ignore))]
 pub(crate) struct CatalogState {
     selection: Option<CredentialSelection>,
+    source_operation: Option<String>,
     cursor: Option<CatalogCursor>,
     fence: Option<Arc<LocalUseFence>>,
     scan_id: Option<String>,
@@ -46,6 +47,7 @@ impl Default for CatalogState {
     fn default() -> Self {
         Self {
             selection: None,
+            source_operation: None,
             cursor: None,
             fence: None,
             scan_id: None,
@@ -67,6 +69,14 @@ impl CatalogState {
             flight.cancel();
         }
         self.lifetime = Arc::new(CancellationToken::new());
+        self.clear_pages();
+        if clear_selection {
+            self.selection = None;
+            self.source_operation = None;
+        }
+        // The admitted future retains the flight until it has actually ended.
+    }
+    fn clear_pages(&mut self) {
         self.cursor = None;
         self.fence = None;
         self.scan_id = None;
@@ -76,10 +86,6 @@ impl CatalogState {
         self.restart = false;
         self.saved_cursor = None;
         self.saved_fence = None;
-        if clear_selection {
-            self.selection = None;
-        }
-        // The admitted future retains the flight until it has actually ended.
     }
     fn request_next(&self, next: bool) -> bool {
         next && !self.restart
@@ -143,6 +149,7 @@ struct CatalogUseGuard {
     identity: Arc<IdentityClient>,
     vault: Arc<VaultClient>,
     selection: CredentialSelection,
+    read: Arc<RepositoryRead>,
     fence: Arc<LocalUseFence>,
     cancellation: Arc<CancellationToken>,
     lifetime: Arc<CancellationToken>,
@@ -163,7 +170,7 @@ impl CatalogUseGuard {
         self.check()?;
         self.identity.validate_local_use(&self.fence).await?;
         self.check()?;
-        self.vault.ensure_record_current(&self.selection).await?;
+        self.vault.validate_repository_read(&self.read).await?;
         self.check()?;
         self.identity.validate_local_use(&self.fence).await?;
         self.check()
@@ -324,6 +331,15 @@ fn caller_error(error: &GithubCatalogError) -> (String, &'static str, bool) {
     };
     (class.into(), outcome, failure)
 }
+fn catalog_revision(text: &str) -> Result<u64, GithubCatalogError> {
+    let value = text
+        .parse::<u64>()
+        .map_err(|_| GithubCatalogError::InvalidInput)?;
+    if value.to_string() != text || value > nddev_device_sync_domain::sync::MAX_REVISION {
+        return Err(GithubCatalogError::InvalidInput);
+    }
+    Ok(value)
+}
 
 impl NdsClient {
     fn catalog_flight(&self) -> Result<Flight<'_>, GithubCatalogError> {
@@ -346,23 +362,97 @@ impl NdsClient {
             .unwrap_or_else(|e| e.into_inner())
             .invalidate(false);
     }
-    #[cfg_attr(feature = "flutter", frb(sync))]
-    pub fn select_github_credential(
+    pub async fn github_catalog_source(&self) -> Result<GithubSourceView, GithubCatalogError> {
+        super::identity::observe_operation(
+            "gds",
+            "gds.catalog.source.read",
+            async {
+                let source = self.vault().await?.github_source().await?;
+                Ok(GithubSourceView {
+                    credential: source.selection.map(|selection| GithubCredentialReference {
+                        record_ref: selection.record_ref().into(),
+                        title: String::new(),
+                        username: String::new(),
+                        revision: selection.revision().to_string(),
+                        pending_id: selection.pending_id().map(Into::into),
+                    }),
+                    revision: source.revision.to_string(),
+                    pending_id: source.pending_id,
+                    local_revision: source.local_revision.to_string(),
+                    conflicted: source.conflicted,
+                })
+            },
+            GithubCatalogError::Unavailable,
+            caller_error,
+        )
+        .await
+    }
+    pub async fn select_github_credential(
         &self,
         record_ref: String,
         revision: String,
         pending_id: Option<String>,
+        expected_source_revision: String,
+        expected_source_pending: Option<String>,
     ) -> Result<(), GithubCatalogError> {
-        let parsed = revision
-            .parse::<u64>()
-            .map_err(|_| GithubCatalogError::InvalidInput)?;
-        if parsed.to_string() != revision {
-            return Err(GithubCatalogError::InvalidInput);
+        let selection =
+            CredentialSelection::new(record_ref, catalog_revision(&revision)?, pending_id)?;
+        self.set_catalog_source(
+            Some(selection),
+            expected_source_revision,
+            expected_source_pending,
+        )
+        .await
+    }
+    pub async fn clear_github_catalog_source(
+        &self,
+        expected_revision: String,
+        expected_pending: Option<String>,
+    ) -> Result<(), GithubCatalogError> {
+        self.set_catalog_source(None, expected_revision, expected_pending)
+            .await
+    }
+    #[cfg_attr(feature = "flutter", frb(ignore))]
+    async fn set_catalog_source(
+        &self,
+        selection: Option<CredentialSelection>,
+        revision: String,
+        pending: Option<String>,
+    ) -> Result<(), GithubCatalogError> {
+        super::identity::observe_operation(
+            "gds",
+            "gds.catalog.source.write",
+            async {
+                let revision = catalog_revision(&revision)?;
+                self.invalidate_catalog();
+                self.vault()
+                    .await?
+                    .set_github_source(selection, revision, pending)
+                    .await?;
+                self.wake_replica();
+                Ok(())
+            },
+            GithubCatalogError::Unavailable,
+            caller_error,
+        )
+        .await
+    }
+    #[cfg_attr(feature = "flutter", frb(ignore))]
+    async fn restore_catalog_source(&self, flight: &Flight<'_>) -> Result<(), GithubCatalogError> {
+        let source = self.vault().await?.github_source().await?;
+        flight.check()?;
+        if source.conflicted {
+            return Err(GithubCatalogError::Busy);
         }
-        let selection = CredentialSelection::new(record_ref, parsed, pending_id)?;
         let mut state = self.catalog.lock().unwrap_or_else(|e| e.into_inner());
-        state.invalidate(true);
-        state.selection = Some(selection);
+        flight.check()?;
+        if source.selection != state.selection || source.operation_id != state.source_operation {
+            // This caller already owns admission and its original cancellation
+            // lifetime. Updating metadata must not create a new caller grant.
+            state.clear_pages();
+            state.selection = source.selection;
+            state.source_operation = source.operation_id;
+        }
         Ok(())
     }
     pub async fn github_catalog_credentials(
@@ -401,7 +491,7 @@ impl NdsClient {
         next_page: bool,
     ) -> Result<Arc<PendingPage>, GithubCatalogError> {
         let mut next_page = next_page;
-        let (selection, after, prior_fence, scan_id) = {
+        let (selection, after, prior_fence, scan_id, source_operation) = {
             let mut state = self.catalog.lock().unwrap_or_else(|e| e.into_inner());
             if state
                 .pending
@@ -444,6 +534,10 @@ impl NdsClient {
                         .scan_id
                         .clone()
                         .ok_or(GithubCatalogError::InvalidInput)?,
+                    state
+                        .source_operation
+                        .clone()
+                        .ok_or(GithubCatalogError::CredentialChanged)?,
                 )
             } else {
                 state.cursor = None;
@@ -451,7 +545,16 @@ impl NdsClient {
                 state.scan_id = None;
                 state.traversal = None;
                 state.scope_resolution = None;
-                (selection, None, None, uuid::Uuid::new_v4().to_string())
+                (
+                    selection,
+                    None,
+                    None,
+                    uuid::Uuid::new_v4().to_string(),
+                    state
+                        .source_operation
+                        .clone()
+                        .ok_or(GithubCatalogError::CredentialChanged)?,
+                )
             }
         };
         let module = Arc::new(self.module_access("gds", Adapter::Shared).await?);
@@ -466,14 +569,19 @@ impl NdsClient {
         // cancellation. Capture this original lifetime before provider I/O.
         let read = Arc::new(
             vault
-                .capture_repository_observations(
-                    selection.clone(),
+                .capture_configured_repository_observations(
+                    &super::module_control::shared_permissions("gds")
+                        .ok_or(GithubCatalogError::Unavailable)?,
+                    &source_operation,
                     fence.clone(),
                     cancellation.as_ref().clone(),
                 )
                 .await?,
         );
         flight.check()?;
+        if read.selection() != &selection {
+            return Err(GithubCatalogError::CredentialChanged);
+        }
         if read.writer_mode() != Some(nddev_device_sync_application::replica::WriterMode::V3) {
             return Err(GithubCatalogError::Unavailable);
         }
@@ -483,6 +591,7 @@ impl NdsClient {
                 identity: self.shared_identity().clone(),
                 vault,
                 selection: selection.clone(),
+                read: read.clone(),
                 fence: fence.clone(),
                 cancellation,
                 lifetime: flight.lifetime.clone(),
@@ -831,7 +940,13 @@ impl NdsClient {
             "gds",
             "gds.catalog.page.read",
             async {
+                if !self.catalog_active() {
+                    return Err(GithubCatalogError::Cancelled);
+                }
                 let flight = self.catalog_flight()?;
+                if !next_page {
+                    self.restore_catalog_source(&flight).await?;
+                }
                 // Refuse an obsolete continuation before timers or protected I/O.
                 // Keep an unfinished first page if a caller asks for next early.
                 let next_page = {
@@ -941,23 +1056,20 @@ mod tests {
             panic!("cursor required")
         };
         let first = NdsClient::new("https://catalog-fixture.invalid".into()).unwrap();
-        first
-            .select_github_credential("record".into(), "7".into(), None)
-            .unwrap();
+        first.catalog.lock().unwrap().selection =
+            Some(CredentialSelection::new("record".into(), 7, None).unwrap());
         first.catalog.lock().unwrap().cursor = Some(cursor);
         first.invalidate_catalog(); // The actual session-reset callers use this boundary.
         assert!(first.catalog.lock().unwrap().cursor.is_none());
-        first
-            .select_github_credential("record".into(), "7".into(), None)
-            .unwrap();
+        first.catalog.lock().unwrap().selection =
+            Some(CredentialSelection::new("record".into(), 7, None).unwrap());
         assert!(matches!(
             immediate(first.github_repository_page(true)),
             Err(GithubCatalogError::InvalidInput)
         ));
         let second = NdsClient::new("https://catalog-fixture.invalid".into()).unwrap();
-        second
-            .select_github_credential("record".into(), "7".into(), None)
-            .unwrap();
+        second.catalog.lock().unwrap().selection =
+            Some(CredentialSelection::new("record".into(), 7, None).unwrap());
         assert!(matches!(
             immediate(second.github_repository_page(true)),
             Err(GithubCatalogError::InvalidInput)

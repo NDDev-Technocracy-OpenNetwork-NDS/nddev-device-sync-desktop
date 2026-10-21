@@ -240,6 +240,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GitStatus dco_decode_box_autoadd_git_status(dynamic raw);
 
   @protected
+  GithubCredentialReference dco_decode_box_autoadd_github_credential_reference(
+    dynamic raw,
+  );
+
+  @protected
   GithubSavedOwnerView dco_decode_box_autoadd_github_saved_owner_view(
     dynamic raw,
   );
@@ -392,6 +397,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  GithubSourceView dco_decode_github_source_view(dynamic raw);
+
+  @protected
   Gpu dco_decode_gpu(dynamic raw);
 
   @protected
@@ -522,6 +530,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   GitStatus? dco_decode_opt_box_autoadd_git_status(dynamic raw);
+
+  @protected
+  GithubCredentialReference?
+  dco_decode_opt_box_autoadd_github_credential_reference(dynamic raw);
 
   @protected
   GithubSavedOwnerView? dco_decode_opt_box_autoadd_github_saved_owner_view(
@@ -831,6 +843,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GitStatus sse_decode_box_autoadd_git_status(SseDeserializer deserializer);
 
   @protected
+  GithubCredentialReference sse_decode_box_autoadd_github_credential_reference(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   GithubSavedOwnerView sse_decode_box_autoadd_github_saved_owner_view(
     SseDeserializer deserializer,
   );
@@ -999,6 +1016,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  GithubSourceView sse_decode_github_source_view(SseDeserializer deserializer);
+
+  @protected
   Gpu sse_decode_gpu(SseDeserializer deserializer);
 
   @protected
@@ -1147,6 +1167,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   GitStatus? sse_decode_opt_box_autoadd_git_status(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GithubCredentialReference?
+  sse_decode_opt_box_autoadd_github_credential_reference(
     SseDeserializer deserializer,
   );
 
@@ -1501,6 +1527,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_github_credential_reference(
+    GithubCredentialReference self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_github_saved_owner_view(
     GithubSavedOwnerView self,
     SseSerializer serializer,
@@ -1702,6 +1734,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_github_source_view(
+    GithubSourceView self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_gpu(Gpu self, SseSerializer serializer);
 
   @protected
@@ -1888,6 +1926,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_opt_box_autoadd_git_status(
     GitStatus? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_github_credential_reference(
+    GithubCredentialReference? self,
     SseSerializer serializer,
   );
 

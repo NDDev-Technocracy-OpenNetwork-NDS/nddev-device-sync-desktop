@@ -187,7 +187,7 @@ pub(crate) fn vault_error(error: nddev_device_sync_vault::Error) -> ClientError 
         _ => ClientError::Server(error.code()),
     }
 }
-fn shared_permissions(module: &str) -> Option<BTreeSet<Permission>> {
+pub(super) fn shared_permissions(module: &str) -> Option<BTreeSet<Permission>> {
     use Permission::*;
     match module {
         "clipboard" => Some(BTreeSet::from([Clipboard, LocalNetwork])),

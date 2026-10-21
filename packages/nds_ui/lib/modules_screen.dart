@@ -45,29 +45,26 @@ class _ModulesScreenState extends State<ModulesScreen> {
   bool _cancelled = false;
   int _epoch = 0;
   final _repository = TextEditingController();
-  String? _published;
+  bool _published = false;
 
   Future<void> _publish() async {
     final client = widget.client;
     final agent = _agent;
+    final epoch = _epoch;
     if (_busy || client == null || agent == null) return;
     setState(() {
       _busy = true;
       _publishing = true;
-      _published = null;
+      _published = false;
       _error = null;
     });
     try {
-      final view = await client.publishLocalState(agent: agent);
-      if (mounted && widget.client == client) {
-        setState(
-          () =>
-              _published = AppLocalizations.of(context)!
-                  .vaultCounts(view.pending, view.conflicts),
-        );
+      await client.publishLocalState(agent: agent);
+      if (mounted && epoch == _epoch && identical(widget.client, client)) {
+        setState(() => _published = true);
       }
     } catch (error) {
-      if (mounted && widget.client == client) {
+      if (mounted && epoch == _epoch && identical(widget.client, client)) {
         setState(() {
           _error = error == native.VaultError.capacityExhausted
               ? 'sync_capacity_exhausted'
@@ -75,7 +72,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
         });
       }
     } finally {
-      if (mounted) {
+      if (mounted && epoch == _epoch && identical(widget.client, client)) {
         setState(() {
           _publishing = false;
           _busy = false;
@@ -109,6 +106,8 @@ class _ModulesScreenState extends State<ModulesScreen> {
       _modules = [];
       _result = null;
       _error = null;
+      _published = false;
+      _publishing = false;
       _metadataRead = null;
       _discover();
     } else if (!_busy && _metadataError) {
@@ -545,7 +544,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
                       onPressed: _busy || _agent == null ? null : _publish,
                       child: Text(l.publishModuleState),
                     ),
-                    if (_published != null) Text(_published!),
+                    if (_published) Text(l.moduleStateQueued),
                   ],
                   const SizedBox(height: OpenNetworkSpacing.four),
                   if (_modules.isNotEmpty)

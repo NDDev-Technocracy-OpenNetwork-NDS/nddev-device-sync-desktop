@@ -1233,4 +1233,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get moduleReloadDraft => 'Reload settings';
+
+  @override
+  String get catalogSourceHelp =>
+      'This choice is saved and synchronized across your account. Enable GDS permissions separately on each device.';
+
+  @override
+  String get catalogClearSource => 'Clear GitHub choice';
 }

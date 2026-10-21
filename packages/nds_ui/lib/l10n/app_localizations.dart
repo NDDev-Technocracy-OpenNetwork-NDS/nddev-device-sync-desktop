@@ -2249,6 +2249,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reload settings'**
   String get moduleReloadDraft;
+
+  /// No description provided for @catalogSourceHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'This choice is saved and synchronized across your account. Enable GDS permissions separately on each device.'**
+  String get catalogSourceHelp;
+
+  /// No description provided for @catalogClearSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear GitHub choice'**
+  String get catalogClearSource;
 }
 
 class _AppLocalizationsDelegate

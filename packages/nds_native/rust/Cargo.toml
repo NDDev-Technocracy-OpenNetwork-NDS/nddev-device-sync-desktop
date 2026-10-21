@@ -14,7 +14,7 @@ development-http = ["nddev-device-sync-accounts/development-http"]
 [dependencies]
 nddev-device-sync-organizations = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations", rev = "9a9a034974c1c85f8c86012c31069d1a09edae2f" }
 nddev-device-sync-application = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-core.git", rev = "63caf93c1e431c4cbc74414f797ab836083db23e" }
-nddev-device-sync-vault = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault", rev = "acc95b97da2f23c2833164ae6fdb9323a90efe54" }
+nddev-device-sync-vault = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault", rev = "f022c2e900936091eabd9bb2d766ef01cb52caf7" }
 tokio = { version = "1.53", features = ["sync", "rt", "time"] }
 zeroize = "1.8"
 tokio-util = { version = "0.7", features = ["rt"] }

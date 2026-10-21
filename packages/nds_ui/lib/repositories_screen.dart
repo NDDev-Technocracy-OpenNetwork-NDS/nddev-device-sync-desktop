@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -19,6 +20,7 @@ class RepositoriesScreen extends StatefulWidget {
 class _RepositoriesScreenState extends State<RepositoriesScreen> {
   List<native.GithubCredentialReference> _credentials = [];
   native.GithubCredentialReference? _selected;
+  native.GithubSourceView? _source;
   native.GithubRepositoryPageView? _page;
   native.GithubSavedRepositoryPageView? _savedPage;
   bool _savedMode = true;
@@ -62,6 +64,7 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
     _page = null;
     _savedPage = null;
     _selected = null;
+    _source = null;
     _credentials = [];
     _nextCredential = '';
     _moreCredentials = false;
@@ -105,6 +108,29 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
     try {
       await action(epoch);
     } on native.GithubCatalogError catch (error) {
+      if (error == native.GithubCatalogError.busy &&
+          mounted &&
+          epoch == _actionEpoch &&
+          !_paused) {
+        // A receipt may advance source CAS metadata while this screen is open.
+        // Refresh the visible choice before an explicit retry; never retry a write.
+        try {
+          final source = await widget.client.githubCatalogSource();
+          if (mounted && epoch == _actionEpoch && !_paused) {
+            setState(() {
+              _source = source;
+              _selected = source.credential;
+            });
+          }
+        } catch (_) {
+          if (mounted && epoch == _actionEpoch && !_paused) {
+            setState(() {
+              _source = null;
+              _selected = null;
+            });
+          }
+        }
+      }
       if (mounted && epoch == _actionEpoch && !_paused) {
         setState(() {
           _error = error;
@@ -135,11 +161,20 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
   }
 
   Future<void> _loadCredentials({bool next = false}) => _run((epoch) async {
+    final source = await widget.client.githubCatalogSource();
     final result = await widget.client.githubCatalogCredentials(
       after: next ? _nextCredential : '',
     );
     if (!mounted || epoch != _actionEpoch || _paused) return;
     setState(() {
+      _source = source;
+      final selected = source.credential;
+      _selected = selected == null
+          ? null
+          : result.items.firstWhere(
+              (record) => _credentialKey(record) == _credentialKey(selected),
+              orElse: () => selected,
+            );
       _credentials = result.items;
       _credentialsLoaded = true;
       _nextCredential = result.nextAfter;
@@ -147,28 +182,46 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
     });
   });
 
-  void _select(native.GithubCredentialReference record) {
-    _actionEpoch++;
-    setState(() {
-      _page = null;
-      _error = null;
-      _selected = null;
-      _busy = false;
-    });
-    try {
-      widget.client.selectGithubCredential(
-        recordRef: record.recordRef,
-        revision: record.revision,
-        pendingId: record.pendingId,
-      );
-      setState(() => _selected = record);
-    } on native.GithubCatalogError catch (error) {
-      setState(() => _error = error);
-    } catch (_) {
-      native.recordClientFailure(kind: native.FailureKind.nativeBridge);
-      setState(() => _error = native.GithubCatalogError.unavailable);
-    }
-  }
+  static String _credentialKey(native.GithubCredentialReference record) =>
+      jsonEncode([record.recordRef, record.revision, record.pendingId]);
+
+  Future<void> _select(native.GithubCredentialReference? record) =>
+      _run((epoch) async {
+        final source = _source;
+        if (source == null || source.conflicted) return;
+        // Dropdown form fields update optimistically. Recreate the field before
+        // awaiting persistence so a refusal cannot display an unsaved choice.
+        setState(() {
+          _selected = null;
+          _page = null;
+        });
+        if (record == null) {
+          await widget.client.clearGithubCatalogSource(
+            expectedRevision: source.revision,
+            expectedPending: source.pendingId,
+          );
+        } else {
+          await widget.client.selectGithubCredential(
+            recordRef: record.recordRef,
+            revision: record.revision,
+            pendingId: record.pendingId,
+            expectedSourceRevision: source.revision,
+            expectedSourcePending: source.pendingId,
+          );
+        }
+        if (!mounted || epoch != _actionEpoch || _paused) return;
+        setState(() {
+          _page = null;
+          _selected = record;
+          _source = null;
+        });
+        final current = await widget.client.githubCatalogSource();
+        if (!mounted || epoch != _actionEpoch || _paused) return;
+        setState(() {
+          _source = current;
+          _selected = current.credential;
+        });
+      });
 
   void _cancel() {
     _actionEpoch++;
@@ -315,7 +368,9 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
     final page = _page;
     final choices = [..._credentials];
     if (_selected != null &&
-        !choices.any((item) => item.recordRef == _selected!.recordRef)) {
+        !choices.any(
+          (item) => _credentialKey(item) == _credentialKey(_selected!),
+        )) {
       choices.insert(0, _selected!);
     }
     return Scaffold(
@@ -334,6 +389,7 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
                   onSelected: _busy || _paused ? null : (_) => _mode(true),
                 ),
                 ChoiceChip(
+                  key: const Key('catalog-mode-provider'),
                   label: Text(l.catalogProvider),
                   selected: !_savedMode,
                   onSelected: _busy || _paused ? null : (_) => _mode(false),
@@ -382,16 +438,23 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
               ],
             ] else ...[
               Text(l.catalogHelp),
+              Text(l.catalogSourceHelp),
+              if (_source?.pendingId != null) Text(l.vaultRecordPending),
+              if (_source?.conflicted == true) Text(l.vaultConflict),
               const SizedBox(height: OpenNetworkSpacing.four),
               DropdownButtonFormField<String>(
-                key: ValueKey(_selected?.recordRef),
-                initialValue: _selected?.recordRef,
+                key: ValueKey(
+                  _selected == null ? null : _credentialKey(_selected!),
+                ),
+                initialValue: _selected == null
+                    ? null
+                    : _credentialKey(_selected!),
                 isExpanded: true,
                 decoration: InputDecoration(labelText: l.catalogCredential),
                 items: choices
                     .map(
                       (record) => DropdownMenuItem(
-                        value: record.recordRef,
+                        value: _credentialKey(record),
                         child: Text(
                           record.title.isEmpty
                               ? record.recordRef
@@ -401,11 +464,18 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
                       ),
                     )
                     .toList(),
-                onChanged: _paused
+                onChanged:
+                    _busy || _paused || _source == null || _source!.conflicted
                     ? null
                     : (id) {
                         if (id != null) {
-                          _select(choices.firstWhere((r) => r.recordRef == id));
+                          unawaited(
+                            _select(
+                              choices.firstWhere(
+                                (r) => _credentialKey(r) == id,
+                              ),
+                            ),
+                          );
                         }
                       },
               ),
@@ -414,6 +484,14 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
               Wrap(
                 spacing: OpenNetworkSpacing.two,
                 children: [
+                  if (_source?.credential != null)
+                    TextButton(
+                      key: const Key('catalog-source-clear'),
+                      onPressed: _busy || _paused || _source!.conflicted
+                          ? null
+                          : () => unawaited(_select(null)),
+                      child: Text(l.catalogClearSource),
+                    ),
                   TextButton(
                     onPressed: _busy || _paused ? null : _loadCredentials,
                     child: Text(l.catalogRefreshCredentials),

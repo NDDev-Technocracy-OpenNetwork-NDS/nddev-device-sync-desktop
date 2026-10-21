@@ -28,6 +28,22 @@ pub struct GithubCredentialReferencePage {
     pub next_after: String,
     pub has_more: bool,
 }
+/// Saved owner intent, not provider access or this device's consent.
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
+pub struct GithubSourceView {
+    pub credential: Option<GithubCredentialReference>,
+    pub revision: String,
+    pub pending_id: Option<String>,
+    pub local_revision: String,
+    pub conflicted: bool,
+}
 #[derive(Clone, Copy)]
 #[cfg_attr(
     all(target_arch = "wasm32", feature = "browser-bindings"),

@@ -17,6 +17,7 @@ void main() {
   const mailbox = String.fromEnvironment('NDS_TEST_MAILPIT');
   const owner = String.fromEnvironment('NDS_TEST_OWNER');
   const vault = bool.fromEnvironment('NDS_TEST_VAULT');
+  const catalogSource = bool.fromEnvironment('NDS_TEST_CATALOG_SOURCE');
   const company = bool.fromEnvironment('NDS_TEST_COMPANY');
   const screenPeer = String.fromEnvironment('NDS_TEST_SCREEN_PEER');
   const screenHandoff = String.fromEnvironment('NDS_TEST_SCREEN_HANDOFF');
@@ -373,6 +374,62 @@ void main() {
           expect(find.text('rds'), findsOneWidget);
           await tester.pageBack();
           await tester.pumpAndSettle();
+          await tester.pageBack();
+          await tester.pumpAndSettle();
+        }
+      }
+      if (catalogSource) {
+        final picker = find.byType(DropdownButtonFormField<String>);
+        final readyPicker = find.byWidgetPredicate(
+          (widget) =>
+              widget is DropdownButtonFormField<String> &&
+              widget.onChanged != null,
+        );
+        for (var opening = 0; opening < 2; opening++) {
+          await modules.tapVisible(
+            tester,
+            find.byKey(const Key('open-github-catalog')),
+          );
+          await modules.tapVisible(
+            tester,
+            find.byKey(const Key('catalog-mode-provider')),
+          );
+          await waitFor(tester, readyPicker);
+          if (opening == 0) {
+            expect(
+              tester
+                  .widget<DropdownButtonFormField<String>>(picker)
+                  .initialValue,
+              isNull,
+            );
+            await tester.tap(picker);
+            await tester.pumpAndSettle();
+            await tester.tap(find.text('UI encrypted record').last);
+            await waitFor(
+              tester,
+              find.byKey(const Key('catalog-source-clear')),
+            );
+          }
+          await waitFor(tester, readyPicker);
+          expect(
+            tester.widget<DropdownButtonFormField<String>>(picker).initialValue,
+            isNotNull,
+          );
+          expect(find.text('PRIVATE_UI_VAULT_VALUE'), findsNothing);
+          if (opening == 1) {
+            await modules.tapVisible(
+              tester,
+              find.byKey(const Key('catalog-source-clear')),
+            );
+            await waitFor(tester, readyPicker);
+            expect(
+              tester
+                  .widget<DropdownButtonFormField<String>>(picker)
+                  .initialValue,
+              isNull,
+            );
+            expect(find.byKey(const Key('catalog-source-clear')), findsNothing);
+          }
           await tester.pageBack();
           await tester.pumpAndSettle();
         }

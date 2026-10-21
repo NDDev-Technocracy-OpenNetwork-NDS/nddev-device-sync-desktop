@@ -547,5 +547,7 @@
   "permissionUserService": "Use the current user service",
   "permissionClipboard": "Use clipboard features",
   "moduleSettingsChanged": "Module settings changed. Refresh the form before saving your choice.",
-  "moduleReloadDraft": "Reload settings"
+  "moduleReloadDraft": "Reload settings",
+  "catalogSourceHelp": "This choice is saved and synchronized across your account. Enable GDS permissions separately on each device.",
+  "catalogClearSource": "Clear GitHub choice"
 }

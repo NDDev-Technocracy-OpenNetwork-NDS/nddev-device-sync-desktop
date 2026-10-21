@@ -166,6 +166,26 @@ void main() {
     expect(diagnostics.writeFailures, BigInt.zero);
     expect(diagnostics.droppedEvents, BigInt.zero);
     expect(diagnostics.rejectedFieldsOrEvents, BigInt.zero);
+    if (phase != 'offline' &&
+        client.deliverySnapshot().policy == native.ExportPolicy.enabled) {
+      // The supervisor deliberately replaces this process between phases.
+      // Wait for the actual sender before discarding its native RAM queues.
+      final deadline = DateTime.now().add(const Duration(seconds: 30));
+      while (true) {
+        final delivery = client.deliverySnapshot();
+        expect(delivery.dropped, BigInt.zero);
+        expect(delivery.spansDropped, BigInt.zero);
+        if (delivery.pending == 0 && delivery.spansPending == 0) {
+          expect(delivery.delivered, greaterThan(BigInt.zero));
+          expect(delivery.spansDelivered, greaterThan(BigInt.zero));
+          break;
+        }
+        if (DateTime.now().isAfter(deadline)) {
+          throw StateError('Module telemetry was not acknowledged before exit');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      }
+    }
     expect(tester.takeException(), isNull);
     debugPrint('NDS_ANDROID_MODULE_PHASE_PASS phase=$phase');
   }, timeout: const Timeout(Duration(minutes: 3)));

@@ -3850,7 +3850,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-agent"
 version = "0.0.1-alpha.8"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent?rev=31cd4f40f307e0439012f6f280a031398082d7a3#31cd4f40f307e0439012f6f280a031398082d7a3"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent?rev=a45a0d980d1e39260dfc7e6d6cbda55b02991d35#a45a0d980d1e39260dfc7e6d6cbda55b02991d35"
 dependencies = [
  "base16ct",
  "nddev-device-sync-adapter-io",

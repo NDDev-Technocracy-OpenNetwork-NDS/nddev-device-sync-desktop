@@ -46,6 +46,17 @@ if (app != source and not (is_test and app == source / 'packages/nds_ui')
     raise SystemExit('The app must consume this exact shared native source')
 print('Building native source: ' + commit + (' (uncommitted)' if dirty else ''), flush=True)
 os.environ.update(build_environment())
+# Resolve from the actual app directory: a Git/Pub native dependency may live
+# outside the installation's parent Cargo configuration scope.
+metadata = json.loads(subprocess.check_output(
+    ['cargo', 'metadata', '--locked', '--no-deps', '--format-version', '1',
+     '--manifest-path', str(source / 'packages/nds_native/rust/Cargo.toml')],
+    cwd=app, text=True, timeout=30))
+os.environ.setdefault('CARGO_TARGET_DIR', metadata['target_directory'])
+os.environ.setdefault('CARGO_BUILD_BUILD_DIR', metadata.get('build_directory', metadata['target_directory']))
+if is_test:
+    os.environ.setdefault('FRB_DART_LOAD_EXTERNAL_LIBRARY_NATIVE_LIB_DIR',
+                          str(Path(metadata['target_directory']) / 'debug'))
 def interrupted(_signal, _frame):
     raise KeyboardInterrupt
 handlers = {sig: signal.signal(sig, interrupted) for sig in [signal.SIGTERM, signal.SIGINT]}

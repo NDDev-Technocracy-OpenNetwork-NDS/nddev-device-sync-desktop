@@ -358,13 +358,19 @@ void main() {
             ),
           );
           await tester.tap(find.byKey(const Key('publish-local-state')));
-          await waitFor(tester, find.text('Pending: 0 · Conflicts: 0'));
+          await waitFor(
+            tester,
+            find.text('Local states queued for synchronization.'),
+          );
           await tester.tap(find.text('NDS session'));
           await tester.pumpAndSettle();
           await tester.ensureVisible(find.byKey(const Key('open-vault')));
           await tester.pumpAndSettle();
           await tester.tap(find.byKey(const Key('open-vault')));
           await waitFor(tester, find.byKey(const Key('open-synced-state')));
+          // The module action acknowledges its local queue. Actual convergence
+          // is observed separately through the live Rust-owned Vault view.
+          await waitFor(tester, find.text('Pending: 0 · Conflicts: 0'));
           await tester.ensureVisible(
             find.byKey(const Key('open-synced-state')),
           );

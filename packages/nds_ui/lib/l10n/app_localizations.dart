@@ -2261,6 +2261,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear GitHub choice'**
   String get catalogClearSource;
+
+  /// No description provided for @moduleStateQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Local states queued for synchronization.'**
+  String get moduleStateQueued;
 }
 
 class _AppLocalizationsDelegate

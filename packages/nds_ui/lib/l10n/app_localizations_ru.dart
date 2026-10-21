@@ -1250,4 +1250,8 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get catalogClearSource => 'Сбросить выбор GitHub';
+
+  @override
+  String get moduleStateQueued =>
+      'Локальные состояния поставлены в очередь синхронизации.';
 }

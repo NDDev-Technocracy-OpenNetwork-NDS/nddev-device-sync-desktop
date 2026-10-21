@@ -1240,4 +1240,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get catalogClearSource => 'Clear GitHub choice';
+
+  @override
+  String get moduleStateQueued => 'Local states queued for synchronization.';
 }

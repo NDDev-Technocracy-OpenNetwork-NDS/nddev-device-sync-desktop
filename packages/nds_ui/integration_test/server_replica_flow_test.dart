@@ -147,11 +147,17 @@ void main() {
           );
           await visible('publish-local-state');
           await waitUntil(
-            () => find.text('Pending: 0 · Conflicts: 0').evaluate().isNotEmpty,
+            () => find
+                .text('Local states queued for synchronization.')
+                .evaluate()
+                .isNotEmpty,
           );
           await tester.tap(find.text('NDS session'));
           await tester.pumpAndSettle();
           await visible('open-vault');
+          await waitUntil(
+            () => find.text('Pending: 0 · Conflicts: 0').evaluate().isNotEmpty,
+          );
           // Keep the actual OTP resend policy; the next independent process can
           // sign in only after the real cooldown, without changing clocks.
           await waitUntil(

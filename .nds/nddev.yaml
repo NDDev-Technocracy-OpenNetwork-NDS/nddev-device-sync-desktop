@@ -1,0 +1,43 @@
+# std-0001 repository manifest — schema: `nddev schema manifest`.
+apiVersion: nddev.ai/v1alpha3
+kind: Repository
+metadata:
+  id: nddev-device-sync-desktop
+  locator: github:NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-desktop
+  owner: rldyourmnd
+spec:
+  standard:
+    id: std-0001
+    version: 3.0.0
+  role: component
+  profiles:
+  - dart
+  system:
+    id: nds
+    root: github:NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync
+  portfolios:
+  - portfolio:nddev-opennetwork
+  provides:
+  - name: nds-native
+    source: packages/nds_native/rust/Cargo.toml
+    direction: code-first
+  variations:
+  - paths: [.gds]
+    purpose: config
+    reason: GDS-owned repository anchor and policy projections; std-0001 excludes .gds by its own boundary rule.
+    decision: {state: approved, by: rldyourmnd, date: "2026-10-22", origin: document, reference: standarts/decisions/0013-estate-hygiene-and-standards-adoption.md}
+  - paths: [module.yaml]
+    purpose: manifest
+    reason: NDS module descriptor owned by the product standards corpus.
+    decision: {state: approved, by: rldyourmnd, date: "2026-10-22", origin: document, reference: standarts/decisions/0013-estate-hygiene-and-standards-adoption.md}
+  - paths: [standarts.lock, toolchains.lock.json]
+    purpose: lock
+    reason: NDS contract locks pinning the standards corpus and the verified toolchain archives.
+    decision: {state: approved, by: rldyourmnd, date: "2026-10-22", origin: document, reference: standarts/decisions/0013-estate-hygiene-and-standards-adoption.md}
+  - paths: [scripts]
+    purpose: tool-config
+    reason: Native assembly, generation, provenance and acceptance tooling owned by the repository.
+    decision: {state: approved, by: rldyourmnd, date: "2026-10-22", origin: document, reference: standarts/decisions/0013-estate-hygiene-and-standards-adoption.md}
+  adapters:
+  - claude
+  - cursor

@@ -254,3 +254,5 @@ fragments before presentation routing; incoming links do not switch an active
 account. HTTPS app/universal-link association is deployment-specific and is not
 claimed by manual native import. The existing browser assembly remains the
 Flutter migration baseline; its React replacement is a separate ADR 0010 task.
+
+Release journals live in [GitHub Releases](https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-desktop/releases).

@@ -45,7 +45,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -929484103;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1137875230;
 
 // Section: executor
 
@@ -1910,6 +1910,75 @@ fn wire__crate__api__identity__NdsClient_configure_module_impl(
                             api_permissions,
                             api_revision,
                             api_pending_id,
+                        )
+                        .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__identity__NdsClient_connect_github_repository_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NdsClient_connect_github_repository",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NdsClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_repository_id = <String>::sse_decode(&mut deserializer);
+            let api_owner_id = <String>::sse_decode(&mut deserializer);
+            let api_owner = <String>::sse_decode(&mut deserializer);
+            let api_name = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<
+                    _,
+                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError,
+                >(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::identity::NdsClient::connect_github_repository(
+                            &*api_that_guard,
+                            api_repository_id,
+                            api_owner_id,
+                            api_owner,
+                            api_name,
                         )
                         .await?;
                         std::result::Result::Ok(output_ok)
@@ -6113,6 +6182,14 @@ const _: fn() = || {
         let _: String = GitStatus.remote_freshness;
     }
     {
+        let GithubConnectionView =
+            None::<nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView>.unwrap();
+        let _: String = GithubConnectionView.outcome;
+        let _: String = GithubConnectionView.reason;
+        let _: String = GithubConnectionView.relative_path;
+        let _: bool = GithubConnectionView.intent_queued;
+    }
+    {
         let GithubCredentialReference =
             None::<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>
                 .unwrap();
@@ -6200,6 +6277,7 @@ const _: fn() = || {
         let GithubSavedRepositoryPageView =
             None::<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView>
                 .unwrap();
+        let _: bool = GithubSavedRepositoryPageView.local_workspace_supported;
         let _: Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView> =
             GithubSavedRepositoryPageView.groups;
         let _: String = GithubSavedRepositoryPageView.observed_seq;
@@ -6904,6 +6982,7 @@ impl SseDecode for crate::api::module_control::DeviceModuleView {
         let mut var_enabled = <bool>::sse_decode(deserializer);
         let mut var_permissions = <Vec<String>>::sse_decode(deserializer);
         let mut var_requiredPermissions = <Vec<String>>::sse_decode(deserializer);
+        let mut var_optionalPermissions = <Vec<String>>::sse_decode(deserializer);
         let mut var_readiness = <String>::sse_decode(deserializer);
         let mut var_checkedAtMs = <Option<u64>>::sse_decode(deserializer);
         let mut var_errorClass = <Option<String>>::sse_decode(deserializer);
@@ -6920,6 +6999,7 @@ impl SseDecode for crate::api::module_control::DeviceModuleView {
             enabled: var_enabled,
             permissions: var_permissions,
             required_permissions: var_requiredPermissions,
+            optional_permissions: var_optionalPermissions,
             readiness: var_readiness,
             checked_at_ms: var_checkedAtMs,
             error_class: var_errorClass,
@@ -7128,6 +7208,22 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCatalogEr
     }
 }
 
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_outcome = <String>::sse_decode(deserializer);
+        let mut var_reason = <String>::sse_decode(deserializer);
+        let mut var_relativePath = <String>::sse_decode(deserializer);
+        let mut var_intentQueued = <bool>::sse_decode(deserializer);
+        return nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView {
+            outcome: var_outcome,
+            reason: var_reason,
+            relative_path: var_relativePath,
+            intent_queued: var_intentQueued,
+        };
+    }
+}
+
 impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -7315,6 +7411,7 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepo
 impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_localWorkspaceSupported = <bool>::sse_decode(deserializer);
         let mut var_groups = <Vec<
             nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView,
         >>::sse_decode(deserializer);
@@ -7322,6 +7419,7 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepo
         let mut var_localRevision = <String>::sse_decode(deserializer);
         let mut var_hasMore = <bool>::sse_decode(deserializer);
         return nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView {
+            local_workspace_supported: var_localWorkspaceSupported,
             groups: var_groups,
             observed_seq: var_observedSeq,
             local_revision: var_localRevision,
@@ -8787,245 +8885,251 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        31 => wire__crate__api__identity__NdsClient_device_modules_impl(
+        30 => wire__crate__api__identity__NdsClient_connect_github_repository_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        32 => wire__crate__api__identity__NdsClient_discover_local_agent_impl(
+        32 => wire__crate__api__identity__NdsClient_device_modules_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        33 => wire__crate__api__identity__NdsClient_github_catalog_credentials_impl(
+        33 => wire__crate__api__identity__NdsClient_discover_local_agent_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        34 => wire__crate__api__identity__NdsClient_github_catalog_source_impl(
+        34 => wire__crate__api__identity__NdsClient_github_catalog_credentials_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        35 => wire__crate__api__identity__NdsClient_github_repository_page_impl(
+        35 => wire__crate__api__identity__NdsClient_github_catalog_source_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        36 => wire__crate__api__identity__NdsClient_import_browser_invitation_impl(
+        36 => wire__crate__api__identity__NdsClient_github_repository_page_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        37 => wire__crate__api__identity__NdsClient_import_invitation_impl(
+        37 => wire__crate__api__identity__NdsClient_import_browser_invitation_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        38 => wire__crate__api__identity__NdsClient_incident_action_impl(
+        38 => wire__crate__api__identity__NdsClient_import_invitation_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        39 => {
+        39 => wire__crate__api__identity__NdsClient_incident_action_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        40 => {
             wire__crate__api__identity__NdsClient_incidents_impl(port, ptr, rust_vec_len, data_len)
         }
-        40 => wire__crate__api__identity__NdsClient_logout_impl(port, ptr, rust_vec_len, data_len),
-        42 => {
+        41 => wire__crate__api__identity__NdsClient_logout_impl(port, ptr, rust_vec_len, data_len),
+        43 => {
             wire__crate__api__identity__NdsClient_passkeys_impl(port, ptr, rust_vec_len, data_len)
         }
-        43 => wire__crate__api__identity__NdsClient_poll_github_impl(
+        44 => wire__crate__api__identity__NdsClient_poll_github_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        44 => wire__crate__api__identity__NdsClient_poll_passkey_impl(
+        45 => wire__crate__api__identity__NdsClient_poll_passkey_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        45 => wire__crate__api__identity__NdsClient_prepare_device_impl(
+        46 => wire__crate__api__identity__NdsClient_prepare_device_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        46 => wire__crate__api__identity__NdsClient_publish_device_state_impl(
+        47 => wire__crate__api__identity__NdsClient_publish_device_state_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        47 => wire__crate__api__identity__NdsClient_publish_local_state_impl(
+        48 => wire__crate__api__identity__NdsClient_publish_local_state_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        48 => {
+        49 => {
             wire__crate__api__identity__NdsClient_reconcile_impl(port, ptr, rust_vec_len, data_len)
         }
-        49 => wire__crate__api__identity__NdsClient_refresh_impl(port, ptr, rust_vec_len, data_len),
-        50 => wire__crate__api__identity__NdsClient_refresh_devices_impl(
+        50 => wire__crate__api__identity__NdsClient_refresh_impl(port, ptr, rust_vec_len, data_len),
+        51 => wire__crate__api__identity__NdsClient_refresh_devices_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        51 => wire__crate__api__identity__NdsClient_request_email_impl(
+        52 => wire__crate__api__identity__NdsClient_request_email_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        53 => wire__crate__api__identity__NdsClient_revoke_device_impl(
+        54 => wire__crate__api__identity__NdsClient_revoke_device_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        54 => wire__crate__api__identity__NdsClient_revoke_passkey_impl(
+        55 => wire__crate__api__identity__NdsClient_revoke_passkey_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        55 => wire__crate__api__identity__NdsClient_saved_github_repository_page_impl(
+        56 => wire__crate__api__identity__NdsClient_saved_github_repository_page_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        56 => wire__crate__api__identity__NdsClient_screen_accept_impl(
+        57 => wire__crate__api__identity__NdsClient_screen_accept_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        58 => wire__crate__api__identity__NdsClient_screen_close_impl(
+        59 => wire__crate__api__identity__NdsClient_screen_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        59 => wire__crate__api__identity__NdsClient_screen_incoming_impl(
+        60 => wire__crate__api__identity__NdsClient_screen_incoming_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        60 => wire__crate__api__identity__NdsClient_screen_open_impl(
+        61 => wire__crate__api__identity__NdsClient_screen_open_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        61 => wire__crate__api__identity__NdsClient_screen_prepare_impl(
+        62 => wire__crate__api__identity__NdsClient_screen_prepare_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        62 => wire__crate__api__identity__NdsClient_screen_stop_impl(
+        63 => wire__crate__api__identity__NdsClient_screen_stop_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        63 => wire__crate__api__identity__NdsClient_screen_targets_impl(
+        64 => wire__crate__api__identity__NdsClient_screen_targets_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        64 => wire__crate__api__identity__NdsClient_select_github_credential_impl(
+        65 => wire__crate__api__identity__NdsClient_select_github_credential_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        67 => wire__crate__api__identity__NdsClient_start_github_impl(
+        68 => wire__crate__api__identity__NdsClient_start_github_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        68 => wire__crate__api__identity__NdsClient_start_passkey_impl(
+        69 => wire__crate__api__identity__NdsClient_start_passkey_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        69 => wire__crate__api__identity__NdsClient_sync_states_impl(
+        70 => wire__crate__api__identity__NdsClient_sync_states_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        70 => wire__crate__api__identity__NdsClient_vault_copy_secret_impl(
+        71 => wire__crate__api__identity__NdsClient_vault_copy_secret_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        71 => wire__crate__api__identity__NdsClient_vault_delete_impl(
+        72 => wire__crate__api__identity__NdsClient_vault_delete_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        72 => wire__crate__api__identity__NdsClient_vault_records_impl(
+        73 => wire__crate__api__identity__NdsClient_vault_records_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        73 => wire__crate__api__identity__NdsClient_vault_refresh_impl(
+        74 => wire__crate__api__identity__NdsClient_vault_refresh_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        74 => wire__crate__api__identity__NdsClient_vault_resolve_impl(
+        75 => wire__crate__api__identity__NdsClient_vault_resolve_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        75 => {
+        76 => {
             wire__crate__api__identity__NdsClient_vault_save_impl(port, ptr, rust_vec_len, data_len)
         }
-        76 => wire__crate__api__identity__NdsClient_vault_snapshot_impl(
+        77 => wire__crate__api__identity__NdsClient_vault_snapshot_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        77 => {
+        78 => {
             wire__crate__api__identity__NdsClient_vault_sync_impl(port, ptr, rust_vec_len, data_len)
         }
-        78 => wire__crate__api__identity__NdsClient_verify_email_impl(
+        79 => wire__crate__api__identity__NdsClient_verify_email_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        83 => wire__crate__api__screen__ScreenHost_close_impl(port, ptr, rust_vec_len, data_len),
-        84 => wire__crate__api__screen__ScreenHost_closed_impl(port, ptr, rust_vec_len, data_len),
-        86 => wire__crate__api__screen__ScreenView_close_impl(port, ptr, rust_vec_len, data_len),
-        87 => wire__crate__api__screen__ScreenView_closed_impl(port, ptr, rust_vec_len, data_len),
-        88 => wire__crate__api__screen__ScreenView_frame_impl(port, ptr, rust_vec_len, data_len),
-        101 => {
+        84 => wire__crate__api__screen__ScreenHost_close_impl(port, ptr, rust_vec_len, data_len),
+        85 => wire__crate__api__screen__ScreenHost_closed_impl(port, ptr, rust_vec_len, data_len),
+        87 => wire__crate__api__screen__ScreenView_close_impl(port, ptr, rust_vec_len, data_len),
+        88 => wire__crate__api__screen__ScreenView_closed_impl(port, ptr, rust_vec_len, data_len),
+        89 => wire__crate__api__screen__ScreenView_frame_impl(port, ptr, rust_vec_len, data_len),
+        102 => {
             wire__crate__api__telemetry__shutdown_telemetry_impl(port, ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),
@@ -9053,75 +9157,75 @@ fn pde_ffi_dispatcher_sync_impl(
             rust_vec_len,
             data_len,
         ),
-        30 => wire__crate__api__identity__NdsClient_delivery_snapshot_impl(
+        31 => wire__crate__api__identity__NdsClient_delivery_snapshot_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        41 => wire__crate__api__identity__NdsClient_new_impl(ptr, rust_vec_len, data_len),
-        52 => wire__crate__api__identity__NdsClient_reserve_clipboard_copy_impl(
+        42 => wire__crate__api__identity__NdsClient_new_impl(ptr, rust_vec_len, data_len),
+        53 => wire__crate__api__identity__NdsClient_reserve_clipboard_copy_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        57 => wire__crate__api__identity__NdsClient_screen_cancel_impl(ptr, rust_vec_len, data_len),
-        65 => wire__crate__api__identity__NdsClient_set_lifecycle_impl(ptr, rust_vec_len, data_len),
-        66 => wire__crate__api__identity__NdsClient_snapshot_impl(ptr, rust_vec_len, data_len),
-        79 => wire__crate__api__screen__ScreenFrame_check_live_impl(ptr, rust_vec_len, data_len),
-        80 => wire__crate__api__screen__ScreenFrame_layout_impl(ptr, rust_vec_len, data_len),
-        81 => wire__crate__api__screen__ScreenFrame_read_once_impl(ptr, rust_vec_len, data_len),
-        82 => wire__crate__api__screen__ScreenHost_cancel_impl(ptr, rust_vec_len, data_len),
-        85 => wire__crate__api__screen__ScreenView_cancel_impl(ptr, rust_vec_len, data_len),
-        89 => wire__crate__api__organizations__capture_invitation_link_impl(
+        58 => wire__crate__api__identity__NdsClient_screen_cancel_impl(ptr, rust_vec_len, data_len),
+        66 => wire__crate__api__identity__NdsClient_set_lifecycle_impl(ptr, rust_vec_len, data_len),
+        67 => wire__crate__api__identity__NdsClient_snapshot_impl(ptr, rust_vec_len, data_len),
+        80 => wire__crate__api__screen__ScreenFrame_check_live_impl(ptr, rust_vec_len, data_len),
+        81 => wire__crate__api__screen__ScreenFrame_layout_impl(ptr, rust_vec_len, data_len),
+        82 => wire__crate__api__screen__ScreenFrame_read_once_impl(ptr, rust_vec_len, data_len),
+        83 => wire__crate__api__screen__ScreenHost_cancel_impl(ptr, rust_vec_len, data_len),
+        86 => wire__crate__api__screen__ScreenView_cancel_impl(ptr, rust_vec_len, data_len),
+        90 => wire__crate__api__organizations__capture_invitation_link_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        90 => wire__crate__api__telemetry__client_diagnostics_impl(ptr, rust_vec_len, data_len),
-        91 => wire__crate__api__identity__client_work_permitted_impl(ptr, rust_vec_len, data_len),
-        92 => wire__nddev_device_sync_vault__view__clipboard_view_default_impl(
+        91 => wire__crate__api__telemetry__client_diagnostics_impl(ptr, rust_vec_len, data_len),
+        92 => wire__crate__api__identity__client_work_permitted_impl(ptr, rust_vec_len, data_len),
+        93 => wire__nddev_device_sync_vault__view__clipboard_view_default_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        93 => wire__crate__api__telemetry__configure_debug_impl(ptr, rust_vec_len, data_len),
-        94 => wire__nddev_device_sync_accounts__view__delivery_view_default_impl(
+        94 => wire__crate__api__telemetry__configure_debug_impl(ptr, rust_vec_len, data_len),
+        95 => wire__nddev_device_sync_accounts__view__delivery_view_default_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        95 => wire__nddev_device_sync_accounts__view__export_policy_default_impl(
+        96 => wire__nddev_device_sync_accounts__view__export_policy_default_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        96 => wire__crate__api__telemetry__init_app_impl(ptr, rust_vec_len, data_len),
-        97 => wire__crate__api__identity__new_vault_record_id_impl(ptr, rust_vec_len, data_len),
-        98 => wire__crate__api__telemetry__record_client_failure_impl(ptr, rust_vec_len, data_len),
-        99 => {
+        97 => wire__crate__api__telemetry__init_app_impl(ptr, rust_vec_len, data_len),
+        98 => wire__crate__api__identity__new_vault_record_id_impl(ptr, rust_vec_len, data_len),
+        99 => wire__crate__api__telemetry__record_client_failure_impl(ptr, rust_vec_len, data_len),
+        100 => {
             wire__crate__api__telemetry__record_client_lifecycle_impl(ptr, rust_vec_len, data_len)
         }
-        100 => wire__crate__api__screen__screen_supported_impl(ptr, rust_vec_len, data_len),
-        102 => wire__crate__api__modules__supports_local_agent_impl(ptr, rust_vec_len, data_len),
-        103 => {
+        101 => wire__crate__api__screen__screen_supported_impl(ptr, rust_vec_len, data_len),
+        103 => wire__crate__api__modules__supports_local_agent_impl(ptr, rust_vec_len, data_len),
+        104 => {
             wire__crate__api__identity__supports_native_clipboard_impl(ptr, rust_vec_len, data_len)
         }
-        104 => wire__crate__api__identity__supports_native_clipboard_read_impl(
+        105 => wire__crate__api__identity__supports_native_clipboard_read_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        105 => wire__crate__api__modules__update_action_kind_impl(ptr, rust_vec_len, data_len),
-        106 => wire__crate__api__modules__update_action_platform_impl(ptr, rust_vec_len, data_len),
-        107 => {
+        106 => wire__crate__api__modules__update_action_kind_impl(ptr, rust_vec_len, data_len),
+        107 => wire__crate__api__modules__update_action_platform_impl(ptr, rust_vec_len, data_len),
+        108 => {
             wire__nddev_device_sync_vault__view__vault_error_code_impl(ptr, rust_vec_len, data_len)
         }
-        108 => wire__nddev_device_sync_vault__view__vault_view_default_impl(
+        109 => wire__nddev_device_sync_vault__view__vault_view_default_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        109 => {
+        110 => {
             wire__nddev_device_sync_accounts__view__view_default_impl(ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),
@@ -9574,6 +9678,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::module_control::DeviceModuleV
             self.enabled.into_into_dart().into_dart(),
             self.permissions.into_into_dart().into_dart(),
             self.required_permissions.into_into_dart().into_dart(),
+            self.optional_permissions.into_into_dart().into_dart(),
             self.readiness.into_into_dart().into_dart(),
             self.checked_at_ms.into_into_dart().into_dart(),
             self.error_class.into_into_dart().into_dart(),
@@ -9877,6 +9982,35 @@ impl
     fn into_into_dart(
         self,
     ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError> {
+        self.into()
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView>
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.0.outcome.into_into_dart().into_dart(),
+            self.0.reason.into_into_dart().into_dart(),
+            self.0.relative_path.into_into_dart().into_dart(),
+            self.0.intent_queued.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView>
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView
+{
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView> {
         self.into()
     }
 }
@@ -10204,6 +10338,10 @@ impl flutter_rust_bridge::IntoDart
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
+            self.0
+                .local_workspace_supported
+                .into_into_dart()
+                .into_dart(),
             self.0.groups.into_into_dart().into_dart(),
             self.0.observed_seq.into_into_dart().into_dart(),
             self.0.local_revision.into_into_dart().into_dart(),
@@ -11622,6 +11760,7 @@ impl SseEncode for crate::api::module_control::DeviceModuleView {
         <bool>::sse_encode(self.enabled, serializer);
         <Vec<String>>::sse_encode(self.permissions, serializer);
         <Vec<String>>::sse_encode(self.required_permissions, serializer);
+        <Vec<String>>::sse_encode(self.optional_permissions, serializer);
         <String>::sse_encode(self.readiness, serializer);
         <Option<u64>>::sse_encode(self.checked_at_ms, serializer);
         <Option<String>>::sse_encode(self.error_class, serializer);
@@ -11789,6 +11928,16 @@ nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModuleConfigur
     }
 }
 
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.outcome, serializer);
+        <String>::sse_encode(self.reason, serializer);
+        <String>::sse_encode(self.relative_path, serializer);
+        <bool>::sse_encode(self.intent_queued, serializer);
+    }
+}
+
 impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -11933,6 +12082,7 @@ impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepo
 impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.local_workspace_supported, serializer);
         <Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>>::sse_encode(self.groups, serializer);
         <String>::sse_encode(self.observed_seq, serializer);
         <String>::sse_encode(self.local_revision, serializer);

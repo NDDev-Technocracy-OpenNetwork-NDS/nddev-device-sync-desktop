@@ -2267,6 +2267,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Local states queued for synchronization.'**
   String get moduleStateQueued;
+
+  /// No description provided for @permissionGitWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Create checkouts and synchronize existing Git commits'**
+  String get permissionGitWrite;
+
+  /// No description provided for @repositoryConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect checkout'**
+  String get repositoryConnect;
+
+  /// No description provided for @repositoryConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout connected: {path}'**
+  String repositoryConnected(String path);
+
+  /// No description provided for @repositoryRegistrationPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout exists at {path}. Retry connection to finish NDS registration.'**
+  String repositoryRegistrationPending(String path);
+
+  /// No description provided for @repositoryIntentQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection intent was queued for NDS synchronization.'**
+  String get repositoryIntentQueued;
+
+  /// No description provided for @repositoryPathOccupied.
+  ///
+  /// In en, this message translates to:
+  /// **'This location is already occupied. Existing files were preserved.'**
+  String get repositoryPathOccupied;
+
+  /// No description provided for @repositoryDifferentInstallation.
+  ///
+  /// In en, this message translates to:
+  /// **'This checkout belongs to another NDS account or installation.'**
+  String get repositoryDifferentInstallation;
+
+  /// No description provided for @repositoryRelocationRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved connection uses another location. Review its move before connecting here.'**
+  String get repositoryRelocationRequired;
+
+  /// No description provided for @repositoryWrongRemote.
+  ///
+  /// In en, this message translates to:
+  /// **'The Git origin or stored repository identity does not match the selected repository.'**
+  String get repositoryWrongRemote;
+
+  /// No description provided for @repositoryUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Local checkout connection is not supported on this device.'**
+  String get repositoryUnsupported;
 }
 
 class _AppLocalizationsDelegate

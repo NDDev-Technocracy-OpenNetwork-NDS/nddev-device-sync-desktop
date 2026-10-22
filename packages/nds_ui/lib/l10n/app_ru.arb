@@ -543,5 +543,29 @@
   "moduleReloadDraft": "Обновить настройки",
   "catalogSourceHelp": "Выбор сохраняется и синхронизируется в аккаунте. Разрешения GDS включаются отдельно на каждом устройстве.",
   "catalogClearSource": "Сбросить выбор GitHub",
-  "moduleStateQueued": "Локальные состояния поставлены в очередь синхронизации."
+  "moduleStateQueued": "Локальные состояния поставлены в очередь синхронизации.",
+  "permissionGitWrite": "Подключать репозитории и синхронизировать Git-коммиты",
+  "repositoryConnect": "Подключить репозиторий",
+  "repositoryConnected": "Репозиторий подключён: {path}",
+  "@repositoryConnected": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "repositoryRegistrationPending": "Репозиторий находится в {path}. Повторите подключение, чтобы завершить регистрацию в NDS.",
+  "@repositoryRegistrationPending": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "repositoryIntentQueued": "Намерение подключения поставлено в очередь синхронизации NDS.",
+  "repositoryPathOccupied": "Это место уже занято. Существующие файлы сохранены.",
+  "repositoryDifferentInstallation": "Репозиторий привязан к другому аккаунту или установке NDS.",
+  "repositoryRelocationRequired": "Сохранённая привязка использует другое расположение. Сначала проверьте перенос репозитория.",
+  "repositoryWrongRemote": "Git origin или сохранённый идентификатор не соответствует выбранному репозиторию.",
+  "repositoryUnsupported": "Локальное подключение репозиториев не поддерживается на этом устройстве."
 }

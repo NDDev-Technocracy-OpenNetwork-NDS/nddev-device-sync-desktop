@@ -36,6 +36,7 @@ pub struct DeviceModuleView {
     pub enabled: bool,
     pub permissions: Vec<String>,
     pub required_permissions: Vec<String>,
+    pub optional_permissions: Vec<String>,
     pub readiness: String,
     pub checked_at_ms: Option<u64>,
     pub error_class: Option<String>,
@@ -194,6 +195,13 @@ pub(super) fn shared_permissions(module: &str) -> Option<BTreeSet<Permission>> {
         "gds" => Some(nddev_device_sync_gds::catalog_runtime::required_permissions()),
         "rds" if cfg!(target_os = "linux") => Some(BTreeSet::from([ReadOnly, LocalNetwork])),
         _ => None,
+    }
+}
+fn optional_permissions(module: &str) -> BTreeSet<Permission> {
+    if module == "gds" && nddev_device_sync_gds::catalog_runtime::workspace_supported() {
+        BTreeSet::from([Permission::GitWrite])
+    } else {
+        BTreeSet::new()
     }
 }
 fn capabilities(descriptor: &ModuleDescriptor) -> (bool, bool, BTreeSet<Permission>) {
@@ -531,6 +539,10 @@ impl NdsClient {
                     .map(tag)
                     .collect::<Result<_, _>>()?,
                 required_permissions: required.into_iter().map(tag).collect::<Result<_, _>>()?,
+                optional_permissions: optional_permissions(id)
+                    .into_iter()
+                    .map(tag)
+                    .collect::<Result<_, _>>()?,
                 readiness,
                 checked_at_ms: observation.and_then(|v| v.observed_at_ms),
                 error_class: observation.and_then(|v| v.error).map(tag).transpose()?,
@@ -562,10 +574,12 @@ impl NdsClient {
                     .local_use_fence_from(&context)
                     .await?;
                 let (_, supported, required) = capabilities(&definition);
+                let mut allowed = required.clone();
+                allowed.extend(optional_permissions(&module));
                 if enabled && !supported {
                     return Err(ClientError::Server("module_unsupported".into()));
                 }
-                if permissions.len() > required.len() {
+                if permissions.len() > allowed.len() {
                     return Err(ClientError::InvalidInput);
                 }
                 let parsed = permissions
@@ -575,7 +589,7 @@ impl NdsClient {
                             .map_err(|_| ClientError::InvalidInput)
                     })
                     .collect::<Result<BTreeSet<Permission>, _>>()?;
-                if parsed.len() != permissions.len() || !parsed.is_subset(&required) {
+                if parsed.len() != permissions.len() || !parsed.is_subset(&allowed) {
                     return Err(ClientError::InvalidInput);
                 }
                 let vault = self.vault().await.map_err(vault_error)?;

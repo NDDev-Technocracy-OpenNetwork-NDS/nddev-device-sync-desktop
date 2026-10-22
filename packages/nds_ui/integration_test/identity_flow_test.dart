@@ -7,9 +7,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:nds_ui/nds_ui.dart';
+import 'package:nds_ui/module_settings.dart';
 
 import 'fixture_identity.dart';
 import 'local_modules_test.dart' as modules;
+import 'device_modules_test.dart' as device;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +30,7 @@ void main() {
 
   testWidgets(
     catalogSource
-        ? 'actual saved GitHub choice, screen recreation and encrypted convergence'
+        ? 'actual saved GitHub choice, background catalog and encrypted convergence'
         : 'actual identity, device enrollment, native restore and revocation',
     (tester) async {
       expect(Uri.parse(server).host, '127.0.0.1');
@@ -440,6 +442,41 @@ void main() {
           }
           await tester.pageBack();
           await tester.pumpAndSettle();
+          if (opening == 0) {
+            await modules.tapVisible(tester, find.text('Local modules'));
+            await modules.waitFor(
+              tester,
+              find.byKey(const Key('module-selector')),
+            );
+            await modules.choose(tester, 'GDS');
+            await modules.configure(
+              tester,
+              enabled: true,
+              permissions: ['read_only', 'credential_store', 'local_network'],
+            );
+            final client = tester
+                .widget<ModuleSettings>(find.byType(ModuleSettings))
+                .client;
+            final deadline = DateTime.now().add(const Duration(seconds: 45));
+            // No foreground provider action: the existing replica must collect
+            // after this page has been closed, using the saved source/consent.
+            while (true) {
+              final observed = (await device.settled(client.deviceModules))
+                  .singleWhere((module) => module.id == 'gds');
+              if (observed.checkedAtMs != null &&
+                  observed.errorClass == 'provider_unavailable') {
+                break;
+              }
+              if (DateTime.now().isAfter(deadline)) {
+                throw StateError(
+                  'Background GDS did not report actual refusal: ${observed.readiness}/${observed.errorClass}',
+                );
+              }
+              await tester.pump(const Duration(milliseconds: 200));
+              await Future<void>.delayed(const Duration(milliseconds: 200));
+            }
+            await modules.tapVisible(tester, find.text('NDS session'));
+          }
         }
         await modules.tapVisible(tester, find.byKey(const Key('open-vault')));
         await waitFor(tester, find.text('Pending: 0 · Conflicts: 0'));

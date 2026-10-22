@@ -75,6 +75,9 @@ source = Path(__file__).resolve().parents[1] / "packages/nds_ui/integration_test
     "server_replica_flow_test.dart" if args.sync_role else "identity_flow_test.dart")
 helper = app / "integration_test/fixture_identity.dart"
 module_helper = app / "integration_test/local_modules_test.dart" if not args.sync_role else None
+background_helper = app / "integration_test/device_modules_test.dart" if args.catalog_source else None
+if background_helper is not None and background_helper.exists():
+    raise SystemExit("Refuse to overwrite existing background fixture helpers")
 if module_helper is not None and module_helper.exists():
     raise SystemExit("Refuse to overwrite existing module fixture helpers")
 if helper.exists(): raise SystemExit("Refuse to overwrite existing fixture helper")
@@ -114,6 +117,8 @@ try:
     shutil.copyfile(source, target)
     if module_helper is not None:
         shutil.copyfile(source.with_name("local_modules_test.dart"), module_helper)
+    if background_helper is not None:
+        shutil.copyfile(source.with_name("device_modules_test.dart"), background_helper)
     if driver is not None:
         shutil.copyfile(source.with_name("driver.dart"), driver)
     if android:
@@ -194,6 +199,8 @@ finally:
     helper.unlink(missing_ok=True)
     if module_helper is not None:
         module_helper.unlink(missing_ok=True)
+    if background_helper is not None:
+        background_helper.unlink(missing_ok=True)
     if driver is not None:
         driver.unlink(missing_ok=True)
     try:

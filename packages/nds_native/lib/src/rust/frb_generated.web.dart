@@ -6,7 +6,6 @@
 // Static analysis wrongly picks the IO variant, thus ignore this
 // ignore_for_file: argument_type_not_assignable
 
-import 'api/catalog_types.dart';
 import 'api/identity.dart';
 import 'api/module_control.dart';
 import 'api/module_types.dart';
@@ -25,6 +24,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
 import 'third_party/nddev_device_sync_accounts/view.dart';
 import 'third_party/nddev_device_sync_cleaner/view.dart';
 import 'third_party/nddev_device_sync_clipboard/view.dart';
+import 'third_party/nddev_device_sync_gds/catalog_runtime/view.dart';
 import 'third_party/nddev_device_sync_gds/view.dart';
 import 'third_party/nddev_device_sync_organizations/view.dart';
 import 'third_party/nddev_device_sync_rds/view.dart';

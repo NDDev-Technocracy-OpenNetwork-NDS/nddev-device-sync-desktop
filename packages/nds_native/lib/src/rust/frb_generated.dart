@@ -3,7 +3,6 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
-import 'api/catalog_types.dart';
 import 'api/identity.dart';
 import 'api/module_control.dart';
 import 'api/module_types.dart';
@@ -24,6 +23,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'third_party/nddev_device_sync_accounts/view.dart';
 import 'third_party/nddev_device_sync_cleaner/view.dart';
 import 'third_party/nddev_device_sync_clipboard/view.dart';
+import 'third_party/nddev_device_sync_gds/catalog_runtime/view.dart';
 import 'third_party/nddev_device_sync_gds/view.dart';
 import 'third_party/nddev_device_sync_organizations/view.dart';
 import 'third_party/nddev_device_sync_rds/view.dart';
@@ -10373,7 +10373,6 @@ class NdsClientImpl extends RustOpaque implements NdsClient {
   Future<View> revokePasskey({required String id}) => RustLib.instance.api
       .crateApiIdentityNdsClientRevokePasskey(that: this, id: id);
 
-  /// Saved facts use NDS local authorization; no GitHub credential is resolved.
   Future<GithubSavedRepositoryPageView> savedGithubRepositoryPage({
     required bool nextPage,
   }) => RustLib.instance.api.crateApiIdentityNdsClientSavedGithubRepositoryPage(

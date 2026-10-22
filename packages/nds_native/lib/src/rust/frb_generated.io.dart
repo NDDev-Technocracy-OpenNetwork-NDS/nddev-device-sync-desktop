@@ -344,6 +344,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GithubCatalogError dco_decode_github_catalog_error(dynamic raw);
 
   @protected
+  GithubConnectionView dco_decode_github_connection_view(dynamic raw);
+
+  @protected
   GithubCredentialReference dco_decode_github_credential_reference(dynamic raw);
 
   @protected
@@ -949,6 +952,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   GithubCatalogError sse_decode_github_catalog_error(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GithubConnectionView sse_decode_github_connection_view(
     SseDeserializer deserializer,
   );
 
@@ -1652,6 +1660,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_github_catalog_error(
     GithubCatalogError self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_github_connection_view(
+    GithubConnectionView self,
     SseSerializer serializer,
   );
 

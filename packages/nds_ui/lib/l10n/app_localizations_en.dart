@@ -1243,4 +1243,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get moduleStateQueued => 'Local states queued for synchronization.';
+
+  @override
+  String get permissionGitWrite =>
+      'Create checkouts and synchronize existing Git commits';
+
+  @override
+  String get repositoryConnect => 'Connect checkout';
+
+  @override
+  String repositoryConnected(String path) {
+    return 'Checkout connected: $path';
+  }
+
+  @override
+  String repositoryRegistrationPending(String path) {
+    return 'Checkout exists at $path. Retry connection to finish NDS registration.';
+  }
+
+  @override
+  String get repositoryIntentQueued =>
+      'Connection intent was queued for NDS synchronization.';
+
+  @override
+  String get repositoryPathOccupied =>
+      'This location is already occupied. Existing files were preserved.';
+
+  @override
+  String get repositoryDifferentInstallation =>
+      'This checkout belongs to another NDS account or installation.';
+
+  @override
+  String get repositoryRelocationRequired =>
+      'The saved connection uses another location. Review its move before connecting here.';
+
+  @override
+  String get repositoryWrongRemote =>
+      'The Git origin or stored repository identity does not match the selected repository.';
+
+  @override
+  String get repositoryUnsupported =>
+      'Local checkout connection is not supported on this device.';
 }

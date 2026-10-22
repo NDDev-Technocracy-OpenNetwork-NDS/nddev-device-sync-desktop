@@ -475,6 +475,48 @@ void main() {
               await tester.pump(const Duration(milliseconds: 200));
               await Future<void>.delayed(const Duration(milliseconds: 200));
             }
+            final configured = (await device.settled(client.deviceModules))
+                .singleWhere((module) => module.id == 'gds');
+            if (Platform.isLinux || Platform.isMacOS) {
+              expect(configured.optionalPermissions, contains('git_write'));
+              expect(configured.permissions, isNot(contains('git_write')));
+              await modules.configure(
+                tester,
+                enabled: true,
+                permissions: [
+                  'read_only',
+                  'credential_store',
+                  'local_network',
+                  'git_write',
+                ],
+              );
+              expect(
+                (await device.settled(client.deviceModules))
+                    .singleWhere((module) => module.id == 'gds')
+                    .permissions,
+                contains('git_write'),
+              );
+              await modules.configure(
+                tester,
+                enabled: true,
+                permissions: ['read_only', 'credential_store', 'local_network'],
+              );
+              expect(
+                (await device.settled(client.deviceModules))
+                    .singleWhere((module) => module.id == 'gds')
+                    .permissions,
+                isNot(contains('git_write')),
+              );
+            } else {
+              expect(
+                configured.optionalPermissions,
+                isNot(contains('git_write')),
+              );
+              expect(
+                find.byKey(const Key('module-permission-git_write')),
+                findsNothing,
+              );
+            }
             await modules.tapVisible(tester, find.text('NDS session'));
           }
         }

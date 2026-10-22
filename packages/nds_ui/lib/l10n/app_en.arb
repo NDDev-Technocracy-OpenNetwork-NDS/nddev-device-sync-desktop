@@ -550,5 +550,29 @@
   "moduleReloadDraft": "Reload settings",
   "catalogSourceHelp": "This choice is saved and synchronized across your account. Enable GDS permissions separately on each device.",
   "catalogClearSource": "Clear GitHub choice",
-  "moduleStateQueued": "Local states queued for synchronization."
+  "moduleStateQueued": "Local states queued for synchronization.",
+  "permissionGitWrite": "Create checkouts and synchronize existing Git commits",
+  "repositoryConnect": "Connect checkout",
+  "repositoryConnected": "Checkout connected: {path}",
+  "@repositoryConnected": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "repositoryRegistrationPending": "Checkout exists at {path}. Retry connection to finish NDS registration.",
+  "@repositoryRegistrationPending": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "repositoryIntentQueued": "Connection intent was queued for NDS synchronization.",
+  "repositoryPathOccupied": "This location is already occupied. Existing files were preserved.",
+  "repositoryDifferentInstallation": "This checkout belongs to another NDS account or installation.",
+  "repositoryRelocationRequired": "The saved connection uses another location. Review its move before connecting here.",
+  "repositoryWrongRemote": "The Git origin or stored repository identity does not match the selected repository.",
+  "repositoryUnsupported": "Local checkout connection is not supported on this device."
 }

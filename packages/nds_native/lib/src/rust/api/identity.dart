@@ -88,6 +88,13 @@ abstract class NdsClient implements RustOpaqueInterface {
     String? pendingId,
   });
 
+  Future<GithubConnectionView> connectGithubRepository({
+    required String repositoryId,
+    required String ownerId,
+    required String owner,
+    required String name,
+  });
+
   DeliveryView deliverySnapshot();
 
   Future<List<DeviceModuleView>> deviceModules();

@@ -1254,4 +1254,45 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get moduleStateQueued =>
       'Локальные состояния поставлены в очередь синхронизации.';
+
+  @override
+  String get permissionGitWrite =>
+      'Подключать репозитории и синхронизировать Git-коммиты';
+
+  @override
+  String get repositoryConnect => 'Подключить репозиторий';
+
+  @override
+  String repositoryConnected(String path) {
+    return 'Репозиторий подключён: $path';
+  }
+
+  @override
+  String repositoryRegistrationPending(String path) {
+    return 'Репозиторий находится в $path. Повторите подключение, чтобы завершить регистрацию в NDS.';
+  }
+
+  @override
+  String get repositoryIntentQueued =>
+      'Намерение подключения поставлено в очередь синхронизации NDS.';
+
+  @override
+  String get repositoryPathOccupied =>
+      'Это место уже занято. Существующие файлы сохранены.';
+
+  @override
+  String get repositoryDifferentInstallation =>
+      'Репозиторий привязан к другому аккаунту или установке NDS.';
+
+  @override
+  String get repositoryRelocationRequired =>
+      'Сохранённая привязка использует другое расположение. Сначала проверьте перенос репозитория.';
+
+  @override
+  String get repositoryWrongRemote =>
+      'Git origin или сохранённый идентификатор не соответствует выбранному репозиторию.';
+
+  @override
+  String get repositoryUnsupported =>
+      'Локальное подключение репозиториев не поддерживается на этом устройстве.';
 }

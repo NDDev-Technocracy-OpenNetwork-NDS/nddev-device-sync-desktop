@@ -23,6 +23,7 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
   native.GithubSourceView? _source;
   native.GithubRepositoryPageView? _page;
   native.GithubSavedRepositoryPageView? _savedPage;
+  native.GithubConnectionView? _connection;
   bool _savedMode = true;
   String _nextCredential = '';
   bool _moreCredentials = false;
@@ -63,6 +64,7 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
   void _clearView() {
     _page = null;
     _savedPage = null;
+    _connection = null;
     _selected = null;
     _source = null;
     _credentials = [];
@@ -104,6 +106,7 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
     setState(() {
       _busy = true;
       _error = null;
+      _connection = null;
     });
     try {
       await action(epoch);
@@ -136,7 +139,10 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
           _error = error;
           // Keep the last accepted page so its next-page action can resume
           // the Rust-owned remainder after backpressure or a bounded wait.
-          if (error != native.GithubCatalogError.busy &&
+          if ((!_savedMode ||
+                  error == native.GithubCatalogError.authorizationRequired ||
+                  error == native.GithubCatalogError.cancelled) &&
+              error != native.GithubCatalogError.busy &&
               error != native.GithubCatalogError.timeout &&
               error != native.GithubCatalogError.capacityExhausted) {
             _page = null;
@@ -310,13 +316,54 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
         if (value.conflicted) l.vaultConflict,
       ].join(' · ');
 
+  String _connectionMessage(
+    AppLocalizations l,
+    native.GithubConnectionView value,
+  ) => switch (value.outcome) {
+    'connected' => l.repositoryConnected(value.relativePath),
+    'registration_pending' => l.repositoryRegistrationPending(
+      value.relativePath,
+    ),
+    'unsupported' => l.repositoryUnsupported,
+    _ => switch (value.reason) {
+      'path_occupied' => l.repositoryPathOccupied,
+      'active_writer' => l.operationBusy,
+      'different_account' => l.repositoryDifferentInstallation,
+      'relocation_required' => l.repositoryRelocationRequired,
+      _ => l.repositoryWrongRemote,
+    },
+  };
+
   Widget _repositoryTile(
     AppLocalizations l,
     native.GithubRepositorySummaryView repository, [
     native.GithubObservationView? observation,
+    native.GithubOwnerView? owner,
   ]) => ListTile(
     key: ValueKey('catalog-repository-${repository.id}'),
     contentPadding: EdgeInsets.zero,
+    trailing:
+        _savedPage?.localWorkspaceSupported == true &&
+            owner != null &&
+            observation?.conflicted != true
+        ? TextButton(
+            key: ValueKey('catalog-connect-${repository.id}'),
+            onPressed: _busy
+                ? null
+                : () => _run((epoch) async {
+                    final result = await widget.client.connectGithubRepository(
+                      repositoryId: repository.id,
+                      ownerId: owner.id,
+                      owner: owner.login,
+                      name: repository.name,
+                    );
+                    if (mounted && epoch == _actionEpoch && !_paused) {
+                      setState(() => _connection = result);
+                    }
+                  }),
+            child: Text(l.repositoryConnect),
+          )
+        : null,
     title: Text(repository.name),
     subtitle: Text(
       [
@@ -398,6 +445,13 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
             ),
             const SizedBox(height: OpenNetworkSpacing.four),
             if (_busy) const LinearProgressIndicator(),
+            if (_connection != null) ...[
+              Semantics(
+                liveRegion: true,
+                child: Text(_connectionMessage(l, _connection!)),
+              ),
+              if (_connection!.intentQueued) Text(l.repositoryIntentQueued),
+            ],
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -433,7 +487,14 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
                 for (final group in _savedPage!.groups)
                   _ownerCard(l, group.ownerId, group.owner?.owner, [
                     for (final item in group.repositories)
-                      _repositoryTile(l, item.repository, item.observation),
+                      _repositoryTile(
+                        l,
+                        item.repository,
+                        item.observation,
+                        group.owner?.observation.conflicted == false
+                            ? group.owner?.owner
+                            : null,
+                      ),
                   ], group.owner?.observation),
               ],
             ] else ...[

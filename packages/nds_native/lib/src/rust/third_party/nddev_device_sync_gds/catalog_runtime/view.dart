@@ -27,6 +27,38 @@ enum GithubCatalogError {
   moduleConfigurationConflict,
 }
 
+class GithubConnectionView {
+  /// Connection is distinct from successful synchronization of commits.
+  final String outcome;
+  final String reason;
+  final String relativePath;
+  final bool intentQueued;
+
+  const GithubConnectionView({
+    required this.outcome,
+    required this.reason,
+    required this.relativePath,
+    required this.intentQueued,
+  });
+
+  @override
+  int get hashCode =>
+      outcome.hashCode ^
+      reason.hashCode ^
+      relativePath.hashCode ^
+      intentQueued.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GithubConnectionView &&
+          runtimeType == other.runtimeType &&
+          outcome == other.outcome &&
+          reason == other.reason &&
+          relativePath == other.relativePath &&
+          intentQueued == other.intentQueued;
+}
+
 class GithubCredentialReference {
   final String recordRef;
   final String title;
@@ -275,12 +307,14 @@ class GithubSavedRepositoryGroupView {
 }
 
 class GithubSavedRepositoryPageView {
+  final bool localWorkspaceSupported;
   final List<GithubSavedRepositoryGroupView> groups;
   final String observedSeq;
   final String localRevision;
   final bool hasMore;
 
   const GithubSavedRepositoryPageView({
+    required this.localWorkspaceSupported,
     required this.groups,
     required this.observedSeq,
     required this.localRevision,
@@ -289,6 +323,7 @@ class GithubSavedRepositoryPageView {
 
   @override
   int get hashCode =>
+      localWorkspaceSupported.hashCode ^
       groups.hashCode ^
       observedSeq.hashCode ^
       localRevision.hashCode ^
@@ -299,6 +334,7 @@ class GithubSavedRepositoryPageView {
       identical(this, other) ||
       other is GithubSavedRepositoryPageView &&
           runtimeType == other.runtimeType &&
+          localWorkspaceSupported == other.localWorkspaceSupported &&
           groups == other.groups &&
           observedSeq == other.observedSeq &&
           localRevision == other.localRevision &&

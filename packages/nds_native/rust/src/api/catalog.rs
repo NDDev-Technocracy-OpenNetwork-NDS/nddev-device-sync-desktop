@@ -17,6 +17,37 @@ fn catalog_revision(text: &str) -> Result<u64, GithubCatalogError> {
 }
 
 impl NdsClient {
+    pub async fn connect_github_repository(
+        &self,
+        repository_id: String,
+        owner_id: String,
+        owner: String,
+        name: String,
+    ) -> Result<GithubConnectionView, GithubCatalogError> {
+        use nddev_device_sync_domain::repositories::{
+            catalog::{GithubAccountId, RepositoryId},
+            workspace::CheckoutLocation,
+        };
+        let parse = |value: &str| {
+            let number = value
+                .parse::<u64>()
+                .map_err(|_| GithubCatalogError::InvalidInput)?;
+            if number.to_string() != value {
+                return Err(GithubCatalogError::InvalidInput);
+            }
+            Ok(number)
+        };
+        let location = CheckoutLocation::new(
+            RepositoryId::new(parse(&repository_id)?)?,
+            GithubAccountId::new(parse(&owner_id)?)?,
+            owner,
+            name,
+        )?;
+        self.catalog_session()
+            .await?
+            .connect_repository(location)
+            .await
+    }
     #[cfg_attr(feature = "flutter", frb(ignore))]
     pub(crate) fn invalidate_catalog(&self) {
         if let Some(client) = self

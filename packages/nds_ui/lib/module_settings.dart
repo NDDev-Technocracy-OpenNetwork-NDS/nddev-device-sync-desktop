@@ -12,6 +12,7 @@ String modulePermissionLabel(AppLocalizations l, String value) =>
       'local_network' => l.permissionLocalNetwork,
       'user_service' => l.permissionUserService,
       'clipboard' => l.permissionClipboard,
+      'git_write' => l.permissionGitWrite,
       _ => value,
     };
 
@@ -204,8 +205,13 @@ class _ModuleSettingsState extends State<ModuleSettings> {
                   _saved = false;
                 }),
         ),
-        if (module.requiredPermissions.isNotEmpty) Text(l.modulePermissions),
-        for (final permission in module.requiredPermissions)
+        if (module.requiredPermissions.isNotEmpty ||
+            module.optionalPermissions.isNotEmpty)
+          Text(l.modulePermissions),
+        for (final permission in {
+          ...module.requiredPermissions,
+          ...module.optionalPermissions,
+        })
           CheckboxListTile(
             key: Key('module-permission-$permission'),
             title: Text(modulePermissionLabel(l, permission)),

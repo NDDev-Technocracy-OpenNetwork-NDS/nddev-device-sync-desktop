@@ -44,7 +44,9 @@ use zeroize::Zeroizing;
 #[cfg_attr(feature = "flutter", frb(opaque))]
 pub struct NdsClient {
     inner: Arc<IdentityClient>,
-    pub(crate) catalog: Mutex<super::catalog::CatalogState>,
+    pub(crate) catalog: Mutex<Option<Arc<nddev_device_sync_gds::catalog_runtime::CatalogClient>>>,
+    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+    pub(crate) catalog_owner: nddev_device_sync_vault::replication::CatalogSlot,
     pub(crate) module_control: Arc<super::module_control::ModuleControl>,
     vault: tokio::sync::Mutex<Option<Arc<VaultClient>>>,
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
@@ -86,6 +88,8 @@ impl NdsClient {
         Ok(Self {
             inner: Arc::new(IdentityClient::new(&endpoint)?),
             catalog: Mutex::default(),
+            #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+            catalog_owner: Arc::default(),
             module_control: Arc::default(),
             vault: tokio::sync::Mutex::new(None),
             #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
@@ -105,7 +109,7 @@ impl NdsClient {
     }
     #[cfg_attr(feature = "flutter", frb(ignore))]
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
-    fn native_runtime(&self) -> Option<Arc<NativeReplica>> {
+    pub(crate) fn native_runtime(&self) -> Option<Arc<NativeReplica>> {
         self.native_runtime
             .lock()
             .unwrap_or_else(|error| error.into_inner())
@@ -468,6 +472,9 @@ impl NdsClient {
             .await
             .map_err(replica_start_error)?;
             self.inner.validate_local_use(fence).await?;
+            owner
+                .catalog(nddev_device_sync_gds::catalog_runtime::CatalogRuntime::new)
+                .map_err(replica_start_error)?;
             {
                 let _publication = self
                     .publication
@@ -485,6 +492,9 @@ impl NdsClient {
         #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
         {
             let vault = self.vault().await.map_err(replica_start_error)?;
+            self.catalog_runtime()
+                .await
+                .map_err(|_| ClientError::Busy)?;
             self.inner.validate_local_use(fence).await?;
             // Protected I/O is complete before this brief cancellation/publication boundary.
             let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
@@ -523,6 +533,10 @@ impl NdsClient {
                 policy_slot: self.replica_schedule.clone(),
                 schedule,
                 client_version: Some(env!("CARGO_PKG_VERSION").into()),
+                #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+                catalog: self.catalog_owner.clone(),
+                #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+                catalog: Arc::default(),
             },
             initial_delay,
             self.replication_active.load(Ordering::Relaxed),
@@ -1103,6 +1117,15 @@ impl NdsClient {
         let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
         self.cancel_screen();
         self.invalidate_catalog();
+        #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+        if let Some(catalog) = self
+            .catalog_owner
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .take()
+        {
+            catalog.cancel();
+        }
         self.delivery
             .lock()
             .unwrap_or_else(|e| e.into_inner())

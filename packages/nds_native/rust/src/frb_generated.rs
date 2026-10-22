@@ -1135,7 +1135,10 @@ fn wire__crate__api__identity__NdsClient_clear_github_catalog_source_impl(
             let api_expected_pending = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
-                transform_result_sse::<_, crate::api::catalog_types::GithubCatalogError>(
+                transform_result_sse::<
+                    _,
+                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError,
+                >(
                     (move || async move {
                         let mut api_that_guard = None;
                         let decode_indices_ =
@@ -2107,7 +2110,10 @@ fn wire__crate__api__identity__NdsClient_github_catalog_credentials_impl(
             let api_after = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
-                transform_result_sse::<_, crate::api::catalog_types::GithubCatalogError>(
+                transform_result_sse::<
+                    _,
+                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError,
+                >(
                     (move || async move {
                         let mut api_that_guard = None;
                         let decode_indices_ =
@@ -2167,7 +2173,10 @@ fn wire__crate__api__identity__NdsClient_github_catalog_source_impl(
             >>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
-                transform_result_sse::<_, crate::api::catalog_types::GithubCatalogError>(
+                transform_result_sse::<
+                    _,
+                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError,
+                >(
                     (move || async move {
                         let mut api_that_guard = None;
                         let decode_indices_ =
@@ -2226,7 +2235,10 @@ fn wire__crate__api__identity__NdsClient_github_repository_page_impl(
             let api_next_page = <bool>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
-                transform_result_sse::<_, crate::api::catalog_types::GithubCatalogError>(
+                transform_result_sse::<
+                    _,
+                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError,
+                >(
                     (move || async move {
                         let mut api_that_guard = None;
                         let decode_indices_ =
@@ -3368,7 +3380,10 @@ fn wire__crate__api__identity__NdsClient_saved_github_repository_page_impl(
             let api_next_page = <bool>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
-                transform_result_sse::<_, crate::api::catalog_types::GithubCatalogError>(
+                transform_result_sse::<
+                    _,
+                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError,
+                >(
                     (move || async move {
                         let mut api_that_guard = None;
                         let decode_indices_ =
@@ -3887,7 +3902,10 @@ fn wire__crate__api__identity__NdsClient_select_github_credential_impl(
             let api_expected_source_pending = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
-                transform_result_sse::<_, crate::api::catalog_types::GithubCatalogError>(
+                transform_result_sse::<
+                    _,
+                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError,
+                >(
                     (move || async move {
                         let mut api_that_guard = None;
                         let decode_indices_ =
@@ -6095,6 +6113,119 @@ const _: fn() = || {
         let _: String = GitStatus.remote_freshness;
     }
     {
+        let GithubCredentialReference =
+            None::<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>
+                .unwrap();
+        let _: String = GithubCredentialReference.record_ref;
+        let _: String = GithubCredentialReference.title;
+        let _: String = GithubCredentialReference.username;
+        let _: String = GithubCredentialReference.revision;
+        let _: Option<String> = GithubCredentialReference.pending_id;
+    }
+    {
+        let GithubCredentialReferencePage =
+            None::<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage>
+                .unwrap();
+        let _: Vec<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference> =
+            GithubCredentialReferencePage.items;
+        let _: String = GithubCredentialReferencePage.next_after;
+        let _: bool = GithubCredentialReferencePage.has_more;
+    }
+    {
+        let GithubObservationView =
+            None::<nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>.unwrap();
+        let _: String = GithubObservationView.revision;
+        let _: bool = GithubObservationView.pending;
+        let _: bool = GithubObservationView.conflicted;
+        let _: String = GithubObservationView.observed_at_ms;
+    }
+    {
+        let GithubOwnerView =
+            None::<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>.unwrap();
+        let _: String = GithubOwnerView.id;
+        let _: String = GithubOwnerView.login;
+        let _: nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView =
+            GithubOwnerView.kind;
+    }
+    {
+        let GithubRepositoryGroupView =
+            None::<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView>
+                .unwrap();
+        let _: nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView =
+            GithubRepositoryGroupView.owner;
+        let _: Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView> =
+            GithubRepositoryGroupView.repositories;
+    }
+    {
+        let GithubRepositoryPageView =
+            None::<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView>.unwrap();
+        let _: nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView =
+            GithubRepositoryPageView.principal;
+        let _: Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView> =
+            GithubRepositoryPageView.groups;
+        let _: String = GithubRepositoryPageView.observed_at_ms;
+        let _: nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView =
+            GithubRepositoryPageView.continuation;
+    }
+    {
+        let GithubRepositorySummaryView =
+            None::<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>
+                .unwrap();
+        let _: String = GithubRepositorySummaryView.id;
+        let _: String = GithubRepositorySummaryView.name;
+        let _: nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView =
+            GithubRepositorySummaryView.visibility;
+        let _: bool = GithubRepositorySummaryView.archived;
+        let _: Option<String> = GithubRepositorySummaryView.default_branch;
+    }
+    {
+        let GithubSavedOwnerView =
+            None::<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView>.unwrap();
+        let _: nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView =
+            GithubSavedOwnerView.owner;
+        let _: nddev_device_sync_gds::catalog_runtime::view::GithubObservationView =
+            GithubSavedOwnerView.observation;
+    }
+    {
+        let GithubSavedRepositoryGroupView =
+            None::<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>
+                .unwrap();
+        let _: String = GithubSavedRepositoryGroupView.owner_id;
+        let _: Option<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView> =
+            GithubSavedRepositoryGroupView.owner;
+        let _: Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView> =
+            GithubSavedRepositoryGroupView.repositories;
+    }
+    {
+        let GithubSavedRepositoryPageView =
+            None::<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView>
+                .unwrap();
+        let _: Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView> =
+            GithubSavedRepositoryPageView.groups;
+        let _: String = GithubSavedRepositoryPageView.observed_seq;
+        let _: String = GithubSavedRepositoryPageView.local_revision;
+        let _: bool = GithubSavedRepositoryPageView.has_more;
+    }
+    {
+        let GithubSavedRepositoryView =
+            None::<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView>
+                .unwrap();
+        let _: nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView =
+            GithubSavedRepositoryView.repository;
+        let _: nddev_device_sync_gds::catalog_runtime::view::GithubObservationView =
+            GithubSavedRepositoryView.observation;
+    }
+    {
+        let GithubSourceView =
+            None::<nddev_device_sync_gds::catalog_runtime::view::GithubSourceView>.unwrap();
+        let _: Option<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference> =
+            GithubSourceView.credential;
+        let _: String = GithubSourceView.revision;
+        let _: Option<String> = GithubSourceView.pending_id;
+        let _: String = GithubSourceView.local_revision;
+        let _: bool = GithubSourceView.conflicted;
+    }
+    {
         let Gpu = None::<nddev_device_sync_sysinfo::view::Gpu>.unwrap();
         let _: Option<f64> = Gpu.usage;
         let _: Option<f64> = Gpu.memory;
@@ -6961,46 +7092,43 @@ impl SseDecode for nddev_device_sync_gds::view::GitStatus {
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubCatalogContinuationView {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <i32>::sse_decode(deserializer);
         return match inner {
-            0 => crate::api::catalog_types::GithubCatalogContinuationView::More,
-            1 => crate::api::catalog_types::GithubCatalogContinuationView::EndOfAccessScope,
-            2 => crate::api::catalog_types::GithubCatalogContinuationView::LimitReached,
-            _ => unreachable!(
-                "Invalid variant for GithubCatalogContinuationView: {}",
-                inner
-            ),
+            0 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::More,
+1 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::EndOfAccessScope,
+2 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::LimitReached,
+            _ => unreachable!("Invalid variant for GithubCatalogContinuationView: {}", inner),
         };
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubCatalogError {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <i32>::sse_decode(deserializer);
         return match inner {
-            0 => crate::api::catalog_types::GithubCatalogError::InvalidInput,
-            1 => crate::api::catalog_types::GithubCatalogError::AuthorizationRequired,
-            2 => crate::api::catalog_types::GithubCatalogError::CredentialChanged,
-            3 => crate::api::catalog_types::GithubCatalogError::Busy,
-            4 => crate::api::catalog_types::GithubCatalogError::Cancelled,
-            5 => crate::api::catalog_types::GithubCatalogError::Timeout,
-            6 => crate::api::catalog_types::GithubCatalogError::Unavailable,
-            7 => crate::api::catalog_types::GithubCatalogError::ProviderFailed,
-            8 => crate::api::catalog_types::GithubCatalogError::InvalidResponse,
-            9 => crate::api::catalog_types::GithubCatalogError::CapacityExhausted,
-            10 => crate::api::catalog_types::GithubCatalogError::ModuleDisabled,
-            11 => crate::api::catalog_types::GithubCatalogError::ModulePermissionRequired,
-            12 => crate::api::catalog_types::GithubCatalogError::ModuleConfigurationConflict,
+            0 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::InvalidInput,
+1 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::AuthorizationRequired,
+2 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::CredentialChanged,
+3 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Busy,
+4 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Cancelled,
+5 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Timeout,
+6 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Unavailable,
+7 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ProviderFailed,
+8 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::InvalidResponse,
+9 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::CapacityExhausted,
+10 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModuleDisabled,
+11 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired,
+12 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict,
             _ => unreachable!("Invalid variant for GithubCatalogError: {}", inner),
         };
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubCredentialReference {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_recordRef = <String>::sse_decode(deserializer);
@@ -7008,7 +7136,7 @@ impl SseDecode for crate::api::catalog_types::GithubCredentialReference {
         let mut var_username = <String>::sse_decode(deserializer);
         let mut var_revision = <String>::sse_decode(deserializer);
         let mut var_pendingId = <Option<String>>::sse_decode(deserializer);
-        return crate::api::catalog_types::GithubCredentialReference {
+        return nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference {
             record_ref: var_recordRef,
             title: var_title,
             username: var_username,
@@ -7018,14 +7146,15 @@ impl SseDecode for crate::api::catalog_types::GithubCredentialReference {
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubCredentialReferencePage {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_items =
-            <Vec<crate::api::catalog_types::GithubCredentialReference>>::sse_decode(deserializer);
+        let mut var_items = <Vec<
+            nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference,
+        >>::sse_decode(deserializer);
         let mut var_nextAfter = <String>::sse_decode(deserializer);
         let mut var_hasMore = <bool>::sse_decode(deserializer);
-        return crate::api::catalog_types::GithubCredentialReferencePage {
+        return nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage {
             items: var_items,
             next_after: var_nextAfter,
             has_more: var_hasMore,
@@ -7033,14 +7162,14 @@ impl SseDecode for crate::api::catalog_types::GithubCredentialReferencePage {
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubObservationView {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubObservationView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_revision = <String>::sse_decode(deserializer);
         let mut var_pending = <bool>::sse_decode(deserializer);
         let mut var_conflicted = <bool>::sse_decode(deserializer);
         let mut var_observedAtMs = <String>::sse_decode(deserializer);
-        return crate::api::catalog_types::GithubObservationView {
+        return nddev_device_sync_gds::catalog_runtime::view::GithubObservationView {
             revision: var_revision,
             pending: var_pending,
             conflicted: var_conflicted,
@@ -7049,26 +7178,28 @@ impl SseDecode for crate::api::catalog_types::GithubObservationView {
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubOwnerKindView {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <i32>::sse_decode(deserializer);
         return match inner {
-            0 => crate::api::catalog_types::GithubOwnerKindView::User,
-            1 => crate::api::catalog_types::GithubOwnerKindView::Organization,
+            0 => nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView::User,
+            1 => nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView::Organization,
             _ => unreachable!("Invalid variant for GithubOwnerKindView: {}", inner),
         };
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubOwnerView {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_id = <String>::sse_decode(deserializer);
         let mut var_login = <String>::sse_decode(deserializer);
         let mut var_kind =
-            <crate::api::catalog_types::GithubOwnerKindView>::sse_decode(deserializer);
-        return crate::api::catalog_types::GithubOwnerView {
+            <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView>::sse_decode(
+                deserializer,
+            );
+        return nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView {
             id: var_id,
             login: var_login,
             kind: var_kind,
@@ -7076,30 +7207,36 @@ impl SseDecode for crate::api::catalog_types::GithubOwnerView {
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubRepositoryGroupView {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_owner = <crate::api::catalog_types::GithubOwnerView>::sse_decode(deserializer);
-        let mut var_repositories =
-            <Vec<crate::api::catalog_types::GithubRepositorySummaryView>>::sse_decode(deserializer);
-        return crate::api::catalog_types::GithubRepositoryGroupView {
+        let mut var_owner =
+            <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>::sse_decode(
+                deserializer,
+            );
+        let mut var_repositories = <Vec<
+            nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView,
+        >>::sse_decode(deserializer);
+        return nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView {
             owner: var_owner,
             repositories: var_repositories,
         };
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubRepositoryPageView {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_principal =
-            <crate::api::catalog_types::GithubOwnerView>::sse_decode(deserializer);
-        let mut var_groups =
-            <Vec<crate::api::catalog_types::GithubRepositoryGroupView>>::sse_decode(deserializer);
+            <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>::sse_decode(
+                deserializer,
+            );
+        let mut var_groups = <Vec<
+            nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView,
+        >>::sse_decode(deserializer);
         let mut var_observedAtMs = <String>::sse_decode(deserializer);
-        let mut var_continuation =
-            <crate::api::catalog_types::GithubCatalogContinuationView>::sse_decode(deserializer);
-        return crate::api::catalog_types::GithubRepositoryPageView {
+        let mut var_continuation = <nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView>::sse_decode(deserializer);
+        return nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView {
             principal: var_principal,
             groups: var_groups,
             observed_at_ms: var_observedAtMs,
@@ -7108,16 +7245,15 @@ impl SseDecode for crate::api::catalog_types::GithubRepositoryPageView {
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubRepositorySummaryView {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_id = <String>::sse_decode(deserializer);
         let mut var_name = <String>::sse_decode(deserializer);
-        let mut var_visibility =
-            <crate::api::catalog_types::GithubRepositoryVisibilityView>::sse_decode(deserializer);
+        let mut var_visibility = <nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView>::sse_decode(deserializer);
         let mut var_archived = <bool>::sse_decode(deserializer);
         let mut var_defaultBranch = <Option<String>>::sse_decode(deserializer);
-        return crate::api::catalog_types::GithubRepositorySummaryView {
+        return nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView {
             id: var_id,
             name: var_name,
             visibility: var_visibility,
@@ -7127,44 +7263,48 @@ impl SseDecode for crate::api::catalog_types::GithubRepositorySummaryView {
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubRepositoryVisibilityView {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <i32>::sse_decode(deserializer);
         return match inner {
-            0 => crate::api::catalog_types::GithubRepositoryVisibilityView::Public,
-            1 => crate::api::catalog_types::GithubRepositoryVisibilityView::Private,
-            2 => crate::api::catalog_types::GithubRepositoryVisibilityView::Internal,
-            _ => unreachable!(
-                "Invalid variant for GithubRepositoryVisibilityView: {}",
-                inner
-            ),
+            0 => nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Public,
+1 => nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Private,
+2 => nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Internal,
+            _ => unreachable!("Invalid variant for GithubRepositoryVisibilityView: {}", inner),
         };
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubSavedOwnerView {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_owner = <crate::api::catalog_types::GithubOwnerView>::sse_decode(deserializer);
+        let mut var_owner =
+            <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>::sse_decode(
+                deserializer,
+            );
         let mut var_observation =
-            <crate::api::catalog_types::GithubObservationView>::sse_decode(deserializer);
-        return crate::api::catalog_types::GithubSavedOwnerView {
+            <nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>::sse_decode(
+                deserializer,
+            );
+        return nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView {
             owner: var_owner,
             observation: var_observation,
         };
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubSavedRepositoryGroupView {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_ownerId = <String>::sse_decode(deserializer);
-        let mut var_owner =
-            <Option<crate::api::catalog_types::GithubSavedOwnerView>>::sse_decode(deserializer);
-        let mut var_repositories =
-            <Vec<crate::api::catalog_types::GithubSavedRepositoryView>>::sse_decode(deserializer);
-        return crate::api::catalog_types::GithubSavedRepositoryGroupView {
+        let mut var_owner = <Option<
+            nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView,
+        >>::sse_decode(deserializer);
+        let mut var_repositories = <Vec<
+            nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView,
+        >>::sse_decode(deserializer);
+        return nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView {
             owner_id: var_ownerId,
             owner: var_owner,
             repositories: var_repositories,
@@ -7172,17 +7312,16 @@ impl SseDecode for crate::api::catalog_types::GithubSavedRepositoryGroupView {
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubSavedRepositoryPageView {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_groups =
-            <Vec<crate::api::catalog_types::GithubSavedRepositoryGroupView>>::sse_decode(
-                deserializer,
-            );
+        let mut var_groups = <Vec<
+            nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView,
+        >>::sse_decode(deserializer);
         let mut var_observedSeq = <String>::sse_decode(deserializer);
         let mut var_localRevision = <String>::sse_decode(deserializer);
         let mut var_hasMore = <bool>::sse_decode(deserializer);
-        return crate::api::catalog_types::GithubSavedRepositoryPageView {
+        return nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView {
             groups: var_groups,
             observed_seq: var_observedSeq,
             local_revision: var_localRevision,
@@ -7191,32 +7330,35 @@ impl SseDecode for crate::api::catalog_types::GithubSavedRepositoryPageView {
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubSavedRepositoryView {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_repository =
-            <crate::api::catalog_types::GithubRepositorySummaryView>::sse_decode(deserializer);
+            <nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>::sse_decode(
+                deserializer,
+            );
         let mut var_observation =
-            <crate::api::catalog_types::GithubObservationView>::sse_decode(deserializer);
-        return crate::api::catalog_types::GithubSavedRepositoryView {
+            <nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>::sse_decode(
+                deserializer,
+            );
+        return nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView {
             repository: var_repository,
             observation: var_observation,
         };
     }
 }
 
-impl SseDecode for crate::api::catalog_types::GithubSourceView {
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSourceView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_credential =
-            <Option<crate::api::catalog_types::GithubCredentialReference>>::sse_decode(
-                deserializer,
-            );
+        let mut var_credential = <Option<
+            nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference,
+        >>::sse_decode(deserializer);
         let mut var_revision = <String>::sse_decode(deserializer);
         let mut var_pendingId = <Option<String>>::sse_decode(deserializer);
         let mut var_localRevision = <String>::sse_decode(deserializer);
         let mut var_conflicted = <bool>::sse_decode(deserializer);
-        return crate::api::catalog_types::GithubSourceView {
+        return nddev_device_sync_gds::catalog_runtime::view::GithubSourceView {
             credential: var_credential,
             revision: var_revision,
             pending_id: var_pendingId,
@@ -7404,73 +7546,63 @@ impl SseDecode for Vec<nddev_device_sync_gds::view::Finding> {
     }
 }
 
-impl SseDecode for Vec<crate::api::catalog_types::GithubCredentialReference> {
+impl SseDecode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(
-                <crate::api::catalog_types::GithubCredentialReference>::sse_decode(deserializer),
-            );
+            ans_.push(<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>::sse_decode(deserializer));
         }
         return ans_;
     }
 }
 
-impl SseDecode for Vec<crate::api::catalog_types::GithubRepositoryGroupView> {
+impl SseDecode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(
-                <crate::api::catalog_types::GithubRepositoryGroupView>::sse_decode(deserializer),
-            );
+            ans_.push(<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView>::sse_decode(deserializer));
         }
         return ans_;
     }
 }
 
-impl SseDecode for Vec<crate::api::catalog_types::GithubRepositorySummaryView> {
+impl SseDecode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(
-                <crate::api::catalog_types::GithubRepositorySummaryView>::sse_decode(deserializer),
-            );
+            ans_.push(<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>::sse_decode(deserializer));
         }
         return ans_;
     }
 }
 
-impl SseDecode for Vec<crate::api::catalog_types::GithubSavedRepositoryGroupView> {
+impl SseDecode
+    for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>
+{
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(
-                <crate::api::catalog_types::GithubSavedRepositoryGroupView>::sse_decode(
-                    deserializer,
-                ),
-            );
+            ans_.push(<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>::sse_decode(deserializer));
         }
         return ans_;
     }
 }
 
-impl SseDecode for Vec<crate::api::catalog_types::GithubSavedRepositoryView> {
+impl SseDecode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(
-                <crate::api::catalog_types::GithubSavedRepositoryView>::sse_decode(deserializer),
-            );
+            ans_.push(<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView>::sse_decode(deserializer));
         }
         return ans_;
     }
@@ -7782,25 +7914,25 @@ impl SseDecode for Option<nddev_device_sync_gds::view::GitStatus> {
     }
 }
 
-impl SseDecode for Option<crate::api::catalog_types::GithubCredentialReference> {
+impl SseDecode for Option<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
-            return Some(
-                <crate::api::catalog_types::GithubCredentialReference>::sse_decode(deserializer),
-            );
+            return Some(<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>::sse_decode(deserializer));
         } else {
             return None;
         }
     }
 }
 
-impl SseDecode for Option<crate::api::catalog_types::GithubSavedOwnerView> {
+impl SseDecode for Option<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(
-                <crate::api::catalog_types::GithubSavedOwnerView>::sse_decode(deserializer),
+                <nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView>::sse_decode(
+                    deserializer,
+                ),
             );
         } else {
             return None;
@@ -9682,370 +9814,475 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_gds::view::G
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubCatalogContinuationView {
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView>
+{
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
-            Self::More => 0.into_dart(),
-            Self::EndOfAccessScope => 1.into_dart(),
-            Self::LimitReached => 2.into_dart(),
+        match self.0 {
+                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::More => 0.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::EndOfAccessScope => 1.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::LimitReached => 2.into_dart(),
+                    _ => unreachable!(),
+                }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView>
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView
+{
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView>
+    {
+        self.into()
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError>
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self.0 {
+                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::InvalidInput => 0.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::AuthorizationRequired => 1.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::CredentialChanged => 2.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Busy => 3.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Cancelled => 4.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Timeout => 5.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Unavailable => 6.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ProviderFailed => 7.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::InvalidResponse => 8.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::CapacityExhausted => 9.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModuleDisabled => 10.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired => 11.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict => 12.into_dart(),
+                    _ => unreachable!(),
+                }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError>
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError
+{
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError> {
+        self.into()
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.0.record_ref.into_into_dart().into_dart(),
+            self.0.title.into_into_dart().into_dart(),
+            self.0.username.into_into_dart().into_dart(),
+            self.0.revision.into_into_dart().into_dart(),
+            self.0.pending_id.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference
+{
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference> {
+        self.into()
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage>
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.0.items.into_into_dart().into_dart(),
+            self.0.next_after.into_into_dart().into_dart(),
+            self.0.has_more.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage>
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage
+{
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage>
+    {
+        self.into()
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.0.revision.into_into_dart().into_dart(),
+            self.0.pending.into_into_dart().into_dart(),
+            self.0.conflicted.into_into_dart().into_dart(),
+            self.0.observed_at_ms.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubObservationView
+{
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubObservationView> {
+        self.into()
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView>
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self.0 {
+            nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView::User => {
+                0.into_dart()
+            }
+            nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView::Organization => {
+                1.into_dart()
+            }
             _ => unreachable!(),
         }
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubCatalogContinuationView
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubCatalogContinuationView>
-    for crate::api::catalog_types::GithubCatalogContinuationView
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView
 {
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubCatalogContinuationView {
-        self
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubCatalogError {
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
-            Self::InvalidInput => 0.into_dart(),
-            Self::AuthorizationRequired => 1.into_dart(),
-            Self::CredentialChanged => 2.into_dart(),
-            Self::Busy => 3.into_dart(),
-            Self::Cancelled => 4.into_dart(),
-            Self::Timeout => 5.into_dart(),
-            Self::Unavailable => 6.into_dart(),
-            Self::ProviderFailed => 7.into_dart(),
-            Self::InvalidResponse => 8.into_dart(),
-            Self::CapacityExhausted => 9.into_dart(),
-            Self::ModuleDisabled => 10.into_dart(),
-            Self::ModulePermissionRequired => 11.into_dart(),
-            Self::ModuleConfigurationConflict => 12.into_dart(),
-            _ => unreachable!(),
-        }
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubCatalogError
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>
 {
-}
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubCatalogError>
-    for crate::api::catalog_types::GithubCatalogError
-{
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubCatalogError {
-        self
-    }
-}
-// Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubCredentialReference {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.record_ref.into_into_dart().into_dart(),
-            self.title.into_into_dart().into_dart(),
-            self.username.into_into_dart().into_dart(),
-            self.revision.into_into_dart().into_dart(),
-            self.pending_id.into_into_dart().into_dart(),
+            self.0.id.into_into_dart().into_dart(),
+            self.0.login.into_into_dart().into_dart(),
+            self.0.kind.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubCredentialReference
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubCredentialReference>
-    for crate::api::catalog_types::GithubCredentialReference
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView
 {
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubCredentialReference {
-        self
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubCredentialReferencePage {
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView>
+{
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.items.into_into_dart().into_dart(),
-            self.next_after.into_into_dart().into_dart(),
-            self.has_more.into_into_dart().into_dart(),
+            self.0.owner.into_into_dart().into_dart(),
+            self.0.repositories.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubCredentialReferencePage
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubCredentialReferencePage>
-    for crate::api::catalog_types::GithubCredentialReferencePage
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView
 {
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubCredentialReferencePage {
-        self
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubObservationView {
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView>
+{
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.revision.into_into_dart().into_dart(),
-            self.pending.into_into_dart().into_dart(),
-            self.conflicted.into_into_dart().into_dart(),
-            self.observed_at_ms.into_into_dart().into_dart(),
+            self.0.principal.into_into_dart().into_dart(),
+            self.0.groups.into_into_dart().into_dart(),
+            self.0.observed_at_ms.into_into_dart().into_dart(),
+            self.0.continuation.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubObservationView
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubObservationView>
-    for crate::api::catalog_types::GithubObservationView
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView
 {
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubObservationView {
-        self
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubOwnerKindView {
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
-            Self::User => 0.into_dart(),
-            Self::Organization => 1.into_dart(),
-            _ => unreachable!(),
-        }
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubOwnerKindView
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>
 {
-}
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubOwnerKindView>
-    for crate::api::catalog_types::GithubOwnerKindView
-{
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubOwnerKindView {
-        self
-    }
-}
-// Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubOwnerView {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.id.into_into_dart().into_dart(),
-            self.login.into_into_dart().into_dart(),
-            self.kind.into_into_dart().into_dart(),
+            self.0.id.into_into_dart().into_dart(),
+            self.0.name.into_into_dart().into_dart(),
+            self.0.visibility.into_into_dart().into_dart(),
+            self.0.archived.into_into_dart().into_dart(),
+            self.0.default_branch.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubOwnerView
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubOwnerView>
-    for crate::api::catalog_types::GithubOwnerView
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView
 {
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubOwnerView {
-        self
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubRepositoryGroupView {
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView>
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self.0 {
+                    nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Public => 0.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Private => 1.into_dart(),
+nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Internal => 2.into_dart(),
+                    _ => unreachable!(),
+                }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView>
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView
+{
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView>
+    {
+        self.into()
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView>
+{
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.owner.into_into_dart().into_dart(),
-            self.repositories.into_into_dart().into_dart(),
+            self.0.owner.into_into_dart().into_dart(),
+            self.0.observation.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubRepositoryGroupView
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubRepositoryGroupView>
-    for crate::api::catalog_types::GithubRepositoryGroupView
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView
 {
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubRepositoryGroupView {
-        self
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubRepositoryPageView {
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>
+{
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.principal.into_into_dart().into_dart(),
-            self.groups.into_into_dart().into_dart(),
-            self.observed_at_ms.into_into_dart().into_dart(),
-            self.continuation.into_into_dart().into_dart(),
+            self.0.owner_id.into_into_dart().into_dart(),
+            self.0.owner.into_into_dart().into_dart(),
+            self.0.repositories.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubRepositoryPageView
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubRepositoryPageView>
-    for crate::api::catalog_types::GithubRepositoryPageView
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView
 {
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubRepositoryPageView {
-        self
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>
+    {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubRepositorySummaryView {
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView>
+{
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.id.into_into_dart().into_dart(),
-            self.name.into_into_dart().into_dart(),
-            self.visibility.into_into_dart().into_dart(),
-            self.archived.into_into_dart().into_dart(),
-            self.default_branch.into_into_dart().into_dart(),
+            self.0.groups.into_into_dart().into_dart(),
+            self.0.observed_seq.into_into_dart().into_dart(),
+            self.0.local_revision.into_into_dart().into_dart(),
+            self.0.has_more.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubRepositorySummaryView
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubRepositorySummaryView>
-    for crate::api::catalog_types::GithubRepositorySummaryView
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView
 {
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubRepositorySummaryView {
-        self
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView>
+    {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubRepositoryVisibilityView {
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
-            Self::Public => 0.into_dart(),
-            Self::Private => 1.into_dart(),
-            Self::Internal => 2.into_dart(),
-            _ => unreachable!(),
-        }
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubRepositoryVisibilityView
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView>
 {
-}
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubRepositoryVisibilityView>
-    for crate::api::catalog_types::GithubRepositoryVisibilityView
-{
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubRepositoryVisibilityView {
-        self
-    }
-}
-// Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubSavedOwnerView {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.owner.into_into_dart().into_dart(),
-            self.observation.into_into_dart().into_dart(),
+            self.0.repository.into_into_dart().into_dart(),
+            self.0.observation.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubSavedOwnerView
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubSavedOwnerView>
-    for crate::api::catalog_types::GithubSavedOwnerView
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView
 {
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubSavedOwnerView {
-        self
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubSavedRepositoryGroupView {
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSourceView>
+{
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.owner_id.into_into_dart().into_dart(),
-            self.owner.into_into_dart().into_dart(),
-            self.repositories.into_into_dart().into_dart(),
+            self.0.credential.into_into_dart().into_dart(),
+            self.0.revision.into_into_dart().into_dart(),
+            self.0.pending_id.into_into_dart().into_dart(),
+            self.0.local_revision.into_into_dart().into_dart(),
+            self.0.conflicted.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubSavedRepositoryGroupView
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSourceView>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubSavedRepositoryGroupView>
-    for crate::api::catalog_types::GithubSavedRepositoryGroupView
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSourceView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubSourceView
 {
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubSavedRepositoryGroupView {
-        self
-    }
-}
-// Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubSavedRepositoryPageView {
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [
-            self.groups.into_into_dart().into_dart(),
-            self.observed_seq.into_into_dart().into_dart(),
-            self.local_revision.into_into_dart().into_dart(),
-            self.has_more.into_into_dart().into_dart(),
-        ]
-        .into_dart()
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubSavedRepositoryPageView
-{
-}
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubSavedRepositoryPageView>
-    for crate::api::catalog_types::GithubSavedRepositoryPageView
-{
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubSavedRepositoryPageView {
-        self
-    }
-}
-// Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubSavedRepositoryView {
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [
-            self.repository.into_into_dart().into_dart(),
-            self.observation.into_into_dart().into_dart(),
-        ]
-        .into_dart()
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubSavedRepositoryView
-{
-}
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubSavedRepositoryView>
-    for crate::api::catalog_types::GithubSavedRepositoryView
-{
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubSavedRepositoryView {
-        self
-    }
-}
-// Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::catalog_types::GithubSourceView {
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [
-            self.credential.into_into_dart().into_dart(),
-            self.revision.into_into_dart().into_dart(),
-            self.pending_id.into_into_dart().into_dart(),
-            self.local_revision.into_into_dart().into_dart(),
-            self.conflicted.into_into_dart().into_dart(),
-        ]
-        .into_dart()
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::catalog_types::GithubSourceView
-{
-}
-impl flutter_rust_bridge::IntoIntoDart<crate::api::catalog_types::GithubSourceView>
-    for crate::api::catalog_types::GithubSourceView
-{
-    fn into_into_dart(self) -> crate::api::catalog_types::GithubSourceView {
-        self
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSourceView> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
@@ -11522,51 +11759,37 @@ impl SseEncode for nddev_device_sync_gds::view::GitStatus {
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubCatalogContinuationView {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(
-            match self {
-                crate::api::catalog_types::GithubCatalogContinuationView::More => 0,
-                crate::api::catalog_types::GithubCatalogContinuationView::EndOfAccessScope => 1,
-                crate::api::catalog_types::GithubCatalogContinuationView::LimitReached => 2,
-                _ => {
-                    unimplemented!("");
-                }
-            },
-            serializer,
-        );
+        <i32>::sse_encode(match self {nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::More => { 0 }
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::EndOfAccessScope => { 1 }
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::LimitReached => { 2 }
+ _ => { unimplemented!(""); }}, serializer);
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubCatalogError {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(
-            match self {
-                crate::api::catalog_types::GithubCatalogError::InvalidInput => 0,
-                crate::api::catalog_types::GithubCatalogError::AuthorizationRequired => 1,
-                crate::api::catalog_types::GithubCatalogError::CredentialChanged => 2,
-                crate::api::catalog_types::GithubCatalogError::Busy => 3,
-                crate::api::catalog_types::GithubCatalogError::Cancelled => 4,
-                crate::api::catalog_types::GithubCatalogError::Timeout => 5,
-                crate::api::catalog_types::GithubCatalogError::Unavailable => 6,
-                crate::api::catalog_types::GithubCatalogError::ProviderFailed => 7,
-                crate::api::catalog_types::GithubCatalogError::InvalidResponse => 8,
-                crate::api::catalog_types::GithubCatalogError::CapacityExhausted => 9,
-                crate::api::catalog_types::GithubCatalogError::ModuleDisabled => 10,
-                crate::api::catalog_types::GithubCatalogError::ModulePermissionRequired => 11,
-                crate::api::catalog_types::GithubCatalogError::ModuleConfigurationConflict => 12,
-                _ => {
-                    unimplemented!("");
-                }
-            },
-            serializer,
-        );
+        <i32>::sse_encode(match self {nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::InvalidInput => { 0 }
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::AuthorizationRequired => { 1 }
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::CredentialChanged => { 2 }
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Busy => { 3 }
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Cancelled => { 4 }
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Timeout => { 5 }
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Unavailable => { 6 }
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ProviderFailed => { 7 }
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::InvalidResponse => { 8 }
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::CapacityExhausted => { 9 }
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModuleDisabled => { 10 }
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired => { 11 }
+nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict => { 12 }
+ _ => { unimplemented!(""); }}, serializer);
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubCredentialReference {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.record_ref, serializer);
@@ -11577,10 +11800,10 @@ impl SseEncode for crate::api::catalog_types::GithubCredentialReference {
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubCredentialReferencePage {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <Vec<crate::api::catalog_types::GithubCredentialReference>>::sse_encode(
+        <Vec<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>>::sse_encode(
             self.items, serializer,
         );
         <String>::sse_encode(self.next_after, serializer);
@@ -11588,7 +11811,7 @@ impl SseEncode for crate::api::catalog_types::GithubCredentialReferencePage {
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubObservationView {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubObservationView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.revision, serializer);
@@ -11598,13 +11821,15 @@ impl SseEncode for crate::api::catalog_types::GithubObservationView {
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubOwnerKindView {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(
             match self {
-                crate::api::catalog_types::GithubOwnerKindView::User => 0,
-                crate::api::catalog_types::GithubOwnerKindView::Organization => 1,
+                nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView::User => 0,
+                nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView::Organization => {
+                    1
+                }
                 _ => {
                     unimplemented!("");
                 }
@@ -11614,48 +11839,52 @@ impl SseEncode for crate::api::catalog_types::GithubOwnerKindView {
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubOwnerView {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.id, serializer);
         <String>::sse_encode(self.login, serializer);
-        <crate::api::catalog_types::GithubOwnerKindView>::sse_encode(self.kind, serializer);
-    }
-}
-
-impl SseEncode for crate::api::catalog_types::GithubRepositoryGroupView {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <crate::api::catalog_types::GithubOwnerView>::sse_encode(self.owner, serializer);
-        <Vec<crate::api::catalog_types::GithubRepositorySummaryView>>::sse_encode(
-            self.repositories,
-            serializer,
+        <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView>::sse_encode(
+            self.kind, serializer,
         );
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubRepositoryPageView {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <crate::api::catalog_types::GithubOwnerView>::sse_encode(self.principal, serializer);
-        <Vec<crate::api::catalog_types::GithubRepositoryGroupView>>::sse_encode(
+        <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>::sse_encode(
+            self.owner, serializer,
+        );
+        <Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>>::sse_encode(self.repositories, serializer);
+    }
+}
+
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>::sse_encode(
+            self.principal,
+            serializer,
+        );
+        <Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView>>::sse_encode(
             self.groups,
             serializer,
         );
         <String>::sse_encode(self.observed_at_ms, serializer);
-        <crate::api::catalog_types::GithubCatalogContinuationView>::sse_encode(
+        <nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView>::sse_encode(
             self.continuation,
             serializer,
         );
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubRepositorySummaryView {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.id, serializer);
         <String>::sse_encode(self.name, serializer);
-        <crate::api::catalog_types::GithubRepositoryVisibilityView>::sse_encode(
+        <nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView>::sse_encode(
             self.visibility,
             serializer,
         );
@@ -11664,82 +11893,71 @@ impl SseEncode for crate::api::catalog_types::GithubRepositorySummaryView {
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubRepositoryVisibilityView {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(
-            match self {
-                crate::api::catalog_types::GithubRepositoryVisibilityView::Public => 0,
-                crate::api::catalog_types::GithubRepositoryVisibilityView::Private => 1,
-                crate::api::catalog_types::GithubRepositoryVisibilityView::Internal => 2,
-                _ => {
-                    unimplemented!("");
-                }
-            },
-            serializer,
-        );
+        <i32>::sse_encode(match self {nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Public => { 0 }
+nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Private => { 1 }
+nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Internal => { 2 }
+ _ => { unimplemented!(""); }}, serializer);
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubSavedOwnerView {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <crate::api::catalog_types::GithubOwnerView>::sse_encode(self.owner, serializer);
-        <crate::api::catalog_types::GithubObservationView>::sse_encode(
+        <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>::sse_encode(
+            self.owner, serializer,
+        );
+        <nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>::sse_encode(
             self.observation,
             serializer,
         );
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubSavedRepositoryGroupView {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.owner_id, serializer);
-        <Option<crate::api::catalog_types::GithubSavedOwnerView>>::sse_encode(
+        <Option<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView>>::sse_encode(
             self.owner, serializer,
         );
-        <Vec<crate::api::catalog_types::GithubSavedRepositoryView>>::sse_encode(
+        <Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView>>::sse_encode(
             self.repositories,
             serializer,
         );
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubSavedRepositoryPageView {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <Vec<crate::api::catalog_types::GithubSavedRepositoryGroupView>>::sse_encode(
-            self.groups,
-            serializer,
-        );
+        <Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>>::sse_encode(self.groups, serializer);
         <String>::sse_encode(self.observed_seq, serializer);
         <String>::sse_encode(self.local_revision, serializer);
         <bool>::sse_encode(self.has_more, serializer);
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubSavedRepositoryView {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <crate::api::catalog_types::GithubRepositorySummaryView>::sse_encode(
+        <nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>::sse_encode(
             self.repository,
             serializer,
         );
-        <crate::api::catalog_types::GithubObservationView>::sse_encode(
+        <nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>::sse_encode(
             self.observation,
             serializer,
         );
     }
 }
 
-impl SseEncode for crate::api::catalog_types::GithubSourceView {
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubSourceView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <Option<crate::api::catalog_types::GithubCredentialReference>>::sse_encode(
-            self.credential,
-            serializer,
-        );
+        <Option<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>>::sse_encode(self.credential, serializer);
         <String>::sse_encode(self.revision, serializer);
         <Option<String>>::sse_encode(self.pending_id, serializer);
         <String>::sse_encode(self.local_revision, serializer);
@@ -11875,54 +12093,62 @@ impl SseEncode for Vec<nddev_device_sync_gds::view::Finding> {
     }
 }
 
-impl SseEncode for Vec<crate::api::catalog_types::GithubCredentialReference> {
+impl SseEncode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <crate::api::catalog_types::GithubCredentialReference>::sse_encode(item, serializer);
-        }
-    }
-}
-
-impl SseEncode for Vec<crate::api::catalog_types::GithubRepositoryGroupView> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(self.len() as _, serializer);
-        for item in self {
-            <crate::api::catalog_types::GithubRepositoryGroupView>::sse_encode(item, serializer);
-        }
-    }
-}
-
-impl SseEncode for Vec<crate::api::catalog_types::GithubRepositorySummaryView> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(self.len() as _, serializer);
-        for item in self {
-            <crate::api::catalog_types::GithubRepositorySummaryView>::sse_encode(item, serializer);
-        }
-    }
-}
-
-impl SseEncode for Vec<crate::api::catalog_types::GithubSavedRepositoryGroupView> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(self.len() as _, serializer);
-        for item in self {
-            <crate::api::catalog_types::GithubSavedRepositoryGroupView>::sse_encode(
+            <nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>::sse_encode(
                 item, serializer,
             );
         }
     }
 }
 
-impl SseEncode for Vec<crate::api::catalog_types::GithubSavedRepositoryView> {
+impl SseEncode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <crate::api::catalog_types::GithubSavedRepositoryView>::sse_encode(item, serializer);
+            <nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode
+    for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>
+{
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView>::sse_encode(
+                item, serializer,
+            );
         }
     }
 }
@@ -12160,22 +12386,26 @@ impl SseEncode for Option<nddev_device_sync_gds::view::GitStatus> {
     }
 }
 
-impl SseEncode for Option<crate::api::catalog_types::GithubCredentialReference> {
+impl SseEncode for Option<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
-            <crate::api::catalog_types::GithubCredentialReference>::sse_encode(value, serializer);
+            <nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>::sse_encode(
+                value, serializer,
+            );
         }
     }
 }
 
-impl SseEncode for Option<crate::api::catalog_types::GithubSavedOwnerView> {
+impl SseEncode for Option<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
-            <crate::api::catalog_types::GithubSavedOwnerView>::sse_encode(value, serializer);
+            <nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView>::sse_encode(
+                value, serializer,
+            );
         }
     }
 }

@@ -1,4 +1,4 @@
-rust_input: crate::api,nddev-device-sync-vault::view,nddev-device-sync-accounts::view,nddev-device-sync-organizations::view,nddev-device-sync-sysinfo::view,nddev-device-sync-clipboard::view,nddev-device-sync-cleaner::view,nddev-device-sync-updater::view,nddev-device-sync-gds::view,nddev-device-sync-rds::view,nddev-device-sync-telemetry::view
+rust_input: crate::api,nddev-device-sync-vault::view,nddev-device-sync-accounts::view,nddev-device-sync-organizations::view,nddev-device-sync-sysinfo::view,nddev-device-sync-clipboard::view,nddev-device-sync-cleaner::view,nddev-device-sync-updater::view,nddev-device-sync-gds::view,nddev-device-sync-gds::catalog_runtime::view,nddev-device-sync-rds::view,nddev-device-sync-telemetry::view
 rust_root: rust/
 dart_output: lib/src/rust
 web: true

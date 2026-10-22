@@ -191,7 +191,7 @@ pub(super) fn shared_permissions(module: &str) -> Option<BTreeSet<Permission>> {
     use Permission::*;
     match module {
         "clipboard" => Some(BTreeSet::from([Clipboard, LocalNetwork])),
-        "gds" => Some(BTreeSet::from([ReadOnly, CredentialStore, LocalNetwork])),
+        "gds" => Some(nddev_device_sync_gds::catalog_runtime::required_permissions()),
         "rds" if cfg!(target_os = "linux") => Some(BTreeSet::from([ReadOnly, LocalNetwork])),
         _ => None,
     }
@@ -447,13 +447,16 @@ impl NdsClient {
             let (native_supported, supported, required) = capabilities(descriptor);
             let shared = shared_permissions(id);
             let native_observation = native.iter().find(|v| v.id == id);
-            let shared_observation = self
-                .module_control
-                .slots
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .get(id)
-                .and_then(|slot| slot.observation.clone());
+            let shared_observation = if id == "gds" {
+                self.catalog_observation().await
+            } else {
+                self.module_control
+                    .slots
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .get(id)
+                    .and_then(|slot| slot.observation.clone())
+            };
             let installed = if shared.is_some() {
                 Some(true)
             } else if native_supported {

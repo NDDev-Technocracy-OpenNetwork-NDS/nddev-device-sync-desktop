@@ -5,10 +5,10 @@
 
 import '../frb_generated.dart';
 import '../third_party/nddev_device_sync_accounts/view.dart';
+import '../third_party/nddev_device_sync_gds/catalog_runtime/view.dart';
 import '../third_party/nddev_device_sync_organizations/view.dart';
 import '../third_party/nddev_device_sync_telemetry/view.dart';
 import '../third_party/nddev_device_sync_vault/view.dart';
-import 'catalog_types.dart';
 import 'module_control.dart';
 import 'modules.dart';
 import 'organizations.dart';
@@ -150,7 +150,6 @@ abstract class NdsClient implements RustOpaqueInterface {
 
   Future<View> revokePasskey({required String id});
 
-  /// Saved facts use NDS local authorization; no GitHub credential is resolved.
   Future<GithubSavedRepositoryPageView> savedGithubRepositoryPage({
     required bool nextPage,
   });

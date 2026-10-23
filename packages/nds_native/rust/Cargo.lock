@@ -3850,7 +3850,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-agent"
 version = "0.0.1-alpha.9"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent?rev=44eb4116dd85455fafa240be4b05828bf35e8231#44eb4116dd85455fafa240be4b05828bf35e8231"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent?rev=b7b1ecb31d300d0e485b7049afae3262a1f07136#b7b1ecb31d300d0e485b7049afae3262a1f07136"
 dependencies = [
  "base16ct",
  "nddev-device-sync-adapter-io",
@@ -3917,7 +3917,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-gds"
 version = "0.0.1-alpha.7"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds?rev=efc9cc01f2b703b3525af0071a4d3ebf339f738e#efc9cc01f2b703b3525af0071a4d3ebf339f738e"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds?rev=a2aed72e6e06f37f83dd2b9724ba2591e7246627#a2aed72e6e06f37f83dd2b9724ba2591e7246627"
 dependencies = [
  "base64 0.23.1",
  "gix",

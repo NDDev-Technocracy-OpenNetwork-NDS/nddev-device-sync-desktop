@@ -57,3 +57,4 @@ integration_test/local_modules_generated_test.dart
 /vendor/
 
 integration_test/driver_generated.dart
+.nddev-reports/

@@ -259,7 +259,7 @@ packages:
       path: "../nds_native"
       relative: true
     source: path
-    version: "0.0.1-alpha.22"
+    version: "0.0.1-alpha.23"
   path:
     dependency: transitive
     description:

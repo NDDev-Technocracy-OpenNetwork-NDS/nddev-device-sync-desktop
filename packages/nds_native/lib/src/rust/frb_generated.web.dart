@@ -242,6 +242,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GitStatus dco_decode_box_autoadd_git_status(dynamic raw);
 
   @protected
+  GithubCommitSyncView dco_decode_box_autoadd_github_commit_sync_view(
+    dynamic raw,
+  );
+
+  @protected
   GithubCredentialReference dco_decode_box_autoadd_github_credential_reference(
     dynamic raw,
   );
@@ -344,6 +349,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   GithubCatalogError dco_decode_github_catalog_error(dynamic raw);
+
+  @protected
+  GithubCommitSyncView dco_decode_github_commit_sync_view(dynamic raw);
 
   @protected
   GithubConnectionView dco_decode_github_connection_view(dynamic raw);
@@ -535,6 +543,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   GitStatus? dco_decode_opt_box_autoadd_git_status(dynamic raw);
+
+  @protected
+  GithubCommitSyncView? dco_decode_opt_box_autoadd_github_commit_sync_view(
+    dynamic raw,
+  );
 
   @protected
   GithubCredentialReference?
@@ -848,6 +861,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GitStatus sse_decode_box_autoadd_git_status(SseDeserializer deserializer);
 
   @protected
+  GithubCommitSyncView sse_decode_box_autoadd_github_commit_sync_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   GithubCredentialReference sse_decode_box_autoadd_github_credential_reference(
     SseDeserializer deserializer,
   );
@@ -954,6 +972,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   GithubCatalogError sse_decode_github_catalog_error(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GithubCommitSyncView sse_decode_github_commit_sync_view(
     SseDeserializer deserializer,
   );
 
@@ -1177,6 +1200,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   GitStatus? sse_decode_opt_box_autoadd_git_status(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GithubCommitSyncView? sse_decode_opt_box_autoadd_github_commit_sync_view(
     SseDeserializer deserializer,
   );
 
@@ -1537,6 +1565,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_github_commit_sync_view(
+    GithubCommitSyncView self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_github_credential_reference(
     GithubCredentialReference self,
     SseSerializer serializer,
@@ -1662,6 +1696,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_github_catalog_error(
     GithubCatalogError self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_github_commit_sync_view(
+    GithubCommitSyncView self,
     SseSerializer serializer,
   );
 
@@ -1942,6 +1982,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_opt_box_autoadd_git_status(
     GitStatus? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_github_commit_sync_view(
+    GithubCommitSyncView? self,
     SseSerializer serializer,
   );
 

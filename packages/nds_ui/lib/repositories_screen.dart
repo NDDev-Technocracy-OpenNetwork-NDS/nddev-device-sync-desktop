@@ -316,6 +316,35 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
         if (value.conflicted) l.vaultConflict,
       ].join(' · ');
 
+  String _synchronization(
+    AppLocalizations l,
+    native.GithubCommitSyncView value,
+  ) => [
+    switch (value.outcome) {
+      'running' => l.repositorySyncRunning,
+      'up_to_date' => l.repositorySyncCurrent,
+      'published' => l.repositorySyncPublished,
+      'fast_forwarded' => l.repositorySyncFastForwarded,
+      _ => switch (value.reason) {
+        'dirty' => l.repositorySyncDirty,
+        'diverged' => l.repositorySyncDiverged,
+        'archived' => l.catalogArchived,
+        'active_writer' || 'operation_busy' => l.operationBusy,
+        'wrong_remote' => l.repositoryWrongRemote,
+        'credential_revalidation_required' => l.catalogSignIn,
+        'vault_selection_changed' => l.catalogCredentialChanged,
+        'module_disabled' => l.moduleDisabled,
+        'module_permission_required' => l.modulePermissionRequired,
+        'module_configuration_conflict' => l.moduleConfigurationConflict,
+        'operation_timeout' => l.catalogTimeout,
+        'provider_failed' => l.catalogProviderFailed,
+        'operation_cancelled' => l.catalogCancelled,
+        _ => l.repositorySyncRefused,
+      },
+    },
+    if (value.observedAtMs != null) _observed(l, value.observedAtMs!),
+  ].join(' · ');
+
   String _connectionMessage(
     AppLocalizations l,
     native.GithubConnectionView value,
@@ -339,6 +368,7 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
     native.GithubRepositorySummaryView repository, [
     native.GithubObservationView? observation,
     native.GithubOwnerView? owner,
+    native.GithubCommitSyncView? synchronization,
   ]) => ListTile(
     key: ValueKey('catalog-repository-${repository.id}'),
     contentPadding: EdgeInsets.zero,
@@ -375,6 +405,7 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
         if (repository.archived) l.catalogArchived,
         if (repository.defaultBranch != null) repository.defaultBranch!,
         if (observation != null) _observation(l, observation),
+        if (synchronization != null) _synchronization(l, synchronization),
       ].join(' · '),
     ),
   );
@@ -494,6 +525,7 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
                         group.owner?.observation.conflicted == false
                             ? group.owner?.owner
                             : null,
+                        item.synchronization,
                       ),
                   ], group.owner?.observation),
               ],

@@ -1295,4 +1295,27 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get repositoryUnsupported =>
       'Локальное подключение репозиториев не поддерживается на этом устройстве.';
+
+  @override
+  String get repositorySyncRunning => 'Синхронизация существующих коммитов…';
+
+  @override
+  String get repositorySyncCurrent => 'Коммиты синхронизированы';
+
+  @override
+  String get repositorySyncPublished => 'Существующие коммиты отправлены';
+
+  @override
+  String get repositorySyncFastForwarded => 'Checkout обновлён без слияния';
+
+  @override
+  String get repositorySyncDirty =>
+      'Незакоммиченные изменения сохранены; синхронизация этого checkout отложена';
+
+  @override
+  String get repositorySyncDiverged => 'Истории разошлись; изменения сохранены';
+
+  @override
+  String get repositorySyncRefused =>
+      'В синхронизации отказано; существующая работа сохранена';
 }

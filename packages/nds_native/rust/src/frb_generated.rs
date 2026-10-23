@@ -6182,6 +6182,13 @@ const _: fn() = || {
         let _: String = GitStatus.remote_freshness;
     }
     {
+        let GithubCommitSyncView =
+            None::<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView>.unwrap();
+        let _: String = GithubCommitSyncView.outcome;
+        let _: String = GithubCommitSyncView.reason;
+        let _: Option<String> = GithubCommitSyncView.observed_at_ms;
+    }
+    {
         let GithubConnectionView =
             None::<nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView>.unwrap();
         let _: String = GithubConnectionView.outcome;
@@ -6292,6 +6299,8 @@ const _: fn() = || {
             GithubSavedRepositoryView.repository;
         let _: nddev_device_sync_gds::catalog_runtime::view::GithubObservationView =
             GithubSavedRepositoryView.observation;
+        let _: Option<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView> =
+            GithubSavedRepositoryView.synchronization;
     }
     {
         let GithubSourceView =
@@ -7208,6 +7217,20 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCatalogEr
     }
 }
 
+impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_outcome = <String>::sse_decode(deserializer);
+        let mut var_reason = <String>::sse_decode(deserializer);
+        let mut var_observedAtMs = <Option<String>>::sse_decode(deserializer);
+        return nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView {
+            outcome: var_outcome,
+            reason: var_reason,
+            observed_at_ms: var_observedAtMs,
+        };
+    }
+}
+
 impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -7439,9 +7462,13 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepo
             <nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>::sse_decode(
                 deserializer,
             );
+        let mut var_synchronization = <Option<
+            nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView,
+        >>::sse_decode(deserializer);
         return nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView {
             repository: var_repository,
             observation: var_observation,
+            synchronization: var_synchronization,
         };
     }
 }
@@ -8006,6 +8033,21 @@ impl SseDecode for Option<nddev_device_sync_gds::view::GitStatus> {
             return Some(<nddev_device_sync_gds::view::GitStatus>::sse_decode(
                 deserializer,
             ));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(
+                <nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView>::sse_decode(
+                    deserializer,
+                ),
+            );
         } else {
             return None;
         }
@@ -9987,6 +10029,34 @@ impl
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView>
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.0.outcome.into_into_dart().into_dart(),
+            self.0.reason.into_into_dart().into_dart(),
+            self.0.observed_at_ms.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView>
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView>,
+    > for nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView
+{
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView> {
+        self.into()
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
     for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
@@ -10374,6 +10444,7 @@ impl flutter_rust_bridge::IntoDart
         [
             self.0.repository.into_into_dart().into_dart(),
             self.0.observation.into_into_dart().into_dart(),
+            self.0.synchronization.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -11928,6 +11999,15 @@ nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModuleConfigur
     }
 }
 
+impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.outcome, serializer);
+        <String>::sse_encode(self.reason, serializer);
+        <Option<String>>::sse_encode(self.observed_at_ms, serializer);
+    }
+}
+
 impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -12099,6 +12179,10 @@ impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepo
         );
         <nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>::sse_encode(
             self.observation,
+            serializer,
+        );
+        <Option<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView>>::sse_encode(
+            self.synchronization,
             serializer,
         );
     }
@@ -12532,6 +12616,18 @@ impl SseEncode for Option<nddev_device_sync_gds::view::GitStatus> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <nddev_device_sync_gds::view::GitStatus>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView>::sse_encode(
+                value, serializer,
+            );
         }
     }
 }

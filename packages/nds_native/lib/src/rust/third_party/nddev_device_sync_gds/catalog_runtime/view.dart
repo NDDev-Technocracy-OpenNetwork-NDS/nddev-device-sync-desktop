@@ -7,7 +7,7 @@ import '../../../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `fmt`, `fmt`, `from`, `from`, `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `fmt`, `fmt`, `from`, `from`, `from`
 
 enum GithubCatalogContinuationView { more, endOfAccessScope, limitReached }
 
@@ -25,6 +25,33 @@ enum GithubCatalogError {
   moduleDisabled,
   modulePermissionRequired,
   moduleConfigurationConflict,
+}
+
+class GithubCommitSyncView {
+  final String outcome;
+  final String reason;
+
+  /// Actual local completion time; absent while an attempt is running.
+  final String? observedAtMs;
+
+  const GithubCommitSyncView({
+    required this.outcome,
+    required this.reason,
+    this.observedAtMs,
+  });
+
+  @override
+  int get hashCode =>
+      outcome.hashCode ^ reason.hashCode ^ observedAtMs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GithubCommitSyncView &&
+          runtimeType == other.runtimeType &&
+          outcome == other.outcome &&
+          reason == other.reason &&
+          observedAtMs == other.observedAtMs;
 }
 
 class GithubConnectionView {
@@ -344,14 +371,17 @@ class GithubSavedRepositoryPageView {
 class GithubSavedRepositoryView {
   final GithubRepositorySummaryView repository;
   final GithubObservationView observation;
+  final GithubCommitSyncView? synchronization;
 
   const GithubSavedRepositoryView({
     required this.repository,
     required this.observation,
+    this.synchronization,
   });
 
   @override
-  int get hashCode => repository.hashCode ^ observation.hashCode;
+  int get hashCode =>
+      repository.hashCode ^ observation.hashCode ^ synchronization.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -359,7 +389,8 @@ class GithubSavedRepositoryView {
       other is GithubSavedRepositoryView &&
           runtimeType == other.runtimeType &&
           repository == other.repository &&
-          observation == other.observation;
+          observation == other.observation &&
+          synchronization == other.synchronization;
 }
 
 /// Saved owner intent, not provider access or this device's consent.

@@ -4854,6 +4854,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GithubCommitSyncView dco_decode_box_autoadd_github_commit_sync_view(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_github_commit_sync_view(raw);
+  }
+
+  @protected
   GithubCredentialReference dco_decode_box_autoadd_github_credential_reference(
     dynamic raw,
   ) {
@@ -5212,6 +5220,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GithubCommitSyncView dco_decode_github_commit_sync_view(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return GithubCommitSyncView(
+      outcome: dco_decode_String(arr[0]),
+      reason: dco_decode_String(arr[1]),
+      observedAtMs: dco_decode_opt_String(arr[2]),
+    );
+  }
+
+  @protected
   GithubConnectionView dco_decode_github_connection_view(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -5393,11 +5414,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
     return GithubSavedRepositoryView(
       repository: dco_decode_github_repository_summary_view(arr[0]),
       observation: dco_decode_github_observation_view(arr[1]),
+      synchronization: dco_decode_opt_box_autoadd_github_commit_sync_view(
+        arr[2],
+      ),
     );
   }
 
@@ -5746,6 +5770,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   GitStatus? dco_decode_opt_box_autoadd_git_status(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_git_status(raw);
+  }
+
+  @protected
+  GithubCommitSyncView? dco_decode_opt_box_autoadd_github_commit_sync_view(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null
+        ? null
+        : dco_decode_box_autoadd_github_commit_sync_view(raw);
   }
 
   @protected
@@ -6609,6 +6643,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GithubCommitSyncView sse_decode_box_autoadd_github_commit_sync_view(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_github_commit_sync_view(deserializer));
+  }
+
+  @protected
   GithubCredentialReference sse_decode_box_autoadd_github_credential_reference(
     SseDeserializer deserializer,
   ) {
@@ -7027,6 +7069,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GithubCommitSyncView sse_decode_github_commit_sync_view(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_outcome = sse_decode_String(deserializer);
+    var var_reason = sse_decode_String(deserializer);
+    var var_observedAtMs = sse_decode_opt_String(deserializer);
+    return GithubCommitSyncView(
+      outcome: var_outcome,
+      reason: var_reason,
+      observedAtMs: var_observedAtMs,
+    );
+  }
+
+  @protected
   GithubConnectionView sse_decode_github_connection_view(
     SseDeserializer deserializer,
   ) {
@@ -7235,9 +7292,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       deserializer,
     );
     var var_observation = sse_decode_github_observation_view(deserializer);
+    var var_synchronization =
+        sse_decode_opt_box_autoadd_github_commit_sync_view(deserializer);
     return GithubSavedRepositoryView(
       repository: var_repository,
       observation: var_observation,
+      synchronization: var_synchronization,
     );
   }
 
@@ -7763,6 +7823,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_box_autoadd_git_status(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  GithubCommitSyncView? sse_decode_opt_box_autoadd_github_commit_sync_view(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_github_commit_sync_view(deserializer));
     } else {
       return null;
     }
@@ -8764,6 +8837,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_github_commit_sync_view(
+    GithubCommitSyncView self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_github_commit_sync_view(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_github_credential_reference(
     GithubCredentialReference self,
     SseSerializer serializer,
@@ -9072,6 +9154,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_github_commit_sync_view(
+    GithubCommitSyncView self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.outcome, serializer);
+    sse_encode_String(self.reason, serializer);
+    sse_encode_opt_String(self.observedAtMs, serializer);
+  }
+
+  @protected
   void sse_encode_github_connection_view(
     GithubConnectionView self,
     SseSerializer serializer,
@@ -9228,6 +9321,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_github_repository_summary_view(self.repository, serializer);
     sse_encode_github_observation_view(self.observation, serializer);
+    sse_encode_opt_box_autoadd_github_commit_sync_view(
+      self.synchronization,
+      serializer,
+    );
   }
 
   @protected
@@ -9672,6 +9769,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_box_autoadd_git_status(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_github_commit_sync_view(
+    GithubCommitSyncView? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_github_commit_sync_view(self, serializer);
     }
   }
 

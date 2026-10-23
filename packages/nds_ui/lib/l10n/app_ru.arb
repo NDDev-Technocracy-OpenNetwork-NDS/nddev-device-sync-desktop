@@ -567,5 +567,12 @@
   "repositoryDifferentInstallation": "Репозиторий привязан к другому аккаунту или установке NDS.",
   "repositoryRelocationRequired": "Сохранённая привязка использует другое расположение. Сначала проверьте перенос репозитория.",
   "repositoryWrongRemote": "Git origin или сохранённый идентификатор не соответствует выбранному репозиторию.",
-  "repositoryUnsupported": "Локальное подключение репозиториев не поддерживается на этом устройстве."
+  "repositoryUnsupported": "Локальное подключение репозиториев не поддерживается на этом устройстве.",
+  "repositorySyncRunning": "Синхронизация существующих коммитов…",
+  "repositorySyncCurrent": "Коммиты синхронизированы",
+  "repositorySyncPublished": "Существующие коммиты отправлены",
+  "repositorySyncFastForwarded": "Checkout обновлён без слияния",
+  "repositorySyncDirty": "Незакоммиченные изменения сохранены; синхронизация этого checkout отложена",
+  "repositorySyncDiverged": "Истории разошлись; изменения сохранены",
+  "repositorySyncRefused": "В синхронизации отказано; существующая работа сохранена"
 }

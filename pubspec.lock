@@ -236,14 +236,14 @@ packages:
       path: "packages/nds_native"
       relative: true
     source: path
-    version: "0.0.1-alpha.22"
+    version: "0.0.1-alpha.23"
   nds_ui:
     dependency: "direct main"
     description:
       path: "packages/nds_ui"
       relative: true
     source: path
-    version: "0.0.1-alpha.22"
+    version: "0.0.1-alpha.23"
   path:
     dependency: transitive
     description:

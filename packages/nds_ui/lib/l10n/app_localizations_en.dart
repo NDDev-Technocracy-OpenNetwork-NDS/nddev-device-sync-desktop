@@ -1284,4 +1284,27 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get repositoryUnsupported =>
       'Local checkout connection is not supported on this device.';
+
+  @override
+  String get repositorySyncRunning => 'Synchronizing existing commits…';
+
+  @override
+  String get repositorySyncCurrent => 'Commits are up to date';
+
+  @override
+  String get repositorySyncPublished => 'Existing commits published';
+
+  @override
+  String get repositorySyncFastForwarded => 'Checkout fast-forwarded';
+
+  @override
+  String get repositorySyncDirty =>
+      'Uncommitted changes preserved; synchronization paused for this checkout';
+
+  @override
+  String get repositorySyncDiverged => 'Histories diverged; changes preserved';
+
+  @override
+  String get repositorySyncRefused =>
+      'Synchronization refused; existing work preserved';
 }

@@ -1,4 +1,14 @@
 # Allowed licenses in the locked graph; the product stays AGPL-3.0-only.
+[advisories]
+yanked = "deny"
+# Transitive entries of the pinned remote-device-sync provider graph; both are
+# maintenance-state advisories with no replacement inside the pinned provider
+# release, not vulnerabilities.
+ignore = [
+    "RUSTSEC-2023-0089", # atomic-polyfill is unmaintained
+    "RUSTSEC-2024-0436", # paste is no longer maintained
+]
+
 [licenses]
 allow = [
     "AGPL-3.0-only", "Apache-2.0", "BSD-3-Clause", "BSL-1.0",
@@ -9,7 +19,7 @@ allow = [
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-git = [
-    "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations","https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-protocol.git", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-sysinfo", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-clipboard", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-cleaner", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-updater", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-rds", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-core.git", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent"]
+    "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations","https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-protocol.git", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-sysinfo", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-clipboard", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-cleaner", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-updater", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-rds", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-core.git", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent", "https://github.com/NDDev-Technocracy-OpenNetwork/remote-device-sync"]
 
 # Exact native/relay inputs already reviewed by the owning RDS package.
 [[licenses.exceptions]]

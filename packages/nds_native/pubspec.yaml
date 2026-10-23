@@ -1,6 +1,6 @@
 name: nds_native
 description: Shared Rust application bridge for NDDev OpenNetwork Flutter clients.
-version: 0.0.1-alpha.22
+version: 0.0.1-alpha.23
 publish_to: none
 environment:
   sdk: ">=3.13.0 <4.0.0"

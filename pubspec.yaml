@@ -1,6 +1,6 @@
 name: nddev_device_sync_desktop
 description: NDDev OpenNetwork NDS desktop client.
-version: 0.0.1-alpha.22+22
+version: 0.0.1-alpha.23+23
 publish_to: none
 environment:
   sdk: ">=3.13.0 <4.0.0"

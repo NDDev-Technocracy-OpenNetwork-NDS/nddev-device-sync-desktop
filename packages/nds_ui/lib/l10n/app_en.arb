@@ -574,5 +574,12 @@
   "repositoryDifferentInstallation": "This checkout belongs to another NDS account or installation.",
   "repositoryRelocationRequired": "The saved connection uses another location. Review its move before connecting here.",
   "repositoryWrongRemote": "The Git origin or stored repository identity does not match the selected repository.",
-  "repositoryUnsupported": "Local checkout connection is not supported on this device."
+  "repositoryUnsupported": "Local checkout connection is not supported on this device.",
+  "repositorySyncRunning": "Synchronizing existing commits…",
+  "repositorySyncCurrent": "Commits are up to date",
+  "repositorySyncPublished": "Existing commits published",
+  "repositorySyncFastForwarded": "Checkout fast-forwarded",
+  "repositorySyncDirty": "Uncommitted changes preserved; synchronization paused for this checkout",
+  "repositorySyncDiverged": "Histories diverged; changes preserved",
+  "repositorySyncRefused": "Synchronization refused; existing work preserved"
 }

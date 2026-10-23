@@ -2327,6 +2327,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Local checkout connection is not supported on this device.'**
   String get repositoryUnsupported;
+
+  /// No description provided for @repositorySyncRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronizing existing commits…'**
+  String get repositorySyncRunning;
+
+  /// No description provided for @repositorySyncCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Commits are up to date'**
+  String get repositorySyncCurrent;
+
+  /// No description provided for @repositorySyncPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Existing commits published'**
+  String get repositorySyncPublished;
+
+  /// No description provided for @repositorySyncFastForwarded.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout fast-forwarded'**
+  String get repositorySyncFastForwarded;
+
+  /// No description provided for @repositorySyncDirty.
+  ///
+  /// In en, this message translates to:
+  /// **'Uncommitted changes preserved; synchronization paused for this checkout'**
+  String get repositorySyncDirty;
+
+  /// No description provided for @repositorySyncDiverged.
+  ///
+  /// In en, this message translates to:
+  /// **'Histories diverged; changes preserved'**
+  String get repositorySyncDiverged;
+
+  /// No description provided for @repositorySyncRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronization refused; existing work preserved'**
+  String get repositorySyncRefused;
 }
 
 class _AppLocalizationsDelegate

@@ -164,8 +164,19 @@ def prepare(cache, *, configured=False):
 def build_environment(cache=None, *, configured=False):
     cache = Path(cache or os.environ.get("NDS_NATIVE_BUILD_HOME", Path.cwd() / "build/nds-native"))
     result = prepare(cache, configured=configured)
+    paths = [result["rust_bin"], os.environ.get("PATH", "")]
+    compiler = {}
+    frontends = os.environ.get("NDS_CACHE_FRONTENDS")
+    if frontends:
+        prefix = Path(frontends)
+        if not prefix.is_absolute() or not (prefix / "cargo").is_file():
+            raise ValueError("NDS cache frontend is not configured")
+        paths.insert(0, str(prefix))
+        compiler = {name: str(Path(result["rust_bin"]) / (tool + (".exe" if os.name == "nt" else "")))
+                    for name, tool in [("RUSTC", "rustc"), ("RUSTDOC", "rustdoc")]}
     return dict(os.environ, CARGO_HOME=result["cargo_home"],
-                PATH=result["rust_bin"] + os.pathsep + os.environ.get("PATH", ""),
+                PATH=os.pathsep.join(paths),
+                **compiler,
                 NDS_NATIVE_BUILD_HOME=result["cache"], RUSTUP_AUTO_INSTALL="0",
                 NDS_NATIVE_SOURCE_HOME=result["source_home"],
                 GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1",

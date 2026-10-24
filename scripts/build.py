@@ -48,10 +48,13 @@ print('Building native source: ' + commit + (' (uncommitted)' if dirty else ''),
 os.environ.update(build_environment())
 # Resolve from the actual app directory: a Git/Pub native dependency may live
 # outside the installation's parent Cargo configuration scope.
+managed = bool(os.environ.get('NDS_CACHE_FRONTENDS'))
+rust = source / 'packages/nds_native/rust'
+# Match the managed build's invocation identity when resolving its final library.
+manifest = [] if managed else ['--manifest-path', str(rust / 'Cargo.toml')]
 metadata = json.loads(subprocess.check_output(
-    ['cargo', 'metadata', '--locked', '--no-deps', '--format-version', '1',
-     '--manifest-path', str(source / 'packages/nds_native/rust/Cargo.toml')],
-    cwd=app, text=True, timeout=30))
+    ['cargo', 'metadata', '--locked', '--no-deps', '--format-version', '1', *manifest],
+    cwd=rust if managed else app, text=True, timeout=30))
 os.environ.setdefault('CARGO_TARGET_DIR', metadata['target_directory'])
 os.environ.setdefault('CARGO_BUILD_BUILD_DIR', metadata.get('build_directory', metadata['target_directory']))
 if is_test:

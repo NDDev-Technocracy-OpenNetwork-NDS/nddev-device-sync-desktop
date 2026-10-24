@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:nds_ui/nds_ui.dart';
 import 'package:nds_ui/module_settings.dart';
+import 'package:nds_ui/state_screen.dart';
 
 import 'fixture_identity.dart';
 import 'local_modules_test.dart' as modules;
@@ -344,7 +345,20 @@ void main() {
         await waitFor(tester, find.byKey(const Key('publish-device-state')));
         await tester.tap(find.byKey(const Key('publish-device-state')));
         await waitFor(tester, find.text('Email code'));
-        expect(find.text('Acceptance device'), findsOneWidget);
+        final stateClient = tester
+            .widget<StateScreen>(find.byType(StateScreen))
+            .client;
+        final ownDevice = find.byKey(
+          ValueKey('state-${stateClient.snapshot().currentDeviceId}'),
+        );
+        await waitFor(tester, ownDevice);
+        expect(
+          find.descendant(
+            of: ownDevice,
+            matching: find.text('Acceptance device'),
+          ),
+          findsOneWidget,
+        );
         expect(tester.takeException(), isNull);
         await tester.pageBack();
         await tester.pumpAndSettle();
@@ -527,6 +541,15 @@ void main() {
         return;
       }
       if (vault) {
+        await modules.tapVisible(tester, find.text('Local modules'));
+        await modules.waitFor(tester, find.byKey(const Key('module-selector')));
+        await modules.choose(tester, 'Clipboard history');
+        await modules.configure(
+          tester,
+          enabled: true,
+          permissions: ['clipboard', 'local_network'],
+        );
+        await modules.tapVisible(tester, find.text('NDS session'));
         await tester.ensureVisible(find.byKey(const Key('open-utilities')));
         await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('open-utilities')));

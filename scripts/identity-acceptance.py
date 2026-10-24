@@ -75,7 +75,9 @@ source = Path(__file__).resolve().parents[1] / "packages/nds_ui/integration_test
     "server_replica_flow_test.dart" if args.sync_role else "identity_flow_test.dart")
 helper = app / "integration_test/fixture_identity.dart"
 module_helper = app / "integration_test/local_modules_test.dart" if not args.sync_role else None
-background_helper = app / "integration_test/device_modules_test.dart" if args.catalog_source else None
+# The general identity flow imports these controls even when the optional
+# catalog branch is disabled. Its Dart import must resolve before tree shaking.
+background_helper = app / "integration_test/device_modules_test.dart" if not args.modules and not args.sync_role else None
 if background_helper is not None and background_helper.exists():
     raise SystemExit("Refuse to overwrite existing background fixture helpers")
 if module_helper is not None and module_helper.exists():

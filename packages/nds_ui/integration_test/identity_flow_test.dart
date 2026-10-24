@@ -527,6 +527,15 @@ void main() {
         return;
       }
       if (vault) {
+        await modules.tapVisible(tester, find.text('Local modules'));
+        await modules.waitFor(tester, find.byKey(const Key('module-selector')));
+        await modules.choose(tester, 'Clipboard history');
+        await modules.configure(
+          tester,
+          enabled: true,
+          permissions: ['clipboard', 'local_network'],
+        );
+        await modules.tapVisible(tester, find.text('NDS session'));
         await tester.ensureVisible(find.byKey(const Key('open-utilities')));
         await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('open-utilities')));

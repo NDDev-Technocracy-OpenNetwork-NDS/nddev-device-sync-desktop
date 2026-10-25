@@ -91,7 +91,9 @@ jobs:
             target: windows
             artifact: build/windows/x64/runner/Debug
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 35
+    # Cold Intel setup plus the bounded 30-minute native build needs room for
+    # artifact verification and cleanup; the other targets retain their budget.
+    timeout-minutes: ${{ matrix.os == 'macos-15-intel' && 45 || 35 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:

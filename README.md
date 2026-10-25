@@ -155,9 +155,11 @@ The explicit GitHub choice is encrypted owner-wide intent, restored when the
 repository screen opens. It does not grant device consent or provider access.
 Reads and durable publications retain the original saved source, selected
 credential and this installation's consent; changing one rejects old work.
-Source-setting conflicts remain blocked. Traversal cursors are process-local;
-restart-safe automatic traversal/cadence and Git materialization/autosync remain
-incomplete. End-to-end provider/client acceptance remains separate. Owned UI
+Source-setting conflicts remain blocked. The elected native Rust Vault owner
+runs bounded catalog traversal and periodic existing-commit cycles for saved
+local connections; it retains source, device consent and writer ownership until
+Git has drained. Recursive initialization, child publication and changed-graph
+reconciliation remain incomplete. End-to-end provider/client acceptance remains separate. Owned UI
 acceptance uses `identity-acceptance.py --vault --catalog-source` with a fresh
 `--fixture-sync3` fixture.
 
@@ -165,6 +167,19 @@ Screen requests and viewing use the shared Rust owner, Accounts authorization
 and Core contracts. The current viewer backend is Linux X11; other targets
 report unsupported. Native subsystem qualification is separate from final
 Accounts-authenticated Flutter viewing, whose acceptance remains incomplete.
+
+`scripts/screen-acceptance.py` qualifies that Linux path against an explicitly
+owned, fresh 3600-second Server `--fixture-sync3` fixture. Supply `--fixture`,
+`--native-test` (the prepared `development-http`, no-default-features Rust lib
+test executable), `--output` (a new private directory), and the checkout's exact
+`--source` SHA. Prewarm the Flutter integration dependencies before starting;
+the UI run resolves them offline and retains the application's lockfile.
+The default `--viewer flutter` pairs the real UI with a native host;
+`--viewer native` isolates the native control/media path. Both use real SMTP
+OTP, separate Secret Services and owned X11 displays, observe changed source
+pixels, and revoke the viewer's company role through signed production routes.
+The receipt and cleanup remain outside the repository. This case does not
+qualify source loss, every lifecycle path, other platforms or a release.
 
 `python scripts/build.py linux --debug` builds committed source with an explicit,
 cache-tracked native source SHA; ordinary `flutter build` retains development

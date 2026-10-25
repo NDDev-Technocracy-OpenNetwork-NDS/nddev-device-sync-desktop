@@ -103,9 +103,57 @@ async fn prepare(client: &NdsClient) {
 #[test]
 #[ignore = "requires owned PG/SMTP, separate native stores and an owned X11 display"]
 fn actual_company_screen_revalidation_closes_native_stream() {
+    screen_case("role");
+}
+
+#[test]
+#[ignore = "requires owned PG/SMTP, separate native stores and an owned X11 display"]
+fn actual_source_loss_closes_native_stream() {
+    screen_case("source-loss");
+}
+
+#[test]
+#[ignore = "requires owned PG/SMTP, separate native stores and an owned X11 display"]
+fn actual_cancellation_closes_native_stream() {
+    screen_case("cancel");
+}
+
+#[test]
+#[ignore = "requires owned PG/SMTP, separate native stores and an owned X11 display"]
+fn actual_local_disable_closes_native_stream() {
+    screen_case("local-disable");
+}
+
+#[test]
+#[ignore = "requires owned PG/SMTP, separate native stores and an owned X11 display"]
+fn actual_logout_closes_native_stream() {
+    screen_case("logout");
+}
+
+#[test]
+#[ignore = "requires owned PG/SMTP, separate native stores and a real five-minute view lifetime"]
+fn actual_expiry_closes_native_stream() {
+    screen_case("expiry");
+}
+
+async fn logout(client: &NdsClient) {
+    for attempt in 0..8 {
+        match client.logout().await {
+            Ok(_) => return,
+            Err(ClientError::Busy) if attempt < 7 => {
+                tokio::time::sleep(Duration::from_millis(400)).await
+            }
+            Err(_) => panic!("owned native session cleanup failed"),
+        }
+    }
+}
+
+fn screen_case(expected_case: &str) {
     tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().unwrap().block_on(async {
         let config = std::env::var("NDS_SCREEN_ACCEPTANCE").expect("explicit owned fixture required");
         let config: Value = serde_json::from_slice(&std::fs::read(config).unwrap()).unwrap();
+        let case = config["case"].as_str().unwrap_or("role");
+        assert_eq!(case, expected_case);
         let endpoint = config["endpoint"].as_str().unwrap();
         assert!(endpoint.starts_with("http://127.0.0.1:") || endpoint.starts_with("http://localhost:"));
         let email = config["email"].as_str().unwrap();
@@ -145,6 +193,7 @@ fn actual_company_screen_revalidation_closes_native_stream() {
                     tokio::time::sleep(Duration::from_millis(200)).await;
                 }
             }).await.expect("actual viewer request did not arrive");
+            let expires_at_ms = request.expires_at_ms;
             let host = client.screen_accept(request.id).await.expect("actual host consent failed");
             // Xvfb resets its root when its last client leaves. Paint only after
             // the production capturer owns a live connection, then observe the change.
@@ -153,9 +202,30 @@ fn actual_company_screen_revalidation_closes_native_stream() {
             publish(root,"host-painted.json",json!({"painted":true}));
             wait_file(&root.join("viewer-frame.json")).await;
             publish(root,"host-streaming.json",json!({"streaming":true}));
-            wait_file(&root.join("demoted.json")).await;
+            wait_file(&root.join("end-trigger.json")).await;
             let at=std::time::Instant::now();
-            tokio::time::timeout(Duration::from_secs(10),host.closed()).await.expect("host kept streaming after demotion");
+            if case == "cancel" { host.cancel(); }
+            if case == "logout" { logout(&client).await; }
+            if case == "local-disable" {
+                for attempt in 0..8 {
+                    let result = async {
+                        let module = client.device_modules().await?.into_iter().find(|m|m.id=="rds").unwrap();
+                        client.configure_module("rds".into(),false,vec![],module.revision,module.pending_id).await
+                    }.await;
+                    match result {
+                        Ok(())=>break,
+                        Err(ClientError::Busy)if attempt<7=>tokio::time::sleep(Duration::from_millis(400)).await,
+                        Err(error)=>panic!("owned local disable failed: {}",error.code()),
+                    }
+                }
+            }
+            tokio::time::timeout(Duration::from_secs(if case=="expiry" {330} else {10}),host.closed()).await.expect("host kept streaming after lifetime loss");
+            if case == "expiry" {
+                let ended = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis();
+                // Native grants use seconds; NDS requests use milliseconds.
+                assert!(ended >= u128::from(expires_at_ms / 1000 * 1000),"stream ended before the actual native expiry boundary");
+                assert!(ended <= u128::from(expires_at_ms) + 10_000,"stream outlived the original request deadline");
+            }
             host.close().await.unwrap();
             publish(root,"host-proof.json",json!({"stopped":true,"observed_stop_ms":at.elapsed().as_millis()}));
         } else {
@@ -182,22 +252,30 @@ fn actual_company_screen_revalidation_closes_native_stream() {
                     }
                 }
             }).await.expect("actual owned X11 color change was not visible");
-            wait_file(&root.join("demoted.json")).await;
+            wait_file(&root.join("end-trigger.json")).await;
             let at=std::time::Instant::now();
-            tokio::time::timeout(Duration::from_secs(10),viewer.closed()).await.expect("viewer retained permission after demotion");
+            tokio::time::timeout(Duration::from_secs(if case=="expiry" {330} else {10}),async {
+                if case=="expiry" {
+                    loop {
+                        tokio::select! { biased;
+                            _=viewer.closed()=>break,
+                            _=tokio::time::sleep(Duration::from_millis(100))=> {
+                                match viewer.frame().await {
+                                    Ok(current) if current.check_live().is_ok()=>{},
+                                    _=>{viewer.closed().await;break;},
+                                }
+                            },
+                        }
+                    }
+                } else {viewer.closed().await;}
+            }).await.expect("viewer retained frames after lifetime loss");
             assert!(frame.check_live().is_err(),"retained frame survived remote revocation");
             drop(frame);
             viewer.close().await.unwrap();
             publish(root,"viewer-proof.json",json!({"stopped":true,"retained_frame_unusable_after_stop":true,"observed_stop_ms":at.elapsed().as_millis()}));
         }
         client.screen_close().await.unwrap();
-        for attempt in 0..8 {
-            match client.logout().await {
-                Ok(_) => break,
-                Err(ClientError::Busy) if attempt<7 => tokio::time::sleep(Duration::from_millis(400)).await,
-                Err(_) => panic!("owned native session cleanup failed"),
-            }
-        }
+        logout(&client).await;
         telemetry::shutdown_telemetry().await.unwrap();
     });
 }

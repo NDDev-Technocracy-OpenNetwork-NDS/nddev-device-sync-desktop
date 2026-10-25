@@ -178,8 +178,13 @@ The default `--viewer flutter` pairs the real UI with a native host;
 `--viewer native` isolates the native control/media path. Both use real SMTP
 OTP, separate Secret Services and owned X11 displays, observe changed source
 pixels, and revoke the viewer's company role through signed production routes.
-The receipt and cleanup remain outside the repository. This case does not
-qualify source loss, every lifecycle path, other platforms or a release.
+The default `--case role` performs signed viewer-role revocation. Native-only
+`--case source-loss`, `cancel`, and `local-disable` terminate the owned capture
+display, cancel the actual host handle, or disable its local module consent.
+Native `logout` uses the actual host logout path; `expiry` waits for the real
+five-minute view lifetime, without changing clocks or production limits. Each
+invocation qualifies only its selected case. Receipts and cleanup remain outside
+the repository; other targets and release qualification remain separate.
 
 `python scripts/build.py linux --debug` builds committed source with an explicit,
 cache-tracked native source SHA; ordinary `flutter build` retains development

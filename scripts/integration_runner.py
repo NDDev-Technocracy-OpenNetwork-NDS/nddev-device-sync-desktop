@@ -10,6 +10,32 @@ import subprocess
 from urllib.parse import unquote, urlparse
 
 
+def pub_get(app, *, offline=False, locked=False):
+    command = ['flutter', 'pub', 'get', *(['--enforce-lockfile'] if locked else []),
+               *(['--offline'] if offline else [])]
+    process = subprocess.Popen(command, cwd=app, stdout=subprocess.DEVNULL,
+                               start_new_session=os.name != 'nt')
+    try:
+        status = process.wait(timeout=120)
+    except (subprocess.TimeoutExpired, KeyboardInterrupt):
+        if os.name == 'nt':
+            subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+        else:
+            os.killpg(process.pid, signal.SIGTERM)
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            if os.name == 'nt':
+                process.kill()
+            else:
+                os.killpg(process.pid, signal.SIGKILL)
+            process.wait(timeout=10)
+        raise
+    if status:
+        raise subprocess.CalledProcessError(status, command)
+
+
 def native_source_commit(app: Path):
     config = app / '.dart_tool/package_config.json'
     packages = json.loads(config.read_text())['packages']
@@ -62,8 +88,7 @@ def integration_runner(app: Path, *, development_http=False, worker_digest=None,
     handlers = {sig: signal.signal(sig, interrupted) for sig in [signal.SIGTERM, signal.SIGINT]}
     try:
         spec.write_text(source)
-        subprocess.run(['flutter', 'pub', 'get', *(['--offline'] if offline_pub else [])], cwd=app, check=True,
-                       stdout=subprocess.DEVNULL, timeout=120)
+        pub_get(app, offline=offline_pub)
         # Resolve the package actually selected by this app, not the checkout
         # containing the acceptance runner. Only our temporary app files differ.
         commit = native_source_commit(app)
@@ -73,8 +98,7 @@ def integration_runner(app: Path, *, development_http=False, worker_digest=None,
         spec.write_bytes(original)
         lock.write_bytes(original_lock)
         try:
-            subprocess.run(['flutter', 'pub', 'get', '--enforce-lockfile', *(['--offline'] if offline_pub else [])], cwd=app,
-                           check=True, stdout=subprocess.DEVNULL, timeout=120)
+            pub_get(app, offline=offline_pub, locked=True)
         finally:
             for sig, handler in handlers.items():
                 signal.signal(sig, handler)

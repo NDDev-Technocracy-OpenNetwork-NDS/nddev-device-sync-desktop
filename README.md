@@ -181,9 +181,10 @@ pixels, and revoke the viewer's company role through signed production routes.
 The default `--case role` performs signed viewer-role revocation. Native-only
 `--case source-loss`, `cancel`, and `local-disable` terminate the owned capture
 display, cancel the actual host handle, or disable its local module consent.
-Each invocation qualifies only its selected case. Receipts and cleanup remain
-outside the repository; expiry, other targets and release qualification remain
-separate.
+Native `logout` uses the actual host logout path; `expiry` waits for the real
+five-minute view lifetime, without changing clocks or production limits. Each
+invocation qualifies only its selected case. Receipts and cleanup remain outside
+the repository; other targets and release qualification remain separate.
 
 `python scripts/build.py linux --debug` builds committed source with an explicit,
 cache-tracked native source SHA; ordinary `flutter build` retains development

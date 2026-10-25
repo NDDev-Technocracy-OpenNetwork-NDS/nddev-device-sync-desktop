@@ -30,6 +30,8 @@ TESTS = {
     "source-loss": "actual_source_loss_closes_native_stream",
     "cancel": "actual_cancellation_closes_native_stream",
     "local-disable": "actual_local_disable_closes_native_stream",
+    "logout": "actual_logout_closes_native_stream",
+    "expiry": "actual_expiry_closes_native_stream",
 }
 HTTP = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
@@ -318,7 +320,8 @@ def qualify(args, fixture):
         elif args.case == "source-loss":
             stop(role_displays["host"])
         write(root / "end-trigger.json", {"case": args.case})
-        host_proof, viewer_proof = fact("host-proof.json", 15), fact("viewer-proof.json", 15)
+        host_proof = fact("host-proof.json", 340 if args.case == "expiry" else 15)
+        viewer_proof = fact("viewer-proof.json", 15)
         for child in processes:
             assert child.wait(timeout=30) == 0
         status, company = authority.signed(owner, "/v2/company")

@@ -25,7 +25,14 @@ from urllib.parse import urlsplit
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
-TEST = "api::screen_acceptance::actual_company_screen_revalidation_closes_native_stream"
+TESTS = {
+    "role": "actual_company_screen_revalidation_closes_native_stream",
+    "source-loss": "actual_source_loss_closes_native_stream",
+    "cancel": "actual_cancellation_closes_native_stream",
+    "local-disable": "actual_local_disable_closes_native_stream",
+    "logout": "actual_logout_closes_native_stream",
+    "expiry": "actual_expiry_closes_native_stream",
+}
 HTTP = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 
@@ -200,15 +207,17 @@ def operation():
 
 
 def qualify(args, fixture):
-    processes, displays, handles = [], [], []
+    processes, displays, handles, role_displays = [], [], [], {}
     args.output.mkdir(mode=0o700, parents=True, exist_ok=False)
     root = Path(tempfile.mkdtemp(prefix="nds-native-screen-", dir=Path.home() / ".local/state"))
     try:
         authority = Authority(fixture, root)
         owner = authority.enroll(authority.authenticate(fixture["owner_email"]))
         host_email, _ = authority.invite(owner, "user")
-        _, admin_session = authority.invite(owner, "admin")
-        controller = authority.enroll(admin_session)
+        controller = None
+        if args.case == "role":
+            _, admin_session = authority.invite(owner, "admin")
+            controller = authority.enroll(admin_session)
         # Clients obtain their own real OTP. Respect the public resend window.
         wait(lambda: time.monotonic() >= max(authority.challenge_at.values()), 300)
 
@@ -257,6 +266,7 @@ def qualify(args, fixture):
                     actual = display.stdout.readline().decode().strip()
                     if actual == number and display.poll() is None:
                         displays.append(display)
+                        role_displays[role] = display
                         break
                 stop(display)
             else:
@@ -279,8 +289,8 @@ def qualify(args, fixture):
             else:
                 config = scope / "native.json"
                 write(config, {"endpoint": fixture["base_url"], "email": host_email if role == "host" else fixture["owner_email"],
-                               "role": role, "directory": str(root)})
-                command = [str(args.native_test), "--exact", TEST, "--ignored", "--nocapture"]
+                                   "role": role, "directory": str(root), "case": args.case})
+                command = [str(args.native_test), "--exact", "api::screen_acceptance::" + TESTS[args.case], "--ignored", "--nocapture"]
                 extra = {"NDS_SCREEN_ACCEPTANCE": str(config), "NDS_OWNED_XVFB": "1", "NDS_OWNED_XVFB_PID": str(display.pid)}
             config = scope / "worker.json"
             write(config, {"root": str(scope), "command": command, "environment": extra})
@@ -299,20 +309,28 @@ def qualify(args, fixture):
             start("viewer")
         fact("host-streaming.json", 180)
         pixels = fact("viewer-frame.json")
-        status, page = authority.signed(controller, "/v2/company/members")
-        assert status == 200
-        member = next(row for row in page["members"] if row["user_id"] == owner["user"])
-        status, _ = authority.signed(controller, "/v2/company/members/" + owner["user"],
-            {"operation_id": operation(), "expected_revision": member["revision"], "action": "set_role", "role": "user"})
-        assert status == 200
-        write(root / "demoted.json", {"demoted": True})
-        host_proof, viewer_proof = fact("host-proof.json", 15), fact("viewer-proof.json", 15)
+        if args.case == "role":
+            status, page = authority.signed(controller, "/v2/company/members")
+            assert status == 200
+            member = next(row for row in page["members"] if row["user_id"] == owner["user"])
+            status, _ = authority.signed(controller, "/v2/company/members/" + owner["user"],
+                {"operation_id": operation(), "expected_revision": member["revision"], "action": "set_role", "role": "user"})
+            assert status == 200
+            write(root / "demoted.json", {"demoted": True})
+        elif args.case == "source-loss":
+            stop(role_displays["host"])
+        write(root / "end-trigger.json", {"case": args.case})
+        host_proof = fact("host-proof.json", 340 if args.case == "expiry" else 15)
+        viewer_proof = fact("viewer-proof.json", 15)
         for child in processes:
             assert child.wait(timeout=30) == 0
+        status, company = authority.signed(owner, "/v2/company")
+        assert status == 200
+        assert company["member"]["role"] == ("user" if args.case == "role" else "admin")
         write(args.output / "receipt.json", {"source": args.source, "viewer": args.viewer,
-            "actual_smtp_otp": True, "actual_signed_role_change": True, "actual_frame": pixels,
+            "case": args.case, "actual_smtp_otp": True, "actual_signed_role_change": args.case == "role", "actual_frame": pixels,
             "host": host_proof, "viewer_proof": viewer_proof,
-            "scope": "Owned Linux X11 view-only stream and Accounts company-role revocation; other platforms and source-loss/update acceptance remain separate."})
+            "scope": "Owned Linux X11 view-only stream and the named actual termination case; other cases, platforms and update acceptance remain separate."})
     finally:
         for child in processes:
             try:
@@ -343,7 +361,10 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--source", required=True)
     parser.add_argument("--viewer", choices=["native", "flutter"], default="flutter")
+    parser.add_argument("--case", choices=TESTS, default="role")
     args = parser.parse_args()
+    if args.viewer == "flutter" and args.case != "role":
+        parser.error("The Flutter workflow currently qualifies role revocation only")
     assert sys.platform == "linux" and re.fullmatch("[a-f0-9]{40}", args.source)
     for p in [args.fixture, args.native_test, args.output]:
         assert p.is_absolute() and not p.resolve().is_relative_to(ROOT)

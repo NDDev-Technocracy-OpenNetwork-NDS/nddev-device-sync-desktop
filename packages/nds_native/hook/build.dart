@@ -12,6 +12,28 @@ void main(List<String> args) async {
     if (development != null && development is! bool) {
       throw const FormatException('development_http must be a boolean');
     }
+    final policyInput = input.userDefines['app_update_policy'];
+    final String appUpdatePolicy;
+    if (policyInput == null || policyInput == '') {
+      appUpdatePolicy = '';
+    } else {
+      if (policyInput is! String || utf8.encode(policyInput).length > 65536) {
+        throw const FormatException(
+          'app_update_policy must be a bounded JSON object string',
+        );
+      }
+      Object? policy;
+      try {
+        policy = jsonDecode(policyInput);
+      } on FormatException {
+        // Do not include the policy body in compiler or hook diagnostics.
+        throw const FormatException('app_update_policy must be a JSON object');
+      }
+      if (policy is! Map<String, dynamic>) {
+        throw const FormatException('app_update_policy must be a JSON object');
+      }
+      appUpdatePolicy = policyInput;
+    }
     final sourceCommit = input.userDefines['source_commit'];
     if (sourceCommit != null &&
         (sourceCommit is! String ||
@@ -93,6 +115,9 @@ void main(List<String> args) async {
         'NDS_NATIVE_BUILD_HOME': native['cache']!,
         'RUSTUP_AUTO_INSTALL': '0',
         'NDS_SOURCE_COMMIT': sourceCommit as String? ?? 'unknown',
+        // userDefines participates in the Native Assets input identity. Always
+        // replace any ambient policy, including when the assembly disables it.
+        'NDS_APP_UPDATE_POLICY': appUpdatePolicy,
         if (workerDigest != null)
           'NDS_GDS_WORKER_SHA256': workerDigest as String,
       },

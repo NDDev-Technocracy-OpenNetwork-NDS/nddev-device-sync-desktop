@@ -63,6 +63,18 @@ void main(List<String> args) async {
         'native_build_cache must be an absolute path',
       );
     }
+    final buildDirectory = input.userDefines['native_build_directory'];
+    if (buildDirectory != null &&
+        (buildDirectory is! String ||
+            !Directory(buildDirectory).isAbsolute ||
+            buildDirectory.length > 32768 ||
+            utf8.encode(buildDirectory).length > 32768 ||
+            utf8.decode(utf8.encode(buildDirectory)) != buildDirectory ||
+            RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(buildDirectory))) {
+      throw const FormatException(
+        'native_build_directory must be an absolute path without controls of at most 32768 UTF-8 bytes',
+      );
+    }
     final cache =
         requestedCache as String? ??
         Directory.fromUri(input.outputDirectoryShared.resolve('nds-native/'))
@@ -108,6 +120,10 @@ void main(List<String> args) async {
       extraCargoBuildArgs: const ['--locked', '--jobs', '4'],
       extraCargoEnvironmentVariables: {
         'CARGO_HOME': native['cargo_home']!,
+        // The runner strips inherited CARGO_* variables. Only the tracked
+        // input selects shared intermediates; final staging stays hook-owned.
+        if (buildDirectory != null)
+          'CARGO_BUILD_BUILD_DIR': buildDirectory as String,
         'CARGO_NET_GIT_FETCH_WITH_CLI': 'true',
         'GIT_CONFIG_GLOBAL': Platform.isWindows ? 'NUL' : '/dev/null',
         'GIT_CONFIG_NOSYSTEM': '1',

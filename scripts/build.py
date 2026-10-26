@@ -44,6 +44,17 @@ def read_policy(path):
         # Never include policy contents in parser, helper or compiler diagnostics.
         raise SystemExit('App-update policy requires a regular UTF-8 JSON object file of at most 65536 bytes') from None
 
+def checked_build_directory(value):
+    try:
+        if (not isinstance(value, str) or not Path(value).is_absolute()
+                or len(value) > 32768
+                or len(value.encode('utf-8')) > 32768
+                or re.search(r'[\x00-\x1f\x7f-\x9f]', value)):
+            raise ValueError
+    except (ValueError, UnicodeError):
+        raise SystemExit('Prepared Cargo build directory requires an absolute UTF-8 path without controls of at most 32768 bytes') from None
+    return value
+
 app_update_policy = read_policy(args.app_update_policy)
 # Only the tracked hook input may configure the native library. Preparation,
 # worker packaging and Flutter must not inherit an ambient policy authority.
@@ -87,8 +98,9 @@ manifest = [] if managed else ['--manifest-path', str(rust / 'Cargo.toml')]
 metadata = json.loads(subprocess.check_output(
     ['cargo', 'metadata', '--locked', '--no-deps', '--format-version', '1', *manifest],
     cwd=rust if managed else app, text=True, timeout=30))
+native_build_directory = checked_build_directory(metadata.get('build_directory', metadata['target_directory']))
 os.environ.setdefault('CARGO_TARGET_DIR', metadata['target_directory'])
-os.environ.setdefault('CARGO_BUILD_BUILD_DIR', metadata.get('build_directory', metadata['target_directory']))
+os.environ.setdefault('CARGO_BUILD_BUILD_DIR', native_build_directory)
 if is_test:
     os.environ.setdefault('FRB_DART_LOAD_EXTERNAL_LIBRARY_NATIVE_LIB_DIR',
                           str(Path(metadata['target_directory']) / 'debug'))
@@ -103,10 +115,11 @@ try:
         worker_digest = package_linux_worker(source, Path(worker_staging.name))
     worker_define = '' if worker_digest is None else f'      gds_worker_sha256: "{worker_digest}"\n'
     cache_define = '      native_build_cache: ' + json.dumps(os.environ['NDS_NATIVE_BUILD_HOME']) + '\n'
+    directory_define = '      native_build_directory: ' + json.dumps(native_build_directory) + '\n'
     python_define = '      native_build_python: ' + json.dumps(sys.executable) + '\n'
     source_define = '' if dirty else f'      source_commit: "{commit}"\n'
     policy_define = '      app_update_policy: ' + json.dumps(app_update_policy) + '\n'
-    spec.write_bytes(original + f'\nhooks:\n  user_defines:\n    nds_native:\n{source_define}{worker_define}{cache_define}{python_define}{policy_define}'.encode())
+    spec.write_bytes(original + f'\nhooks:\n  user_defines:\n    nds_native:\n{source_define}{worker_define}{cache_define}{directory_define}{python_define}{policy_define}'.encode())
     environment = os.environ.copy()
     environment['CARGO_BUILD_JOBS'] = '4'
     executable = shutil.which('flutter')

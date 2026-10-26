@@ -1000,5 +1000,5 @@ Future<void> appUpdatePreservation(
   await tap('logout');
   await until(() async => find.byKey(const Key('email')).evaluate().isNotEmpty);
   await step('complete', {'passed': true, 'fixture_signed_out': true});
-  print('NDS_APP_UPDATE_PRESERVATION_PASS');
+  debugPrint('NDS_APP_UPDATE_PRESERVATION_PASS');
 }

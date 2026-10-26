@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:nddev_opennetwork_design_system/opennetwork_design_system.dart';
-import 'package:nds_native/src/rust/api/app_update.dart' as native;
+import 'package:nds_native/nds_native.dart' as native;
 
 import 'l10n/app_localizations.dart';
 

@@ -194,7 +194,23 @@ fn screen_case(expected_case: &str) {
                 }
             }).await.expect("actual viewer request did not arrive");
             let expires_at_ms = request.expires_at_ms;
-            let host = client.screen_accept(request.id).await.expect("actual host consent failed");
+            let mut accepted = None;
+            for attempt in 0..8 {
+                match client.screen_accept(request.id.clone()).await {
+                    Ok(host) => { accepted = Some(host); break; }
+                    Err(super::screen::ScreenFailure::Busy) if attempt < 7 => {
+                        // Retry the same explicit action; never acquire a new
+                        // request or renew its original grant/deadline.
+                        eprintln!("NDS_SCREEN_ACCEPT_BUSY_RETRY attempt={}", attempt + 1);
+                        tokio::time::sleep(Duration::from_millis(400)).await;
+                    }
+                    Err(error) => {
+                        eprintln!("NDS_SCREEN_ACCEPT_REFUSED code={}", error.code());
+                        panic!("actual host consent failed");
+                    }
+                }
+            }
+            let host = accepted.expect("actual host consent was not obtained");
             // Xvfb resets its root when its last client leaves. Paint only after
             // the production capturer owns a live connection, then observe the change.
             wait_file(&root.join("viewer-capture.json")).await;

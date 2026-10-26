@@ -136,13 +136,16 @@ try:
         "--dart-define=NDS_DEVICE_NAME=" + ("Sync " + args.sync_role if args.sync_role else "Acceptance device")]
     if fixture.get("screen_peer_email") is not None:
         handoff = Path(fixture["screen_handoff"])
+        screen_case = fixture.get("screen_case", "role")
         if (args.device != "linux" or not fixture["screen_peer_email"].endswith("@example.invalid")
                 or not handoff.is_absolute() or not handoff.is_dir()
                 or not handoff.name.startswith("nds-native-screen-")
+                or screen_case not in ["role", "source-loss", "cancel", "local-disable", "logout", "expiry"]
                 or os.environ.get("NDS_OWNED_XVFB") != "1"):
             raise SystemExit("Screen UI acceptance requires an owned Linux display and native-pair handoff")
         command += ["--dart-define=NDS_TEST_SCREEN_PEER=" + fixture["screen_peer_email"],
-                    "--dart-define=NDS_TEST_SCREEN_HANDOFF=" + str(handoff)]
+                    "--dart-define=NDS_TEST_SCREEN_HANDOFF=" + str(handoff),
+                    "--dart-define=NDS_TEST_SCREEN_CASE=" + screen_case]
     if args.company:
         command.append("--dart-define=NDS_TEST_COMPANY=true")
     if args.vault:
@@ -152,6 +155,9 @@ try:
     if args.sync_role:
         command.append("--dart-define=NDS_TEST_SYNC_ROLE=" + args.sync_role)
     environment = os.environ.copy()
+    environment.pop("NDS_TEST_SCREEN_CASE", None)
+    if fixture.get("screen_peer_email") is not None:
+        environment["NDS_TEST_SCREEN_CASE"] = screen_case
     environment["CARGO_BUILD_JOBS"] = "4"
     status = 0
     phases = (["persist", "offline", "restore"] if args.modules else

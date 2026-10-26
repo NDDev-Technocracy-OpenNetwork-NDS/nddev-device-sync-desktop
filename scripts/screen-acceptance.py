@@ -275,7 +275,8 @@ def qualify(args, fixture):
                    ["GH_TOKEN", "GITHUB_TOKEN", "SSH_AUTH_SOCK", "DBUS_SESSION_BUS_ADDRESS", "WAYLAND_DISPLAY"]}
             env.update({k: str(scope / v) for k, v in [("XDG_DATA_HOME", "data"), ("XDG_STATE_HOME", "state"),
                 ("XDG_CONFIG_HOME", "config"), ("XDG_CACHE_HOME", "cache"), ("XDG_RUNTIME_DIR", "runtime")]})
-            env.update(DISPLAY=":" + number, XAUTHORITY=str(auth), GDK_BACKEND="x11", LIBGL_ALWAYS_SOFTWARE="1")
+            env.update(DISPLAY=":" + number, XAUTHORITY=str(auth), XDG_SESSION_TYPE="x11",
+                       GDK_BACKEND="x11", LIBGL_ALWAYS_SOFTWARE="1")
             # Build inputs are explicitly verified by prepare_native, not state.
             for name in ["CARGO_HOME", "CARGO_TARGET_DIR", "NDS_NATIVE_BUILD_HOME", "NDS_NATIVE_BUILD_PREPARED", "NDS_NATIVE_SOURCE_HOME"]:
                 if name in os.environ:
@@ -283,7 +284,8 @@ def qualify(args, fixture):
             env.update({k: v for k, v in os.environ.items() if k.startswith("NDS_CACHE_")})
             if flutter:
                 config = scope / "fixture.json"
-                write(config, fixture | {"screen_peer_email": host_email, "screen_handoff": str(root)})
+                write(config, fixture | {"screen_peer_email": host_email, "screen_handoff": str(root),
+                                         "screen_case": args.case})
                 command = [sys.executable, str(ROOT / "scripts/identity-acceptance.py"), "--fixture", str(config), "--offline-pub"]
                 extra = {"NDS_OWNED_XVFB": "1", "NDS_OWNED_XVFB_PID": str(display.pid)}
             else:
@@ -363,8 +365,6 @@ def main():
     parser.add_argument("--viewer", choices=["native", "flutter"], default="flutter")
     parser.add_argument("--case", choices=TESTS, default="role")
     args = parser.parse_args()
-    if args.viewer == "flutter" and args.case != "role":
-        parser.error("The Flutter workflow currently qualifies role revocation only")
     assert sys.platform == "linux" and re.fullmatch("[a-f0-9]{40}", args.source)
     for p in [args.fixture, args.native_test, args.output]:
         assert p.is_absolute() and not p.resolve().is_relative_to(ROOT)

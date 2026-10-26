@@ -19,6 +19,15 @@ PACKAGE = Path(__file__).resolve().parents[1]
 RDS_REPOSITORY = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-rds"
 
 
+def standards_release():
+    # The native producer belongs to Shared, including when another app uses
+    # this package. Never substitute the SDK edition or an ambient variable.
+    value = tomllib.loads((PACKAGE.parents[1] / "standarts.lock").read_text())["source_release"]
+    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9_.:-]{1,128}", value):
+        raise ValueError("native standards release requires its owning lock identity")
+    return value
+
+
 def run_command(arguments, *, cwd=None, env=None, timeout=30, capture=False):
     process = subprocess.Popen(
         arguments, cwd=cwd, env=env, text=True, encoding="utf-8",
@@ -88,6 +97,7 @@ def preparation_lock(path):
 
 
 def prepare(cache, *, configured=False):
+    release = standards_release()
     manifest = tomllib.loads((PACKAGE / "rust/Cargo.toml").read_text())
     dependency = manifest["dependencies"]["nddev-device-sync-rds"]
     revision = dependency["rev"]
@@ -158,7 +168,7 @@ def prepare(cache, *, configured=False):
                 env=environment, timeout=240,
             )
     return {"cargo_home": str(cargo_home), "source_home": str(source_home),
-            "rust_bin": str(rust_bin), "cache": str(cache)}
+            "rust_bin": str(rust_bin), "cache": str(cache), "standards_release": release}
 
 
 def build_environment(cache=None, *, configured=False):
@@ -177,6 +187,7 @@ def build_environment(cache=None, *, configured=False):
     return dict(os.environ, CARGO_HOME=result["cargo_home"],
                 PATH=os.pathsep.join(paths),
                 **compiler,
+                NDS_STANDARDS_RELEASE=result["standards_release"],
                 NDS_NATIVE_BUILD_HOME=result["cache"], RUSTUP_AUTO_INSTALL="0",
                 NDS_NATIVE_SOURCE_HOME=result["source_home"],
                 GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1",

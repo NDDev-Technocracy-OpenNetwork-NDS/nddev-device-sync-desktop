@@ -952,6 +952,7 @@ Future<void> appUpdatePreservation(
     fresh.dispose();
   }
   await tap('open-vault');
+  await until(() async => find.byType(VaultScreen).evaluate().isNotEmpty);
   expect(
     identical(
       tester.widget<VaultScreen>(find.byType(VaultScreen)).client,

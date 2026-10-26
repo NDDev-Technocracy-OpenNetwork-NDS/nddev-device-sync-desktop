@@ -162,8 +162,21 @@ fn metadata() -> DataVersions {
     }
 }
 
+// The input type fixes the bound to one SHA-256 output (32 bytes).
+fn digest_hex(output: sha2::digest::Output<Sha256>) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    output
+        .iter()
+        .flat_map(|&byte| {
+            [
+                char::from(HEX[(byte >> 4) as usize]),
+                char::from(HEX[(byte & 15) as usize]),
+            ]
+        })
+        .collect()
+}
 fn digest(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    digest_hex(Sha256::digest(bytes))
 }
 fn domain_error(error: domain::Error) -> Error {
     match error {
@@ -502,7 +515,7 @@ impl Updater {
                 }
             }
             if received != candidate.release.artifact.bytes
-                || format!("{:x}", hash.finalize()) != candidate.release.artifact.sha256
+                || digest_hex(hash.finalize()) != candidate.release.artifact.sha256
             {
                 return Err(Error::Manifest);
             }
@@ -867,7 +880,7 @@ fn local_candidate(
         hash.update(&bytes[..n]);
     }
     if count != candidate.release.artifact.bytes
-        || format!("{:x}", hash.finalize()) != candidate.release.artifact.sha256
+        || digest_hex(hash.finalize()) != candidate.release.artifact.sha256
     {
         return Err(Error::Manifest);
     }

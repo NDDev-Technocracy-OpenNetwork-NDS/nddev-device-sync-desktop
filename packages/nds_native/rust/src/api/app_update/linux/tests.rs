@@ -84,8 +84,12 @@ fn committed_candidate_retention_has_one_current_and_refuses_unknown_layouts() {
     let root = &directory.0;
     ensure_root(root).unwrap();
     let current = "a".repeat(64);
-    let old_manifest = b"retention fixture metadata";
+    let old_manifest = b"abc";
     let old = digest(old_manifest);
+    assert_eq!(
+        old,
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    );
     fs::create_dir(root.join(&current)).unwrap();
     fs::create_dir(root.join(&old)).unwrap();
     write_new(&root.join(&old).join("app-release.json"), old_manifest).unwrap();

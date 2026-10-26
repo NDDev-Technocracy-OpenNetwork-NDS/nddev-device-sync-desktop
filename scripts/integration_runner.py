@@ -59,7 +59,8 @@ def native_source_commit(app: Path):
     return commit
 
 @contextmanager
-def integration_runner(app: Path, *, development_http=False, worker_digest=None, offline_pub=False):
+def integration_runner(app: Path, *, development_http=False, worker_digest=None, offline_pub=False,
+                       app_update_policy=None):
     spec, lock = app / 'pubspec.yaml', app / 'pubspec.lock'
     original, original_lock = spec.read_bytes(), lock.read_bytes()
     source = original.decode()
@@ -75,6 +76,13 @@ def integration_runner(app: Path, *, development_http=False, worker_digest=None,
         source += f'      gds_worker_sha256: "{worker_digest}"\n'
     if development_http:
         source += '      development_http: true\n'
+    if app_update_policy is not None:
+        if (not isinstance(app_update_policy, str) or len(app_update_policy.encode()) > 65536 or
+                not isinstance(json.loads(app_update_policy), dict)):
+            raise RuntimeError('App-update policy must be a bounded trusted JSON object string')
+        # A tracked Native Assets userDefine, never an ambient runtime policy.
+        # Preserve the caller's exact string and the original spec on teardown.
+        source += '      app_update_policy: ' + json.dumps(app_update_policy) + '\n'
     # The same explicit, receipt-checked cache contract as scripts/build.py.
     # Hooks still verify the selected RDS source, config and build receipt.
     cache = os.environ.get('NDS_NATIVE_BUILD_HOME')

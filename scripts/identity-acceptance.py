@@ -29,7 +29,27 @@ parser.add_argument("--modules", action="store_true", help="Qualify Android modu
 parser.add_argument("--offline-pub", action="store_true", help="Resolve temporary test dependencies from a prewarmed cache; retain lockfile verification")
 parser.add_argument("--sync-role", choices=["owner", "recipient"])
 parser.add_argument("--resume", action="store_true", help="Verify a retained desktop session after another device changed the server")
+parser.add_argument("--app-update-handoff", type=Path,
+                    help="Owned Linux application staging preservation phase")
+parser.add_argument("--app-update-policy", type=Path,
+                    help="Independent trusted compile-time qualification policy for the app-update phase")
 args = parser.parse_args()
+if (args.app_update_handoff is None) != (args.app_update_policy is None):
+    parser.error("App-update handoff and independent compile-time policy are required together")
+app_update_policy = None
+if args.app_update_policy is not None:
+    if (not args.app_update_policy.is_absolute() or args.app_update_policy.is_symlink() or
+            not args.app_update_policy.is_file() or args.app_update_policy.stat().st_size > 65536):
+        parser.error("Expected a bounded regular trusted assembly policy file")
+    app_update_policy = args.app_update_policy.read_text()
+    if not isinstance(json.loads(app_update_policy), dict):
+        parser.error("Assembly policy must be one JSON object")
+if args.app_update_handoff is not None and (args.device != "linux" or not args.vault or
+        any([args.company, args.modules, args.catalog_source, args.sync_role, args.resume, args.cold_restart])):
+    parser.error("App-update preservation requires the standalone Linux --vault phase")
+if args.app_update_handoff is not None and (not args.app_update_handoff.is_absolute() or
+        not args.app_update_handoff.is_dir() or not args.app_update_handoff.name.startswith("nds-app-update-ui-")):
+    parser.error("App-update handoff must be an existing owned absolute directory")
 if args.catalog_source and (not args.vault or args.cold_restart or args.resume or args.modules or args.company or args.sync_role):
     parser.error("Catalog source acceptance requires a standalone --vault setup without other scenarios")
 app = args.app.resolve()
@@ -64,6 +84,8 @@ if args.cold_restart:
     if installed.stdout.strip():
         raise SystemExit("Cold acceptance requires an emulator without an existing NDS app")
 fixture = json.loads(args.fixture.read_text())
+if args.app_update_handoff is not None and fixture.get("screen_peer_email") is not None:
+    parser.error("App-update and screen acceptance own distinct fixtures")
 for key in ["base_url", "mailpit_url"]:
     parsed = urlparse(fixture[key])
     if parsed.scheme != "http" or parsed.hostname != "127.0.0.1":
@@ -93,6 +115,9 @@ if target.exists() or (driver is not None and driver.exists()):
 target.parent.mkdir(exist_ok=True)
 ports = [str(urlparse(fixture[key]).port) for key in ["base_url", "mailpit_url"]]
 log = args.fixture.with_name(args.fixture.stem + "-flutter-" + args.device + ".log")
+if args.app_update_handoff is not None:
+    log = args.app_update_handoff / "flutter-driver.log"
+    if log.exists(): raise SystemExit("Refuse to overwrite app-update evidence")
 if args.sync_role:
     log = log.with_stem(log.stem + "-sync-" + args.sync_role)
 runner = ExitStack()
@@ -114,7 +139,8 @@ def fixture_mode(mode):
 try:
     if temporary_gradle is not None:
         gradle_path.write_bytes(temporary_gradle)
-    runner.enter_context(integration_runner(app, development_http=True, offline_pub=args.offline_pub))
+    runner.enter_context(integration_runner(app, development_http=True, offline_pub=args.offline_pub,
+                                           app_update_policy=app_update_policy))
     shutil.copyfile(source.with_name("fixture_identity.dart"), helper)
     shutil.copyfile(source, target)
     if module_helper is not None:
@@ -150,11 +176,15 @@ try:
         command.append("--dart-define=NDS_TEST_COMPANY=true")
     if args.vault:
         command.append("--dart-define=NDS_TEST_VAULT=true")
+    if args.app_update_handoff is not None:
+        command.append("--dart-define=NDS_TEST_APP_UPDATE_HANDOFF=" + str(args.app_update_handoff))
     if args.catalog_source:
         command.append("--dart-define=NDS_TEST_CATALOG_SOURCE=true")
     if args.sync_role:
         command.append("--dart-define=NDS_TEST_SYNC_ROLE=" + args.sync_role)
     environment = os.environ.copy()
+    if args.app_update_handoff is not None:
+        environment["NDS_TEST_APP_UPDATE_CASE"] = "preservation"
     environment.pop("NDS_TEST_SCREEN_CASE", None)
     if fixture.get("screen_peer_email") is not None:
         environment["NDS_TEST_SCREEN_CASE"] = screen_case

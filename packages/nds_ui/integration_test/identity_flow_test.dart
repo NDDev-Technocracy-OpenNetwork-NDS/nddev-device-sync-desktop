@@ -754,8 +754,9 @@ Future<void> appUpdatePreservation(
   Future<void> until(Future<bool> Function() ready) async {
     final deadline = DateTime.now().add(const Duration(seconds: 90));
     while (!await ready()) {
-      if (DateTime.now().isAfter(deadline))
+      if (DateTime.now().isAfter(deadline)) {
         throw StateError('Owned application update phase timed out');
+      }
       await tester.pump(const Duration(milliseconds: 100));
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
@@ -782,6 +783,12 @@ Future<void> appUpdatePreservation(
     FocusManager.instance.primaryFocus?.unfocus();
     final finder = find.byKey(Key(key));
     await until(() async => finder.evaluate().isNotEmpty);
+    await until(() async {
+      final widget = tester.widget<Widget>(finder);
+      if (widget is ButtonStyleButton) return widget.onPressed != null;
+      if (widget is IconButton) return widget.onPressed != null;
+      return true;
+    });
     await tester.ensureVisible(finder);
     await tester.pump();
     await tester.tap(finder);
@@ -799,13 +806,29 @@ Future<void> appUpdatePreservation(
         tester.widget<FilledButton>(found).onPressed != null;
   });
   Future<void> writeRecord(String title, String value) async {
+    final editor = find.byKey(const Key('vault-title'));
     await until(
-      () async => find.byKey(const Key('vault-title')).evaluate().isNotEmpty,
+      () async =>
+          editor.evaluate().isNotEmpty &&
+          tester.widget<TextField>(editor).enabled == true,
     );
-    await tester.enterText(find.byKey(const Key('vault-title')), title);
+    await tester.enterText(editor, title);
     await tester.enterText(find.byKey(const Key('vault-secret')), value);
     await tap('vault-save');
-    await until(() async => find.text(title).evaluate().isNotEmpty);
+    // Entered text is already findable before save completes. Require the
+    // actual rendered record card and the cleared editor, not that draft.
+    await until(
+      () async =>
+          find
+              .descendant(of: find.byType(Card), matching: find.text(title))
+              .evaluate()
+              .isNotEmpty &&
+          tester
+              .widget<TextField>(find.byKey(const Key('vault-secret')))
+              .controller!
+              .text
+              .isEmpty,
+    );
     expect(find.text(value), findsNothing);
   }
 

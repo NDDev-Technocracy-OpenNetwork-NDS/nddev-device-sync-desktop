@@ -36,3 +36,12 @@ pub(crate) fn source_commit() -> &'static str {
     let length = value.iter().position(|byte| *byte == 0).unwrap();
     std::str::from_utf8(&value[..length]).expect("compile-time validated source SHA")
 }
+
+/// The assembly supplies its locked standards identity at compile time.
+/// The owning telemetry SDK validates a supplied nonempty value.
+pub(crate) fn standards_release() -> &'static str {
+    match option_env!("NDS_STANDARDS_RELEASE") {
+        Some(value) if !value.is_empty() => value,
+        _ => "unreleased",
+    }
+}

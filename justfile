@@ -4,6 +4,7 @@ check:
     python3 packages/nds_native/tool/prepare_native.py -- just _check
 
 _check:
+    python3 -m unittest discover -s packages/nds_native/tool -p 'test_*.py'
     python3 scripts/check-native-dependencies.py
     flutter pub get --enforce-lockfile
     cd packages/nds_ui && flutter pub get --enforce-lockfile

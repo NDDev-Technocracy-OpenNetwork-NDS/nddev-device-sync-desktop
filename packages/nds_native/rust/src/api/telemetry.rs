@@ -37,7 +37,7 @@ pub fn init_app() -> Result<(), DiagnosticsError> {
             repository: "NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-desktop".into(),
             commit: crate::provenance::source_commit().into(),
             channel: "alpha".into(),
-            standards: "unreleased".into(),
+            standards: crate::provenance::standards_release().into(),
             environment: if cfg!(debug_assertions)
                 || crate::provenance::source_commit() == "unknown"
             {
@@ -156,6 +156,100 @@ fn shutdown_local() -> LocalDiagnostics {
 
 #[cfg(all(test, unix))]
 mod tests {
+    #[test]
+    fn actual_sdk_events_keep_the_compiled_producer_identity() {
+        use std::io::Read;
+
+        const CHILD: &str = "NDS_TEST_TELEMETRY_PRODUCER_CHILD";
+        const RUNTIME_POISON: &str = "runtime-standards-must-not-override-build";
+        const OUTPUT_BYTES: u64 = 65_536;
+        if std::env::var_os(CHILD).is_some() {
+            super::init_app().unwrap();
+            assert!(super::client_diagnostics().sink_initialized);
+            assert!(super::record_client_lifecycle(
+                super::ClientLifecycle::Ready
+            ));
+            let stopped = super::shutdown_local();
+            assert_eq!(stopped.terminating, Some(true));
+            assert_eq!(stopped.shutdown_incomplete, Some(false));
+            std::process::exit(0);
+        }
+
+        struct Child {
+            process: std::process::Child,
+            output: Option<std::thread::JoinHandle<std::io::Result<Vec<u8>>>>,
+        }
+        impl Drop for Child {
+            fn drop(&mut self) {
+                let _ = self.process.kill();
+                let _ = self.process.wait();
+                if let Some(output) = self.output.take() {
+                    let _ = output.join();
+                }
+            }
+        }
+        let mut child = Child {
+            process: std::process::Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "api::telemetry::tests::actual_sdk_events_keep_the_compiled_producer_identity",
+                    // No pretty `test ...` prefix may join a real SDK JSON line.
+                    "--quiet",
+                    "--nocapture",
+                ])
+                .env(CHILD, "1")
+                .env("NDS_STANDARDS_RELEASE", RUNTIME_POISON)
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::null())
+                .spawn()
+                .unwrap(),
+            output: None,
+        };
+        let stdout = child.process.stdout.take().unwrap();
+        child.output = Some(std::thread::spawn(move || {
+            let mut bytes = Vec::new();
+            stdout.take(OUTPUT_BYTES + 1).read_to_end(&mut bytes)?;
+            Ok(bytes)
+        }));
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
+        let status = loop {
+            if let Some(status) = child.process.try_wait().unwrap() {
+                break status;
+            }
+            assert!(std::time::Instant::now() < deadline, "SDK child deadline");
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        };
+        let output = child.output.take().unwrap().join().unwrap().unwrap();
+        assert!(status.success(), "isolated SDK producer failed ({status})");
+        assert!(output.len() as u64 <= OUTPUT_BYTES);
+        let events: Vec<_> = output
+            .split(|byte| *byte == b'\n')
+            .filter_map(|line| serde_json::from_slice::<serde_json::Value>(line).ok())
+            .map(|event| nddev_device_sync_telemetry::decode_event(event).unwrap())
+            .collect();
+        // A configured build catches the old literal `unreleased`; an unset
+        // build keeps that honest fallback. Runtime settings cannot choose it.
+        for name in ["client.ready", "process.stopped"] {
+            let records: Vec<_> = events
+                .iter()
+                .filter(|event| event.event_name == name)
+                .collect();
+            assert_eq!(records.len(), 1, "missing or duplicate SDK lifecycle event");
+            let event = records[0];
+            assert_eq!(
+                event.standards_release,
+                crate::provenance::standards_release()
+            );
+            assert_ne!(event.standards_release, RUNTIME_POISON);
+            assert_eq!(event.source_commit, crate::provenance::source_commit());
+            assert_eq!(
+                event.source_repository,
+                "NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-desktop"
+            );
+            assert_eq!(event.service_name, "nddev-device-sync-client");
+        }
+    }
+
     #[test]
     fn missing_console_preserves_identity_and_reports_diagnostic_unavailability() {
         const CHILD: &str = "NDS_TEST_CLOSED_STDOUT_CHILD";

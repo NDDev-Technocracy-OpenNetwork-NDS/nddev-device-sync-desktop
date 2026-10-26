@@ -498,7 +498,6 @@ mod network {
                     socket
                         .set_write_timeout(Some(Duration::from_secs(2)))
                         .unwrap();
-                    let mut request = [0; 8192];
                     let Some(path) = requested_path(&mut socket) else {
                         continue;
                     };

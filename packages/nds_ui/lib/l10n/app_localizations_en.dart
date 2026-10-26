@@ -1307,4 +1307,93 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get repositorySyncRefused =>
       'Synchronization refused; existing work preserved';
+
+  @override
+  String get appUpdateTitle => 'NDS application updates';
+
+  @override
+  String get appUpdateCheck => 'Check for updates';
+
+  @override
+  String get appUpdateDownload => 'Download update';
+
+  @override
+  String get appUpdateCancel => 'Cancel download';
+
+  @override
+  String get appUpdateIdle => 'Check for an application update.';
+
+  @override
+  String get appUpdateChecking => 'Checking the update…';
+
+  @override
+  String get appUpdateAvailable =>
+      'A verified update is available to download.';
+
+  @override
+  String get appUpdateDownloading => 'Downloading the update…';
+
+  @override
+  String get appUpdateStaged =>
+      'The download is verified and saved. Installation is not available in this build.';
+
+  @override
+  String get appUpdateUnsupported =>
+      'Application updates are not supported on this platform.';
+
+  @override
+  String get appUpdateNotConfigured =>
+      'Application updates are not configured for this build.';
+
+  @override
+  String get appUpdateBusy =>
+      'Another update operation is running. Try again when it finishes.';
+
+  @override
+  String get appUpdateCancelled => 'The download was cancelled.';
+
+  @override
+  String get appUpdateTimeout => 'The update operation timed out. Try again.';
+
+  @override
+  String get appUpdateNetwork =>
+      'The update could not be retrieved from an approved source.';
+
+  @override
+  String get appUpdateTooLarge =>
+      'The download does not match its expected size.';
+
+  @override
+  String get appUpdateSignature =>
+      'The update publisher or signed manifest could not be verified.';
+
+  @override
+  String get appUpdateInvalid =>
+      'The update is invalid or the download is incomplete.';
+
+  @override
+  String get appUpdateSource =>
+      'The update does not match the candidate approved for this build.';
+
+  @override
+  String get appUpdateCompatibility =>
+      'Data compatibility is unknown or unsupported.';
+
+  @override
+  String get appUpdateNotNewer =>
+      'This candidate is not newer than the installed application.';
+
+  @override
+  String get appUpdateStorage =>
+      'The update could not be safely saved or restored.';
+
+  @override
+  String appUpdateVersion(String version) {
+    return 'Candidate $version';
+  }
+
+  @override
+  String appUpdateProgress(String downloaded, String total) {
+    return '$downloaded / $total bytes';
+  }
 }

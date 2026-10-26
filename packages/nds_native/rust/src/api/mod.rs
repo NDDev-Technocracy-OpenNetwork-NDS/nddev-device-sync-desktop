@@ -1,3 +1,4 @@
+pub mod app_update;
 pub mod catalog;
 pub mod catalog_types;
 pub mod identity;

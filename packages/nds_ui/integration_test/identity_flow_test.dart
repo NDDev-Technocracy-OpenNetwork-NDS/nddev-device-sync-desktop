@@ -9,6 +9,9 @@ import 'package:integration_test/integration_test.dart';
 import 'package:nds_ui/nds_ui.dart';
 import 'package:nds_ui/module_settings.dart';
 import 'package:nds_ui/state_screen.dart';
+import 'package:nds_ui/vault_screen.dart';
+import 'package:nds_ui/l10n/app_localizations.dart';
+import 'package:nds_native/nds_native.dart' as native;
 
 import 'fixture_identity.dart';
 import 'local_modules_test.dart' as modules;
@@ -23,6 +26,9 @@ void main() {
   const catalogSource = bool.fromEnvironment('NDS_TEST_CATALOG_SOURCE');
   const company = bool.fromEnvironment('NDS_TEST_COMPANY');
   const screenPeer = String.fromEnvironment('NDS_TEST_SCREEN_PEER');
+  const appUpdateHandoff = String.fromEnvironment(
+    'NDS_TEST_APP_UPDATE_HANDOFF',
+  );
   const screenHandoff = String.fromEnvironment('NDS_TEST_SCREEN_HANDOFF');
   const screenCase = String.fromEnvironment(
     'NDS_TEST_SCREEN_CASE',
@@ -109,6 +115,12 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const Key('enroll-device')), findsNothing);
+      if (appUpdateHandoff.isNotEmpty) {
+        expect(vault && Platform.isLinux && screenPeer.isEmpty, isTrue);
+        await appUpdatePreservation(tester, server, appUpdateHandoff);
+        expect(tester.takeException(), isNull);
+        return;
+      }
       if (screenPeer.isNotEmpty) {
         expect(Platform.isLinux, isTrue);
         expect([
@@ -717,4 +729,277 @@ Future<void> waitScreenFact(
     await tester.pump(const Duration(milliseconds: 100));
     await Future<void>.delayed(const Duration(milliseconds: 100));
   }
+}
+
+// Opt-in application staging preservation. Every account, key and operation is
+// produced by the ordinary UI/Rust path against the existing owned fixture.
+Future<void> appUpdatePreservation(
+  WidgetTester tester,
+  String server,
+  String handoff,
+) async {
+  final directory = Directory(handoff);
+  expect(directory.isAbsolute && directory.existsSync(), isTrue);
+  expect(
+    directory.uri.pathSegments
+        .where((s) => s.isNotEmpty)
+        .last
+        .startsWith('nds-app-update-ui-'),
+    isTrue,
+  );
+  final expectation = jsonDecode(
+    await File('$handoff/expectation.json').readAsString(),
+  ) as Map<String, dynamic>;
+  final version = expectation['version'] as String;
+  Future<void> until(Future<bool> Function() ready) async {
+    final deadline = DateTime.now().add(const Duration(seconds: 90));
+    while (!await ready()) {
+      if (DateTime.now().isAfter(deadline)) {
+        throw StateError('Owned application update phase timed out');
+      }
+      await tester.pump(const Duration(milliseconds: 100));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+    await tester.pump();
+  }
+
+  Future<void> step(
+    String name, [
+    Map<String, Object?> values = const {},
+  ]) async {
+    expect(RegExp(r'^[a-z-]+$').hasMatch(name), isTrue);
+    final fact = File('$handoff/$name.json');
+    expect(await fact.exists(), isFalse);
+    final temp = File('${fact.path}.tmp');
+    await temp.writeAsString(jsonEncode(values), flush: true);
+    await temp.rename(fact.path);
+    final ack = File('$handoff/$name.ready');
+    await until(() async => ack.exists());
+    final result = jsonDecode(await ack.readAsString()) as Map<String, dynamic>;
+    expect(result['ok'], isTrue, reason: 'Owned controller rejected $name');
+  }
+
+  Future<void> tap(String key) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final finder = find.byKey(Key(key));
+    await until(() async => finder.evaluate().isNotEmpty);
+    await until(() async {
+      final widget = tester.widget<Widget>(finder);
+      if (widget is ButtonStyleButton) return widget.onPressed != null;
+      if (widget is IconButton) return widget.onPressed != null;
+      return true;
+    });
+    await tester.ensureVisible(finder);
+    await tester.pump();
+    await tester.tap(finder);
+    await tester.pump();
+  }
+
+  Future<void> message(String expected) => until(() async {
+    final found = find.byKey(const Key('app-update-status'));
+    return found.evaluate().isNotEmpty &&
+        tester.widget<Text>(found).data == expected;
+  });
+  Future<void> checkEnabled() => until(() async {
+    final found = find.byKey(const Key('app-update-check'));
+    return found.evaluate().isNotEmpty &&
+        tester.widget<FilledButton>(found).onPressed != null;
+  });
+  Future<void> writeRecord(String title, String value) async {
+    final editor = find.byKey(const Key('vault-title'));
+    await until(
+      () async =>
+          editor.evaluate().isNotEmpty &&
+          tester.widget<TextField>(editor).enabled == true,
+    );
+    await tester.enterText(editor, title);
+    await tester.enterText(find.byKey(const Key('vault-secret')), value);
+    await tap('vault-save');
+    // Entered text is already findable before save completes. Require the
+    // actual rendered record card and the cleared editor, not that draft.
+    await until(
+      () async =>
+          find
+              .descendant(of: find.byType(Card), matching: find.text(title))
+              .evaluate()
+              .isNotEmpty &&
+          tester
+              .widget<TextField>(find.byKey(const Key('vault-secret')))
+              .controller!
+              .text
+              .isEmpty,
+    );
+    expect(find.text(value), findsNothing);
+  }
+
+  await tap('open-vault');
+  await until(() async => find.byType(VaultScreen).evaluate().isNotEmpty);
+  final original = tester.widget<VaultScreen>(find.byType(VaultScreen)).client;
+  await writeRecord(
+    'App update acknowledged baseline',
+    'SYNTHETIC_APP_UPDATE_BASELINE',
+  );
+  await until(() async {
+    try {
+      final v = await original.vaultSnapshot();
+      return v.unlocked && v.pending == 0 && !v.catchingUp;
+    } on native.VaultError catch (e) {
+      if (e.code() == 'vault_busy') return false;
+      rethrow;
+    }
+  });
+  final initial = await original.vaultSnapshot();
+  final device = original.snapshot().currentDeviceId;
+  expect(
+    initial.unlocked && initial.keyId.isNotEmpty && device.isNotEmpty,
+    isTrue,
+  );
+  await step('online-ready', {'device_id': device, 'key_id': initial.keyId});
+  await step('offline-requested');
+  await writeRecord(
+    'App update pending original',
+    'SYNTHETIC_APP_UPDATE_PENDING',
+  );
+  native.RecordView? retained;
+  await until(() async {
+    try {
+      final page = await original.vaultRecords(after: '');
+      for (final row in page.items) {
+        if (row.title == 'App update pending original' &&
+            row.pendingId != null) {
+          retained = row;
+          return true;
+        }
+      }
+      return false;
+    } on native.VaultError catch (e) {
+      if (e.code() == 'vault_busy') return false;
+      rethrow;
+    }
+  });
+  final record = retained!;
+  await step('pending-created', {
+    'record_id': record.id,
+    'pending_id': record.pendingId,
+    'device_id': device,
+    'key_id': initial.keyId,
+  });
+  await tester.pageBack();
+  await tester.pumpAndSettle();
+  await step('discovery-failure');
+  await tap('app-update-open');
+  await checkEnabled();
+  final l = AppLocalizations.of(
+    tester.element(find.byKey(const Key('app-update-status'))),
+  )!;
+  await tap('app-update-check');
+  await message(l.appUpdateNetwork);
+  await step('after-discovery');
+  await step('partial-cancel');
+  await tap('app-update-check');
+  await message(l.appUpdateAvailable);
+  expect(find.text(l.appUpdateVersion(version)), findsOneWidget);
+  await tap('app-update-download');
+  await until(
+    () async => find.byType(Text).evaluate().any((e) {
+      final text = (e.widget as Text).data ?? '';
+      final match = RegExp(r'^([0-9]+) / ([0-9]+) ').firstMatch(text);
+      return match != null &&
+          BigInt.parse(match[1]!) > BigInt.zero &&
+          BigInt.parse(match[1]!) < BigInt.parse(match[2]!);
+    }),
+  );
+  await step('download-partial');
+  await tap('app-update-cancel');
+  await message(l.appUpdateCancelled);
+  await step('after-cancel');
+  await step('verified-stage');
+  await tap('app-update-check');
+  await message(l.appUpdateAvailable);
+  await tap('app-update-download');
+  await message(l.appUpdateStaged);
+  await step('after-stage');
+  await tester.pageBack();
+  await tester.pumpAndSettle();
+  await step('local-restore');
+  await tap('app-update-open');
+  await message(l.appUpdateStaged);
+  await tester.pageBack();
+  await tester.pumpAndSettle();
+  // A fresh facade has no retained VaultClient/runtime slot: refresh_local must
+  // read the actual protected native key and decrypt this same journal. Never
+  // export keys/session values or attach a competing replica owner here.
+  final fresh = native.NdsClient(endpoint: server);
+  try {
+    final view = await fresh.refresh();
+    expect(view.authenticated && view.offlineAuthorized, isTrue);
+    expect(view.currentDeviceId, device);
+    final restored = await fresh.vaultSnapshot();
+    expect(restored.unlocked, isTrue);
+    expect(restored.keyId, initial.keyId);
+    final page = await fresh.vaultRecords(after: '');
+    expect(
+      page.items.any(
+        (r) =>
+            r.id == record.id &&
+            r.pendingId == record.pendingId &&
+            r.title == record.title,
+      ),
+      isTrue,
+    );
+  } finally {
+    fresh.cancel();
+    fresh.dispose();
+  }
+  await tap('open-vault');
+  await until(() async => find.byType(VaultScreen).evaluate().isNotEmpty);
+  expect(
+    identical(
+      tester.widget<VaultScreen>(find.byType(VaultScreen)).client,
+      original,
+    ),
+    isTrue,
+  );
+  await tester.pageBack();
+  await tester.pumpAndSettle();
+  await step('after-restore', {
+    'device_id': device,
+    'key_id': initial.keyId,
+    'fresh_native_store_and_vault_read': true,
+  });
+  await step('reconnect-requested');
+  // No vaultSync/manual retry, replacement facade, logout, or owner stop. The
+  // original background owner performs the upload after server recovery.
+  await until(() async {
+    try {
+      final page = await original.vaultRecords(after: '');
+      return page.items.any(
+        (r) =>
+            r.id == record.id &&
+            r.pendingId == null &&
+            r.observedSeq > BigInt.zero,
+      );
+    } on native.VaultError catch (e) {
+      if (e.code() == 'vault_busy') return false;
+      rethrow;
+    }
+  });
+  final finalView = await original.vaultSnapshot();
+  expect(
+    finalView.unlocked && finalView.pending == 0 && finalView.conflicts == 0,
+    isTrue,
+  );
+  expect(finalView.keyId, initial.keyId);
+  expect(original.snapshot().currentDeviceId, device);
+  await step('after-reconnect', {
+    'device_id': device,
+    'key_id': finalView.keyId,
+    'manual_sync': false,
+  });
+  // Ordinary logout of this synthetic fixture account is cleanup, not update
+  // activation or a stop of an ambient service.
+  await tap('logout');
+  await until(() async => find.byKey(const Key('email')).evaluate().isNotEmpty);
+  await step('complete', {'passed': true, 'fixture_signed_out': true});
+  debugPrint('NDS_APP_UPDATE_PRESERVATION_PASS');
 }

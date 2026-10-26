@@ -15,6 +15,8 @@ _check:
     cd packages/nds_native/rust && cargo fmt --check
     cd packages/nds_native/rust && cargo test --locked --lib --jobs 4
     cd packages/nds_native/rust && cargo clippy --locked --all-targets --jobs 4 -- -D warnings
+    cd packages/nds_native/rust && cargo test --locked --no-default-features --features development-http --lib app_update --jobs 4
+    cd packages/nds_native/rust && cargo clippy --locked --no-default-features --features development-http --all-targets --jobs 4 -- -D warnings
     cd packages/nds_native/rust && cargo audit --deny warnings
     cd packages/nds_native/rust && cargo deny --locked check licenses sources
 

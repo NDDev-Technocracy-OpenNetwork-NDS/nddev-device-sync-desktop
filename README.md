@@ -177,13 +177,15 @@ the UI run resolves them offline and retains the application's lockfile.
 The default `--viewer flutter` pairs the real UI with a native host;
 `--viewer native` isolates the native control/media path. Both use real SMTP
 OTP, separate Secret Services and owned X11 displays, observe changed source
-pixels, and revoke the viewer's company role through signed production routes.
-The default `--case role` performs signed viewer-role revocation. Native-only
-`--case source-loss`, `cancel`, and `local-disable` terminate the owned capture
+pixels. The default `--case role` revokes the viewer's company role through
+signed production routes. With either viewer, `--case source-loss`, `cancel`,
+and `local-disable` terminate the owned capture
 display, cancel the actual host handle, or disable its local module consent.
-Native `logout` uses the actual host logout path; `expiry` waits for the real
+`logout` uses the actual host logout path; `expiry` waits for the real
 five-minute view lifetime, without changing clocks or production limits. Each
-invocation qualifies only its selected case. Receipts and cleanup remain outside
+Flutter case checks removal of the actual displayed image; expiry also rejects
+an early disconnect against the native host's expiry proof. Each invocation
+qualifies only its selected case. Receipts and cleanup remain outside
 the repository; other targets and release qualification remain separate.
 
 `python scripts/build.py linux --debug` builds committed source with an explicit,

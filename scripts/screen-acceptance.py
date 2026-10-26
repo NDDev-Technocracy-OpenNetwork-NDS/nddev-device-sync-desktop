@@ -275,7 +275,8 @@ def qualify(args, fixture):
                    ["GH_TOKEN", "GITHUB_TOKEN", "SSH_AUTH_SOCK", "DBUS_SESSION_BUS_ADDRESS", "WAYLAND_DISPLAY"]}
             env.update({k: str(scope / v) for k, v in [("XDG_DATA_HOME", "data"), ("XDG_STATE_HOME", "state"),
                 ("XDG_CONFIG_HOME", "config"), ("XDG_CACHE_HOME", "cache"), ("XDG_RUNTIME_DIR", "runtime")]})
-            env.update(DISPLAY=":" + number, XAUTHORITY=str(auth), GDK_BACKEND="x11", LIBGL_ALWAYS_SOFTWARE="1")
+            env.update(DISPLAY=":" + number, XAUTHORITY=str(auth), XDG_SESSION_TYPE="x11",
+                       GDK_BACKEND="x11", LIBGL_ALWAYS_SOFTWARE="1")
             # Build inputs are explicitly verified by prepare_native, not state.
             for name in ["CARGO_HOME", "CARGO_TARGET_DIR", "NDS_NATIVE_BUILD_HOME", "NDS_NATIVE_BUILD_PREPARED", "NDS_NATIVE_SOURCE_HOME"]:
                 if name in os.environ:

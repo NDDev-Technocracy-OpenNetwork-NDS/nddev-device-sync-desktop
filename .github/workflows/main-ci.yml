@@ -297,7 +297,7 @@ jobs:
                   raise SystemExit('Unexpected native qualification ZIP members')
               for entry in entries:
                   limit = 1024**3 if entry.filename == 'payload' else 65536
-                  if (entry.is_dir() or stat.S_ISLNK(entry.external_attr >> 16)
+                  if (entry.is_dir() or stat.S_IFMT(entry.external_attr >> 16) not in (0, stat.S_IFREG)
                           or not 0 < entry.file_size <= limit):
                       raise SystemExit('Invalid native qualification ZIP member')
                   with package.open(entry) as source, (root / entry.filename).open('xb') as output:
@@ -305,6 +305,10 @@ jobs:
           manifest = json.loads((root / 'app-release.json').read_bytes())
           identity = json.loads((root / 'artifact-identity.json').read_bytes())
           source = os.environ['GITHUB_SHA']
+          counter = os.environ['GITHUB_RUN_NUMBER']
+          if (not re.fullmatch('[1-9][0-9]{0,9}', counter) or int(counter) > 4294967295
+                  or manifest.get('version') != f'1.0.0-alpha.{counter}'):
+              raise SystemExit('Native candidate version differs from its publisher run number')
           if (set(identity) != {'schema', 'source_commit', 'sha256', 'bytes'}
                   or type(identity.get('schema')) is not int or identity.get('schema') != 1
                   or type(identity.get('bytes')) is not int
@@ -323,10 +327,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync
-          ref: da6510825aa02814e4e45eca80c05eae4e0a3827
+          ref: cc4ac03c777d902f38d8c73e7fc51a5a6a6453ed
           path: vendor/nds-contract
           persist-credentials: false
-      - run: python -m pip install -r vendor/nds-contract/requirements-check.txt
+      - run: |
+          python -m pip install --require-hashes --only-binary=:all: -r vendor/nds-contract/requirements-check.txt
       - name: Check the canonical Linux manifest contract
         run: python vendor/nds-contract/scripts/check-contracts.py --app-release "$RUNNER_TEMP/nds-native-authentication/app-release.json" --development-http
       - name: Authenticate the exact native manifest bytes

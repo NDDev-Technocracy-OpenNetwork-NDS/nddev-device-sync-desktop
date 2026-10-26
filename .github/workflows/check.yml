@@ -33,7 +33,9 @@ jobs:
       - run: python scripts/bootstrap-ci.py
       - run: rustup toolchain install 1.99.1 --profile minimal --component rustfmt,clippy
       - name: Native library build dependencies
-        run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libclang-dev libssl-dev libx11-dev nasm libsecret-1-dev
+        run: |
+          sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS /usr/bin/python3 -I scripts/prefer-ubuntu-https.py &&
+          sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libclang-dev libssl-dev libx11-dev nasm libsecret-1-dev
       - run: cargo install --locked --version 1.0.127 cargo-expand
       - name: Install verified bridge generator
         run: |

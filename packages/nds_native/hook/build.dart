@@ -106,6 +106,7 @@ void main(List<String> args) async {
       input.packageRoot.resolve('rust/Cargo.toml'),
       input.packageRoot.resolve('rust/Cargo.lock'),
       input.packageRoot.resolve('rust/rust-toolchain.toml'),
+      input.packageRoot.resolve('../../standarts.lock'),
       File('${native['cargo_home']}${Platform.pathSeparator}config.toml').uri,
     ]);
     // The upstream build helper logs its environment at CONFIG level. Never
@@ -131,6 +132,8 @@ void main(List<String> args) async {
         'NDS_NATIVE_BUILD_HOME': native['cache']!,
         'RUSTUP_AUTO_INSTALL': '0',
         'NDS_SOURCE_COMMIT': sourceCommit as String? ?? 'unknown',
+        // This producer's edition comes from its owning, tracked source lock.
+        'NDS_STANDARDS_RELEASE': native['standards_release']!,
         // userDefines participates in the Native Assets input identity. Always
         // replace any ambient policy, including when the assembly disables it.
         'NDS_APP_UPDATE_POLICY': appUpdatePolicy,

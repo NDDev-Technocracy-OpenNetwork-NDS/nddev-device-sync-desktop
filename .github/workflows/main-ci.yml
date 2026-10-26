@@ -80,7 +80,8 @@ jobs:
         include:
           - os: ubuntu-24.04
             target: linux
-            artifact: build/linux/x64/debug/bundle
+            mode: release
+            artifact: build/linux/x64/release/bundle
           - os: macos-15
             target: macos
             artifact: build/macos/Build/Products/Debug
@@ -132,11 +133,90 @@ jobs:
       - run: flutter pub get --enforce-lockfile
         working-directory: packages/nds_native
       - run: flutter analyze --no-pub
-      - run: python scripts/build.py ${{ matrix.target }} --debug
+      - run: python scripts/build.py ${{ matrix.target }} --${{ matrix.mode || 'debug' }}
         env:
           NDS_NATIVE_BUILD_HOME: ${{ runner.temp }}/nds-native
       - run: python scripts/check-artifact.py '${{ matrix.artifact }}' --native-source-commit '${{ github.sha }}'
-      - run: python scripts/build-provenance.py '${{ matrix.artifact }}' --output build/nds-build-provenance.json
+      - run: python scripts/build-provenance.py '${{ matrix.artifact }}' --build-kind '${{ matrix.mode || 'debug' }}' --output build/nds-build-provenance.json
+      - name: Read compiled owning format metadata
+        if: runner.os == 'Linux'
+        id: native-metadata
+        env:
+          NDS_NATIVE_BUILD_HOME: ${{ runner.temp }}/nds-native
+          NDS_SOURCE_COMMIT: ${{ github.sha }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os, subprocess, sys
+          from pathlib import Path
+          sys.dont_write_bytecode = True
+          sys.path.insert(0, str(Path('packages/nds_native/tool').resolve()))
+          from prepare_native import build_environment
+          # The ordinary build just verified these inputs. Consume the same
+          # configured source/provider receipts without another refresh.
+          env = build_environment(configured=True)
+          env.pop('NDS_APP_UPDATE_POLICY', None)
+          manifest = str(Path('packages/nds_native/rust/Cargo.toml').resolve())
+          metadata = json.loads(subprocess.check_output(
+              ['cargo', 'metadata', '--locked', '--format-version', '1', '--manifest-path', manifest],
+              env=env, text=True, timeout=120))
+          workers = [p for p in metadata['packages'] if p['name'] == 'nddev-device-sync-gds']
+          if len(workers) != 1:
+              raise SystemExit('One locked GDS worker source is required')
+          env['CARGO_BUILD_BUILD_DIR'] = metadata.get('build_directory', metadata['target_directory'])
+          result = subprocess.check_output(
+              ['cargo', 'run', '--locked', '--release', '--manifest-path', manifest,
+               '--example', 'app_release_metadata', '--jobs', '4', '--quiet'],
+              env=env, text=True, timeout=600)
+          value = json.loads(result)
+          if value.get('source_commit') != os.environ['NDS_SOURCE_COMMIT']:
+              raise SystemExit('Compiled metadata source differs from the native artifact')
+          Path('build/nds-format-metadata.json').write_text(result)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('worker_source=' + str(Path(workers[0]['manifest_path']).parent) + '\n')
+          PY
+      - name: Select the existing verified native SPDX tool
+        if: runner.os == 'Linux'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: NDDev-Technocracy-Standarts/std-0004-ci-cd-workflows
+          ref: ea492e553862c0638341f8b41d5455427f680174
+          path: vendor/ci-standard
+          persist-credentials: false
+      - name: Prepare the checksum-pinned SPDX tool
+        if: runner.os == 'Linux'
+        run: bash vendor/ci-standard/scripts/prepare-release-tools.sh
+      - name: Prepare the native qualification artifact once
+        if: runner.os == 'Linux'
+        run: |
+          python scripts/make-native-app-release.py \
+            --bundle '${{ matrix.artifact }}' --provenance build/nds-build-provenance.json \
+            --formats build/nds-format-metadata.json \
+            --worker-source '${{ steps.native-metadata.outputs.worker_source }}' \
+            --version '1.0.0-alpha.${{ github.run_number }}' --port 18475 \
+            --output "$RUNNER_TEMP/nds-native-candidate"
+      - name: Retain the exact native qualification bytes
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: nds-native-linux-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/nds-native-candidate/app-release.json
+            ${{ runner.temp }}/nds-native-candidate/payload
+            ${{ runner.temp }}/nds-native-candidate/artifact-identity.json
+          if-no-files-found: error
+          retention-days: 1
+      - name: Native qualification diagnostics
+        if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: nds-native-linux-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/nds-build-provenance.json
+            build/nds-format-metadata.json
+            ${{ runner.temp }}/nds-native-candidate/.work/*.log
+          if-no-files-found: ignore
+          retention-days: 1
       - name: Native macOS ARM window lifetime
         if: matrix.os == 'macos-15'
         run: python scripts/macos-window-acceptance.py '${{ matrix.artifact }}' --source '${{ github.sha }}' --evidence "$RUNNER_TEMP/nds-window-acceptance"
@@ -155,3 +235,120 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - run: test '${{ needs.contracts.result }}' = success && test '${{ needs.builds.result }}' = success
+
+  authenticate-native-candidate:
+    needs: [quality]
+    if: needs.quality.result == 'success' && github.ref == 'refs/heads/main' && github.repository_id == '1412610357'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.15.0'
+      - name: Verify the exact current-run artifact and unchanged inner archive
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, re, shutil, stat, subprocess, zipfile
+          from pathlib import Path
+          repo, run, attempt = (os.environ[name] for name in
+                                ['GITHUB_REPOSITORY', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT'])
+          endpoint = f'repos/{repo}/actions/runs/{run}/artifacts'
+          pages = json.loads(subprocess.check_output(
+              ['gh', 'api', '--paginate', '--slurp', endpoint], text=True, timeout=60))
+          name = f'nds-native-linux-{run}-{attempt}'
+          artifacts = [a for p in pages for a in p['artifacts'] if a['name'] == name]
+          if len(artifacts) != 1 or artifacts[0]['expired']:
+              raise SystemExit('One exact current-run native artifact is required')
+          artifact = artifacts[0]
+          lineage = artifact.get('workflow_run', {})
+          if (lineage.get('id') != int(run) or lineage.get('repository_id') != 1412610357
+                  or lineage.get('head_repository_id') != 1412610357
+                  or lineage.get('head_branch') != 'main' or lineage.get('head_sha') != os.environ['GITHUB_SHA']
+                  or type(artifact.get('size_in_bytes')) is not int
+                  or not 0 < artifact['size_in_bytes'] <= 1024**3 + 1024**2):
+              raise SystemExit('Native artifact lineage or size differs from this main run')
+          digest = artifact.get('digest', '')
+          if not re.fullmatch('sha256:[a-f0-9]{64}', digest):
+              raise SystemExit('The Actions artifact has no immutable SHA256 identity')
+          root = Path(os.environ['RUNNER_TEMP']) / 'nds-native-authentication'
+          root.mkdir(mode=0o700)
+          archive = root / 'actions.zip'
+          with archive.open('xb') as output:
+              subprocess.run(['gh', 'api', f'repos/{repo}/actions/artifacts/{artifact["id"]}/zip'],
+                             stdout=output, check=True, timeout=240)
+          with archive.open('rb') as source:
+              if (archive.stat().st_size != artifact['size_in_bytes']
+                      or hashlib.file_digest(source, 'sha256').hexdigest() != digest.removeprefix('sha256:')):
+                  raise SystemExit('Actions ZIP digest differs from its exact artifact ID')
+          with zipfile.ZipFile(archive) as package:
+              entries = package.infolist()
+              if sorted(e.filename for e in entries) != ['app-release.json', 'artifact-identity.json', 'payload']:
+                  raise SystemExit('Unexpected native qualification ZIP members')
+              for entry in entries:
+                  limit = 1024**3 if entry.filename == 'payload' else 65536
+                  if (entry.is_dir() or stat.S_IFMT(entry.external_attr >> 16) not in (0, stat.S_IFREG)
+                          or not 0 < entry.file_size <= limit):
+                      raise SystemExit('Invalid native qualification ZIP member')
+                  with package.open(entry) as source, (root / entry.filename).open('xb') as output:
+                      shutil.copyfileobj(source, output, length=65536)
+          manifest = json.loads((root / 'app-release.json').read_bytes())
+          identity = json.loads((root / 'artifact-identity.json').read_bytes())
+          source = os.environ['GITHUB_SHA']
+          counter = os.environ['GITHUB_RUN_NUMBER']
+          if (not re.fullmatch('[1-9][0-9]{0,9}', counter) or int(counter) > 4294967295
+                  or manifest.get('version') != f'1.0.0-alpha.{counter}'):
+              raise SystemExit('Native candidate version differs from its publisher run number')
+          if (set(identity) != {'schema', 'source_commit', 'sha256', 'bytes'}
+                  or type(identity.get('schema')) is not int or identity.get('schema') != 1
+                  or type(identity.get('bytes')) is not int
+                  or identity.get('source_commit') != source or manifest['artifact']['app_source'] != source
+                  or manifest['artifact']['native_source'] != source):
+              raise SystemExit('Native source differs from the publisher workflow source')
+          with (root / 'payload').open('rb') as payload:
+              payload_digest = hashlib.file_digest(payload, 'sha256').hexdigest()
+          size = (root / 'payload').stat().st_size
+          if (identity.get('sha256') != payload_digest or identity.get('bytes') != size
+                  or manifest['artifact']['sha256'] != payload_digest or manifest['artifact']['bytes'] != size):
+              raise SystemExit('The original inner archive changed after its build')
+          (root / 'actions-artifact.json').write_text(json.dumps(
+              {'run_id': run, 'attempt': attempt, 'artifact_id': artifact['id'], 'digest': digest}, indent=2) + '\n')
+          PY
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync
+          ref: cc4ac03c777d902f38d8c73e7fc51a5a6a6453ed
+          path: vendor/nds-contract
+          persist-credentials: false
+      - run: |
+          python -m pip install --require-hashes --only-binary=:all: -r vendor/nds-contract/requirements-check.txt
+      - name: Check the canonical Linux manifest contract
+        run: python vendor/nds-contract/scripts/check-contracts.py --app-release "$RUNNER_TEMP/nds-native-authentication/app-release.json" --development-http
+      - name: Authenticate the exact native manifest bytes
+        id: attest-native
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6
+        with:
+          subject-path: ${{ runner.temp }}/nds-native-authentication/app-release.json
+      - name: Retain portable authentication and original artifact identity
+        env:
+          BUNDLE_PATH: ${{ steps.attest-native.outputs.bundle-path }}
+        run: cp -- "$BUNDLE_PATH" "$RUNNER_TEMP/nds-native-authentication/app-release.sigstore.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: nds-native-linux-authentication-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/nds-native-authentication/app-release.json
+            ${{ runner.temp }}/nds-native-authentication/app-release.sigstore.json
+            ${{ runner.temp }}/nds-native-authentication/actions-artifact.json
+          if-no-files-found: error
+          retention-days: 1

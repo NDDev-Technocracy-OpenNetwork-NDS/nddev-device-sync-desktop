@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Reject integration entrypoints and native test plugins in a built app."""
 import argparse
+import os
 from pathlib import Path
+import stat
 import zipfile
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -43,6 +45,76 @@ def native_source(data):
         native_source_found = True
 
 
+def regular_file(path):
+    if path.is_symlink():
+        raise OSError('Regular file required')
+    flags = os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0) | getattr(os, 'O_NONBLOCK', 0)
+    descriptor = os.open(path, flags)
+    if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+        os.close(descriptor)
+        raise OSError('Regular file required')
+    return os.fdopen(descriptor, 'rb')
+
+
+def linux_bundle(root):
+    native = root / 'lib/libnds_native.so'
+    if native.exists() or native.is_symlink():
+        return True
+    parts = root.parts
+    if len(parts) >= 5 and parts[-5:-3] == ('build', 'linux') and parts[-1] == 'bundle':
+        return True
+    # Missing native assets must not turn Linux runners/workers/AOT into an
+    # alternative source witness. Do not reclassify nested other-OS resources.
+    for path in [root / 'lib/libapp.so', *root.iterdir()]:
+        try:
+            with regular_file(path) as candidate:
+                if candidate.read(4) == b'\x7fELF':
+                    return True
+        except OSError:
+            continue
+    return False
+
+
+def linux_native_source(root):
+    path = root / 'lib/libnds_native.so'
+    prefix = b'NDS-SOURCE-1\0'
+    record_size = len(prefix) + 41
+    try:
+        if not path.resolve(strict=True).is_relative_to(root.resolve()):
+            raise SystemExit('Linux native library must remain inside its bundle')
+        with regular_file(path) as candidate:
+            before = os.fstat(candidate.fileno())
+            if not 0 < before.st_size <= 1024 * 1024 * 1024:
+                raise SystemExit('Linux native library is outside its 1 GiB inspection bound')
+            if candidate.read(4) != b'\x7fELF':
+                raise SystemExit('Expected ELF native asset lib/libnds_native.so')
+            candidate.seek(0)
+            tail, total = b'', 0
+            while chunk := candidate.read(64 * 1024):
+                total += len(chunk)
+                if total > before.st_size:
+                    raise SystemExit('Linux native library changed during inspection')
+                data, offset = tail + chunk, 0
+                while (found := data.find(prefix, offset)) >= 0:
+                    if found + record_size > len(data):
+                        tail = data[found:]
+                        break
+                    native_source(data[found:found + record_size])
+                    offset = found + len(prefix)
+                else:
+                    tail = data[offset:][-(len(prefix) - 1):]
+            # A full prefix with a truncated body must retain the same refusal
+            # as the whole-file parser; processed records are never recounted.
+            native_source(tail)
+            after = os.fstat(candidate.fileno())
+            if (total != before.st_size or
+                    (before.st_size, before.st_mtime_ns, before.st_ctime_ns) !=
+                    (after.st_size, after.st_mtime_ns, after.st_ctime_ns)):
+                raise SystemExit('Linux native library changed during inspection')
+    except OSError:
+        raise SystemExit('Expected regular contained Linux native asset lib/libnds_native.so') from None
+
+
 def check(name, data):
     global checked
     if any(marker in data for marker in markers):
@@ -61,7 +133,9 @@ if args.artifact.suffix == '.apk':
 elif args.artifact.is_dir():
     if any('integration_test' in path.name.lower() for path in args.artifact.rglob('*')):
         raise SystemExit('Native integration test plugin found in app bundle')
-    if expected:
+    if expected and linux_bundle(args.artifact):
+        linux_native_source(args.artifact)
+    elif expected:
         for path in args.artifact.rglob('*'):
             if path.is_file() and 0 < path.stat().st_size <= 128 * 1024 * 1024:
                 with path.open('rb') as candidate:

@@ -574,5 +574,46 @@
   "repositorySyncFastForwarded": "Checkout обновлён без слияния",
   "repositorySyncDirty": "Незакоммиченные изменения сохранены; синхронизация этого checkout отложена",
   "repositorySyncDiverged": "Истории разошлись; изменения сохранены",
-  "repositorySyncRefused": "В синхронизации отказано; существующая работа сохранена"
+  "repositorySyncRefused": "В синхронизации отказано; существующая работа сохранена",
+  "appUpdateTitle": "Обновления приложения NDS",
+  "appUpdateCheck": "Проверить обновления",
+  "appUpdateDownload": "Скачать обновление",
+  "appUpdateCancel": "Отменить загрузку",
+  "appUpdateIdle": "Проверьте наличие обновления приложения.",
+  "appUpdateChecking": "Проверяем обновление…",
+  "appUpdateAvailable": "Проверенное обновление доступно для загрузки.",
+  "appUpdateDownloading": "Загружаем обновление…",
+  "appUpdateStaged": "Загрузка проверена и сохранена. Установка в этой сборке пока недоступна.",
+  "appUpdateUnsupported": "Обновление приложения на этой платформе не поддерживается.",
+  "appUpdateNotConfigured": "Для этой сборки обновление приложения не настроено.",
+  "appUpdateBusy": "Уже выполняется другая операция обновления. Дождитесь её завершения.",
+  "appUpdateCancelled": "Загрузка отменена.",
+  "appUpdateTimeout": "Время операции обновления истекло. Попробуйте ещё раз.",
+  "appUpdateNetwork": "Не удалось получить обновление из разрешённого источника.",
+  "appUpdateTooLarge": "Размер загрузки не совпадает с ожидаемым.",
+  "appUpdateSignature": "Не удалось проверить издателя или подписанное описание обновления.",
+  "appUpdateInvalid": "Обновление недействительно или загрузка не завершена.",
+  "appUpdateSource": "Обновление не соответствует разрешённому кандидату этой сборки.",
+  "appUpdateCompatibility": "Совместимость данных неизвестна или не поддерживается.",
+  "appUpdateNotNewer": "Версия кандидата не новее установленного приложения.",
+  "appUpdateStorage": "Не удалось безопасно сохранить или восстановить обновление.",
+  "appUpdateVersion": "Кандидат {version}",
+  "@appUpdateVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "appUpdateProgress": "{downloaded} / {total} байт",
+  "@appUpdateProgress": {
+    "placeholders": {
+      "downloaded": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  }
 }

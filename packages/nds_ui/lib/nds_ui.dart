@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/services.dart';
 import 'package:flutter/semantics.dart';
 import 'package:nddev_opennetwork_design_system/opennetwork_design_system.dart';
@@ -10,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'l10n/app_localizations.dart';
 import 'activity.dart';
+import 'app_update.dart';
 import 'modules_screen.dart';
 import 'screen_viewer.dart';
 import 'screen_requests.dart';
@@ -557,6 +559,15 @@ class _IdentityScreenState extends State<_IdentityScreen> {
         toolbarHeight:
             OpenNetworkBrand.heightOf(context) + OpenNetworkSpacing.four,
         actions: [
+          if (!kIsWeb && defaultTargetPlatform == TargetPlatform.linux)
+            IconButton(
+              key: const Key('app-update-open'),
+              tooltip: l.appUpdateTitle,
+              icon: const Icon(Icons.system_update_alt),
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute(builder: (_) => const AppUpdateScreen()),
+              ),
+            ),
           PopupMenuButton<String>(
             tooltip: 'English / Русский',
             onSelected: (language) => widget.onLocale(Locale(language)),

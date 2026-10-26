@@ -147,7 +147,7 @@ jobs:
         shell: bash
         run: |
           python - <<'PY'
-          import json, os, subprocess, sys
+          import json, os, re, subprocess, sys
           from pathlib import Path
           sys.dont_write_bytecode = True
           sys.path.insert(0, str(Path('packages/nds_native/tool').resolve()))
@@ -155,7 +155,9 @@ jobs:
           # The ordinary build just verified these inputs. Consume the same
           # configured source/provider receipts without another refresh.
           env = build_environment(configured=True)
-          env.pop('NDS_APP_UPDATE_POLICY', None)
+          # Match the release hook's declared inputs instead of creating a
+          # second host-only compilation graph for the metadata example.
+          env['NDS_APP_UPDATE_POLICY'] = ''
           manifest = str(Path('packages/nds_native/rust/Cargo.toml').resolve())
           metadata = json.loads(subprocess.check_output(
               ['cargo', 'metadata', '--locked', '--format-version', '1', '--manifest-path', manifest],
@@ -163,10 +165,21 @@ jobs:
           workers = [p for p in metadata['packages'] if p['name'] == 'nddev-device-sync-gds']
           if len(workers) != 1:
               raise SystemExit('One locked GDS worker source is required')
+          provenance = json.loads(Path('build/nds-build-provenance.json').read_text())
+          worker = provenance['worker']
+          if (provenance['app_source']['commit'] != os.environ['NDS_SOURCE_COMMIT'] or
+              provenance['native_source']['commit'] != os.environ['NDS_SOURCE_COMMIT'] or
+              worker['source'] != workers[0]['source'] or
+              worker['target'] != 'x86_64-unknown-linux-gnu' or
+              not isinstance(worker['sha256'], str) or
+              not re.fullmatch('[a-f0-9]{64}', worker['sha256'])):
+              raise SystemExit('Metadata worker input differs from the verified native bundle')
+          env['NDS_GDS_WORKER_SHA256'] = worker['sha256']
           env['CARGO_BUILD_BUILD_DIR'] = metadata.get('build_directory', metadata['target_directory'])
           result = subprocess.check_output(
               ['cargo', 'run', '--locked', '--release', '--manifest-path', manifest,
-               '--example', 'app_release_metadata', '--jobs', '4', '--quiet'],
+               '--target', 'x86_64-unknown-linux-gnu',
+               '--example', 'app_release_metadata', '--jobs', '4'],
               env=env, text=True, timeout=600)
           value = json.loads(result)
           if value.get('source_commit') != os.environ['NDS_SOURCE_COMMIT']:

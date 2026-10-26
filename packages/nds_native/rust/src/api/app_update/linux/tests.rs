@@ -1,4 +1,6 @@
 use super::*;
+#[cfg(feature = "development-http")]
+use std::os::unix::fs::{FileExt, MetadataExt};
 
 struct Directory(PathBuf);
 impl Directory {
@@ -236,6 +238,87 @@ fn fixture() -> (PathBuf, Policy) {
 }
 
 #[cfg(feature = "development-http")]
+fn same_payload_file(first: &fs::Metadata, second: &fs::Metadata) -> bool {
+    first.is_file()
+        && second.is_file()
+        && first.dev() == second.dev()
+        && first.ino() == second.ino()
+        && first.len() == second.len()
+        && first.mtime() == second.mtime()
+        && first.mtime_nsec() == second.mtime_nsec()
+        && first.ctime() == second.ctime()
+        && first.ctime_nsec() == second.ctime_nsec()
+}
+
+#[cfg(feature = "development-http")]
+fn open_payload_file(path: &Path) -> (File, fs::Metadata) {
+    let metadata = fs::symlink_metadata(path).unwrap();
+    assert!(metadata.is_file());
+    assert!((2..=domain::MAX_ARTIFACT_BYTES).contains(&metadata.len()));
+    let file = File::open(path).unwrap();
+    assert!(same_payload_file(&metadata, &file.metadata().unwrap()));
+    assert!(same_payload_file(
+        &metadata,
+        &fs::symlink_metadata(path).unwrap()
+    ));
+    (file, metadata)
+}
+
+#[cfg(feature = "development-http")]
+fn hash_payload_file(file: &mut File, path: &Path, metadata: &fs::Metadata) -> (u64, String) {
+    let deadline = std::time::Instant::now() + Duration::from_secs(120);
+    let mut bytes = [0; CHUNK];
+    let mut count = 0u64;
+    let mut hash = Sha256::new();
+    loop {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "payload hash deadline"
+        );
+        let n = match file.read(&mut bytes) {
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+            result => result.unwrap(),
+        };
+        if n == 0 {
+            break;
+        }
+        count = count.checked_add(n as u64).unwrap();
+        assert!(count <= metadata.len() && count <= domain::MAX_ARTIFACT_BYTES);
+        hash.update(&bytes[..n]);
+    }
+    assert_eq!(count, metadata.len(), "payload short read");
+    assert!(same_payload_file(metadata, &file.metadata().unwrap()));
+    assert!(same_payload_file(
+        metadata,
+        &fs::symlink_metadata(path).unwrap()
+    ));
+    (count, digest_hex(hash.finalize()))
+}
+
+#[cfg(feature = "development-http")]
+fn payload_facts(path: &Path) -> (u64, String) {
+    let (mut file, metadata) = open_payload_file(path);
+    hash_payload_file(&mut file, path, &metadata)
+}
+
+#[cfg(feature = "development-http")]
+fn fixture_document_hashes(root: &Path) -> Vec<(&'static str, String)> {
+    [
+        ("app-release.json", MANIFEST_BYTES),
+        ("bundle.json", BUNDLE_BYTES),
+        ("assembly-policy.json", MANIFEST_BYTES),
+    ]
+    .into_iter()
+    .map(|(name, bound)| {
+        (
+            name,
+            digest(&read_bounded(&root.join(name), bound).unwrap()),
+        )
+    })
+    .collect()
+}
+
+#[cfg(feature = "development-http")]
 #[tokio::test]
 #[ignore = "child of the explicitly invoked real staging qualification"]
 async fn qualified_staging_child() {
@@ -255,6 +338,8 @@ async fn actual_signed_staging_disconnect_cancel_crash_and_offline_restore() {
     use network::SignedServer;
     use std::sync::atomic::Ordering;
     let (fixture, policy) = fixture();
+    let fixture_documents = fixture_document_hashes(&fixture);
+    let eligibility_baseline = policy.installed_version.clone();
     let case = Directory::new();
     let stage_root = case.0.join("staging");
     let installed = case.0.join("installed-app-canary");
@@ -273,19 +358,21 @@ async fn actual_signed_staging_disconnect_cancel_crash_and_offline_restore() {
     let payload = stage_root
         .join(std::str::from_utf8(&pointer).unwrap())
         .join("payload");
-    let original_payload = fs::read(&payload).unwrap();
+    let original_payload = payload_facts(&payload);
+    assert_eq!(original_payload, server.payload_facts());
 
     server.mode(1);
     updater.check().await.unwrap();
     assert!(matches!(updater.stage().await, Err(Error::Network)));
     assert_eq!(fs::read(stage_root.join("current")).unwrap(), pointer);
-    assert_eq!(fs::read(&payload).unwrap(), original_payload);
+    assert_eq!(payload_facts(&payload), original_payload);
     assert_no_partial(&stage_root);
 
     server.mode(3);
     updater.check().await.unwrap();
     assert!(matches!(updater.stage().await, Err(Error::Manifest)));
     assert_eq!(fs::read(stage_root.join("current")).unwrap(), pointer);
+    assert_eq!(payload_facts(&payload), original_payload);
     assert_no_partial(&stage_root);
 
     server.mode(2);
@@ -304,6 +391,7 @@ async fn actual_signed_staging_disconnect_cancel_crash_and_offline_restore() {
     let (result, ()) = tokio::join!(download, cancel);
     assert!(matches!(result, Err(Error::Cancelled)));
     assert_eq!(fs::read(stage_root.join("current")).unwrap(), pointer);
+    assert_eq!(payload_facts(&payload), original_payload);
     assert_no_partial(&stage_root);
     server.mode(0);
 
@@ -348,6 +436,7 @@ async fn actual_signed_staging_disconnect_cancel_crash_and_offline_restore() {
     child.0.kill().unwrap();
     assert!(!child.0.wait().unwrap().success());
     assert_eq!(fs::read(stage_root.join("current")).unwrap(), pointer);
+    assert_eq!(payload_facts(&payload), original_payload);
     assert!(partial_has_bytes(&stage_root));
     server.mode(0);
     drop(server);
@@ -357,7 +446,9 @@ async fn actual_signed_staging_disconnect_cancel_crash_and_offline_restore() {
     let restored = restarted.restore().await.unwrap();
     assert_eq!(restored.status, Status::Staged);
     assert_eq!(fs::read(stage_root.join("current")).unwrap(), pointer);
-    assert_eq!(fs::read(payload).unwrap(), original_payload);
+    assert_eq!(payload_facts(&payload), original_payload);
+    assert_eq!(payload_facts(&fixture.join("payload")), original_payload);
+    assert_eq!(fixture_document_hashes(&fixture), fixture_documents);
     assert_eq!(fs::read(installed).unwrap(), b"existing app fixture");
     assert_no_partial(&stage_root);
     restarted.close().await;
@@ -372,9 +463,13 @@ async fn actual_signed_staging_disconnect_cancel_crash_and_offline_restore() {
     );
     fs::create_dir_all(&evidence).unwrap();
     write_new(&evidence.join("staging-receipt.json"), &serde_json::to_vec_pretty(&serde_json::json!({
-        "scope": "Real NDS publisher DSSE, HTTP, private file staging and crash/restart; opaque qualification payload, not native application distribution",
+        "scope": "Real NDS publisher DSSE and supplied signed payload file; HTTP, private byte staging and crash/restart, not installation, native distribution or activation",
         "source": option_env!("NDS_SOURCE_COMMIT").unwrap_or("unknown"),
-        "manifest_sha256": String::from_utf8(pointer).unwrap(), "payload_sha256": digest(&original_payload),
+        "manifest_sha256": String::from_utf8(pointer).unwrap(),
+        "payload_sha256": original_payload.1, "payload_bytes": original_payload.0,
+        "fixture_inputs_unchanged": true, "payload_buffer_bytes": CHUNK,
+        "eligibility_baseline": eligibility_baseline,
+        "eligibility_scope": "controlled fixture only; installed product version is not established",
         "cases": ["verified_commit", "disconnect", "tampered_payload", "mid_body_cancel", "owned_child_crash", "offline_restore", "partial_cleanup"],
         "installed_canary_unchanged": true, "native_keys_and_vault_pending": "UNVERIFIED by this subsystem fixture"
     })).unwrap()).unwrap();
@@ -409,14 +504,17 @@ mod network {
         thread,
     };
 
-    fn requested_path(socket: &mut TcpStream) -> Option<String> {
+    fn requested_path(socket: &mut TcpStream, live: &impl Fn() -> bool) -> Option<String> {
         let mut request = [0u8; 8192];
         let mut used = 0;
         loop {
-            if used == request.len() {
+            if used == request.len() || !live() {
                 return None;
             }
-            let n = socket.read(&mut request[used..]).ok()?;
+            let n = match socket.read(&mut request[used..]) {
+                Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+                result => result.ok()?,
+            };
             if n == 0 {
                 return None;
             }
@@ -432,6 +530,21 @@ mod network {
             return None;
         }
         Some(words.next()?.to_owned())
+    }
+
+    fn write_live(socket: &mut TcpStream, mut bytes: &[u8], live: &impl Fn() -> bool) -> bool {
+        while !bytes.is_empty() {
+            if !live() {
+                return false;
+            }
+            match socket.write(bytes) {
+                Ok(0) => return false,
+                Ok(n) => bytes = &bytes[n..],
+                Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(_) => return false,
+            }
+        }
+        true
     }
 
     enum Reply {
@@ -503,6 +616,7 @@ mod network {
     }
 
     pub(super) struct SignedServer {
+        payload_facts: (u64, String),
         stop: Arc<AtomicBool>,
         mode: Arc<std::sync::atomic::AtomicU8>,
         epoch: Arc<std::sync::atomic::AtomicU64>,
@@ -519,10 +633,11 @@ mod network {
             let origin = url.origin();
             assert_eq!(policy.url(&policy.manifest_url).unwrap().origin(), origin);
             assert_eq!(policy.url(&policy.bundle_url).unwrap().origin(), origin);
-            let payload = read_bounded(&root.join("payload"), 4 * 1024 * 1024).unwrap();
-            assert!(payload.len() >= 2);
-            assert_eq!(payload.len() as u64, candidate.release.artifact.bytes);
-            assert_eq!(digest(&payload), candidate.release.artifact.sha256);
+            let payload_path = root.join("payload");
+            let (mut payload, payload_metadata) = open_payload_file(&payload_path);
+            let payload_facts = hash_payload_file(&mut payload, &payload_path, &payload_metadata);
+            assert_eq!(payload_facts.0, candidate.release.artifact.bytes);
+            assert_eq!(payload_facts.1, candidate.release.artifact.sha256);
             // Never take over an occupied port or change the signed artifact URL.
             let listener = TcpListener::bind(("127.0.0.1", url.port().unwrap())).unwrap();
             listener.set_nonblocking(true).unwrap();
@@ -550,61 +665,96 @@ mod network {
                     socket
                         .set_write_timeout(Some(Duration::from_secs(2)))
                         .unwrap();
-                    let Some(path) = requested_path(&mut socket) else {
+                    let current = generation.load(Ordering::Acquire);
+                    let live = || {
+                        !done.load(Ordering::Acquire)
+                            && generation.load(Ordering::Acquire) == current
+                            && std::time::Instant::now() < deadline
+                    };
+                    let Some(path) = requested_path(&mut socket, &live) else {
                         continue;
                     };
                     let body = if path == paths[0] {
-                        &manifest
+                        Some(&manifest)
                     } else if path == paths[1] {
-                        &bundle
+                        Some(&bundle)
                     } else if path == paths[2] {
-                        &payload
+                        None
                     } else {
-                        let _ = socket.write_all(b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+                        write_live(&mut socket, b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", &live);
                         continue;
                     };
-                    let _ = write!(
-                        socket,
-                        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                        body.len()
+                    let length = body.map_or(payload_metadata.len(), |bytes| bytes.len() as u64);
+                    let header = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Length: {length}\r\nConnection: close\r\n\r\n"
                     );
-                    if path != paths[2] {
-                        let _ = socket.write_all(body);
+                    if !write_live(&mut socket, header.as_bytes(), &live) {
                         continue;
                     }
+                    if let Some(body) = body {
+                        write_live(&mut socket, body, &live);
+                        continue;
+                    }
+                    assert!(same_payload_file(
+                        &payload_metadata,
+                        &payload.metadata().unwrap()
+                    ));
+                    assert!(same_payload_file(
+                        &payload_metadata,
+                        &fs::symlink_metadata(&payload_path).unwrap()
+                    ));
                     let selected = behavior.load(Ordering::Acquire);
-                    let current = generation.load(Ordering::Acquire);
-                    match selected {
-                        1 => {
-                            let _ = socket.write_all(&body[..body.len() / 2]);
-                        }
-                        2 => {
-                            let _ = socket.write_all(&body[..(body.len() / 2).min(CHUNK)]);
-                            let _ = socket.flush();
-                            while !done.load(Ordering::Acquire)
-                                && generation.load(Ordering::Acquire) == current
-                                && std::time::Instant::now() < deadline
-                            {
-                                thread::sleep(Duration::from_millis(5));
+                    let end = match selected {
+                        1 => length / 2,
+                        2 => (length / 2).min(CHUNK as u64),
+                        _ => length,
+                    };
+                    let mut bytes = [0; CHUNK];
+                    let mut offset = 0u64;
+                    // Positional reads keep every request independent without
+                    // copying the archive or sharing a seek cursor.
+                    while offset < end && live() {
+                        let limit = (end - offset).min(CHUNK as u64) as usize;
+                        let n = match payload.read_at(&mut bytes[..limit], offset) {
+                            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => {
+                                continue;
                             }
+                            result => result.unwrap(),
+                        };
+                        assert_ne!(n, 0, "signed payload short read");
+                        if selected == 3 && offset == 0 {
+                            bytes[0] ^= 1; // Tamper only with this response.
                         }
-                        3 => {
-                            let mut changed = body.clone();
-                            changed[0] ^= 1;
-                            let _ = socket.write_all(&changed);
+                        if !write_live(&mut socket, &bytes[..n], &live) {
+                            break;
                         }
-                        _ => {
-                            let _ = socket.write_all(body);
+                        offset += n as u64;
+                    }
+                    if selected == 2 && offset == end && socket.flush().is_ok() {
+                        while live() {
+                            thread::sleep(Duration::from_millis(5));
                         }
                     }
+                    assert!(same_payload_file(
+                        &payload_metadata,
+                        &payload.metadata().unwrap()
+                    ));
+                    assert!(same_payload_file(
+                        &payload_metadata,
+                        &fs::symlink_metadata(&payload_path).unwrap()
+                    ));
                 }
             });
             Self {
+                payload_facts,
                 stop,
                 mode,
                 epoch,
                 worker: Some(worker),
             }
+        }
+        pub(super) fn payload_facts(&self) -> (u64, String) {
+            self.payload_facts.clone()
         }
         pub(super) fn mode(&self, value: u8) {
             self.mode.store(value, Ordering::Release);
@@ -615,7 +765,10 @@ mod network {
         fn drop(&mut self) {
             self.stop.store(true, Ordering::Release);
             self.epoch.fetch_add(1, Ordering::AcqRel);
-            self.worker.take().unwrap().join().unwrap();
+            let joined = self.worker.take().unwrap().join();
+            if !thread::panicking() {
+                joined.unwrap();
+            }
         }
     }
 

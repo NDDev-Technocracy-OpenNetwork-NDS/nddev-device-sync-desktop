@@ -1318,4 +1318,93 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get repositorySyncRefused =>
       'В синхронизации отказано; существующая работа сохранена';
+
+  @override
+  String get appUpdateTitle => 'Обновления приложения NDS';
+
+  @override
+  String get appUpdateCheck => 'Проверить обновления';
+
+  @override
+  String get appUpdateDownload => 'Скачать обновление';
+
+  @override
+  String get appUpdateCancel => 'Отменить загрузку';
+
+  @override
+  String get appUpdateIdle => 'Проверьте наличие обновления приложения.';
+
+  @override
+  String get appUpdateChecking => 'Проверяем обновление…';
+
+  @override
+  String get appUpdateAvailable =>
+      'Проверенное обновление доступно для загрузки.';
+
+  @override
+  String get appUpdateDownloading => 'Загружаем обновление…';
+
+  @override
+  String get appUpdateStaged =>
+      'Загрузка проверена и сохранена. Установка в этой сборке пока недоступна.';
+
+  @override
+  String get appUpdateUnsupported =>
+      'Обновление приложения на этой платформе не поддерживается.';
+
+  @override
+  String get appUpdateNotConfigured =>
+      'Для этой сборки обновление приложения не настроено.';
+
+  @override
+  String get appUpdateBusy =>
+      'Уже выполняется другая операция обновления. Дождитесь её завершения.';
+
+  @override
+  String get appUpdateCancelled => 'Загрузка отменена.';
+
+  @override
+  String get appUpdateTimeout =>
+      'Время операции обновления истекло. Попробуйте ещё раз.';
+
+  @override
+  String get appUpdateNetwork =>
+      'Не удалось получить обновление из разрешённого источника.';
+
+  @override
+  String get appUpdateTooLarge => 'Размер загрузки не совпадает с ожидаемым.';
+
+  @override
+  String get appUpdateSignature =>
+      'Не удалось проверить издателя или подписанное описание обновления.';
+
+  @override
+  String get appUpdateInvalid =>
+      'Обновление недействительно или загрузка не завершена.';
+
+  @override
+  String get appUpdateSource =>
+      'Обновление не соответствует разрешённому кандидату этой сборки.';
+
+  @override
+  String get appUpdateCompatibility =>
+      'Совместимость данных неизвестна или не поддерживается.';
+
+  @override
+  String get appUpdateNotNewer =>
+      'Версия кандидата не новее установленного приложения.';
+
+  @override
+  String get appUpdateStorage =>
+      'Не удалось безопасно сохранить или восстановить обновление.';
+
+  @override
+  String appUpdateVersion(String version) {
+    return 'Кандидат $version';
+  }
+
+  @override
+  String appUpdateProgress(String downloaded, String total) {
+    return '$downloaded / $total байт';
+  }
 }

@@ -12,26 +12,26 @@ flutter = ["dep:flutter_rust_bridge"]
 browser-bindings = ["dep:tsify", "serde/derive", "nddev-device-sync-accounts/browser-bindings", "nddev-device-sync-organizations/browser-bindings", "nddev-device-sync-vault/browser-bindings", "nddev-device-sync-telemetry/browser-bindings", "nddev-device-sync-gds/browser-bindings"]
 development-http = ["nddev-device-sync-accounts/development-http"]
 [dependencies]
-nddev-device-sync-organizations = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations", rev = "1a452e4ef8812627296a960b4c1ab9c9b39bbbbc" }
+nddev-device-sync-organizations = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations", rev = "a5adb8b7534001a8557b0edb0dc0ffdc2c04e137" }
 nddev-device-sync-application = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-core.git", rev = "e052fa0ee00bde55cda24746df2dc07f6ed996e7" }
-nddev-device-sync-vault = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault", rev = "203f42ba4615e3f1497030f129aa7208fe1bfd6e" }
+nddev-device-sync-vault = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault", rev = "41cc02df9dadccb00b7512627c3ca63b1824f694" }
 tokio = { version = "1.53", features = ["sync", "rt", "time"] }
 zeroize = "1.8"
 tokio-util = { version = "0.7", features = ["rt"] }
 flutter_rust_bridge = { optional=true, version="=2.13.0",default-features=false,features=["anyhow","dart-opaque","portable-atomic","rust-async","thread-pool"] }
-nddev-device-sync-accounts = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts", rev = "ad2dbd86f74cc321d2016d25a30ee585e25b88ac" }
+nddev-device-sync-accounts = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts", rev = "ae1af64c79c311fb0125e22f1f15966bf2ed218b" }
 nddev-device-sync-domain = {git="https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-core.git", rev = "e052fa0ee00bde55cda24746df2dc07f6ed996e7"}
 time = {version="0.3",features=["parsing","wasm-bindgen"]}
 tracing = "0.1"
 serde_json = "1"
 serde = "1"
 uuid = { version="1.27", features=["v4", "v7"] }
-nddev-device-sync-agent = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent", rev = "c17844bcbf99293f0647b698e2c95cff8ef80034" }
+nddev-device-sync-agent = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent", rev = "6dc28eb00e874f17f47ade59fb273b6bb6a60a1a" }
 nddev-device-sync-sysinfo = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-sysinfo", rev = "92cf2d9922d3753f65f2514ee1e79f8fff57293f" }
-nddev-device-sync-clipboard = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-clipboard", rev = "b1fbf4cc33926a5115818a9877349a6fe9cf32c7" }
+nddev-device-sync-clipboard = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-clipboard", rev = "5cfba91ec053f647227c4d8787194975e9d67588" }
 nddev-device-sync-cleaner = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-cleaner", rev = "191613987e172ad23e806b050d570b30acac0260" }
 nddev-device-sync-updater = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-updater", rev = "f4946ef582e0d939147fad1d38d143f1f0c96ab0" }
-nddev-device-sync-gds = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds", rev = "3de4c68b5e1970dd0789cf3feaebc8a3c0c56db2", features = ["catalog-runtime", "commit-sync"] }
+nddev-device-sync-gds = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds", rev = "fdb46de307a1ddf6ae9f6fea0f341bd1e76c3cc4", features = ["catalog-runtime", "commit-sync"] }
 nddev-device-sync-rds = { version = "=0.0.1-alpha.2", git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-rds", rev = "65e215798059f23fe583caae9151343f70e34773", features = ["owned-screen"] }
 nddev-device-sync-telemetry = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability", rev = "32f21f8a8f9c313bee9dcd1769c042133b5520da", features = ["client-traces"] }
 [lints.rust]

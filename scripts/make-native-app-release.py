@@ -217,28 +217,51 @@ def source_graph(commit, shared, worker, standards, design, worker_commit):
     return [sources[key] for key in sorted(sources)]
 
 
-def run_logged(command, scratch, name, timeout=180):
+def run_logged(command, scratch, name, timeout=180, *, environment=None):
     with (scratch / (name + '.log')).open('xb') as log:
-        subprocess.run(command, cwd=scratch, env=command_environment(), stdin=subprocess.DEVNULL,
+        subprocess.run(command, cwd=scratch, env=command_environment() if environment is None else environment, stdin=subprocess.DEVNULL,
                        stdout=log, stderr=subprocess.STDOUT, check=True, timeout=timeout)
 
 
-def spdx_inventory(document):
+def spdx_inventory(document, scan_root):
+    require(scan_root.is_dir() and not scan_root.is_symlink())
+    resolved_root = scan_root.resolve()
+    directories, entries = {''}, 0
+    for parent, children, files in os.walk(scan_root, followlinks=False):
+        entries += len(children) + len(files)
+        require(entries <= 2 * MAX_FILES)
+        for child in children:
+            path = Path(parent) / child
+            require(not path.is_symlink() and stat.S_ISDIR(path.lstat().st_mode))
+            require(path.resolve().is_relative_to(resolved_root))
+            directories.add(relative_name(path.relative_to(scan_root).as_posix()))
     require(document.get('spdxVersion') == 'SPDX-2.3' and isinstance(document.get('files'), list))
-    require(len(document['files']) <= MAX_FILES)
-    result = {}
+    require(len(document['files']) <= MAX_FILES + len(directories))
+    result, seen = {}, set()
     for entry in document['files']:
         require(isinstance(entry, dict))
         name = entry['fileName']
         require(isinstance(name, str))
+        original_name = name
         if name.startswith('./'):
             name = name[2:]
         elif name.startswith('/'):
             name = name[1:]
-        relative_name(name)
+        if name:
+            relative_name(name)
+        else:
+            require(original_name == '')
+        require(name not in seen)
+        seen.add(name)
+        if name in directories:
+            # Syft 1.54.1 emits only this sentinel shape for real directories.
+            # A regular/unrecognized file without SHA256 is never skipped.
+            require(entry.get('fileTypes') == ['OTHER'] and entry.get('checksums') == [
+                {'algorithm': 'SHA1', 'checksumValue': '0' * 40}])
+            continue
         require(isinstance(entry['checksums'], list) and all(isinstance(item, dict) for item in entry['checksums']))
         checksums = [item['checksumValue'] for item in entry['checksums'] if item['algorithm'] == 'SHA256']
-        require(name not in result and len(checksums) == 1 and hex_value(checksums[0], 64))
+        require(len(result) < MAX_FILES and len(checksums) == 1 and hex_value(checksums[0], 64))
         result[name] = checksums[0]
     return result
 
@@ -249,7 +272,16 @@ def scan(syft, target, output, config, scratch, name, version, declared=False):
                '--output', 'spdx-json=' + str(output), '--parallelism', '2']
     if declared:
         command += ['--override-default-catalogers', 'rust-cargo-lock-cataloger,dart-pubspec-lock-cataloger']
-    run_logged(command, scratch, name)
+    # Isolate only the scanner's profile. Git/H11 keep their existing environment;
+    # no ambient HOME, cache, authentication or proxy settings reach Syft.
+    profile = scratch / (name + '.profile')
+    profile.mkdir(mode=0o700)
+    environment = command_environment()
+    for variable, directory in [('HOME', 'home'), ('XDG_CACHE_HOME', 'cache'), ('TMPDIR', 'tmp')]:
+        path = profile / directory
+        path.mkdir(mode=0o700)
+        environment[variable] = str(path)
+    run_logged(command, scratch, name, environment=environment)
     return json_object(read_bytes(output, MAX_SBOM))
 
 
@@ -379,10 +411,10 @@ def produce(args):
     syft_digest, _ = file_digest(syft, 512 * 1024 * 1024)
     native_sbom, declared_sbom = scratch / 'native.spdx.json', scratch / 'declared-dependencies.spdx.json'
     native_document = scan(syft, bundle, native_sbom, config, scratch, 'nds-linux-bundle', args.version)
-    require(spdx_inventory(native_document) == files)
+    require(spdx_inventory(native_document, bundle) == files)
     declared_document = scan(syft, declared_input, declared_sbom, config, scratch,
                              'nds-declared-application-locks', args.version, declared=True)
-    require(spdx_inventory(declared_document) == {name: digest(value) for name, value in lock_bytes.items()})
+    require(spdx_inventory(declared_document, declared_input) == {name: digest(value) for name, value in lock_bytes.items()})
     require(isinstance(declared_document.get('packages'), list) and declared_document['packages'])
     facts = {'schema': 1, 'source_commit': commit, 'worker_source_commit': worker_commit,
              'scope': 'Declared application lockfile inputs, possibly including dev and other targets; not linked Rust or build-tool dependency completeness',

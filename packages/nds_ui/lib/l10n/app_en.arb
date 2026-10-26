@@ -581,5 +581,46 @@
   "repositorySyncFastForwarded": "Checkout fast-forwarded",
   "repositorySyncDirty": "Uncommitted changes preserved; synchronization paused for this checkout",
   "repositorySyncDiverged": "Histories diverged; changes preserved",
-  "repositorySyncRefused": "Synchronization refused; existing work preserved"
+  "repositorySyncRefused": "Synchronization refused; existing work preserved",
+  "appUpdateTitle": "NDS application updates",
+  "appUpdateCheck": "Check for updates",
+  "appUpdateDownload": "Download update",
+  "appUpdateCancel": "Cancel download",
+  "appUpdateIdle": "Check for an application update.",
+  "appUpdateChecking": "Checking the update…",
+  "appUpdateAvailable": "A verified update is available to download.",
+  "appUpdateDownloading": "Downloading the update…",
+  "appUpdateStaged": "The download is verified and saved. Installation is not available in this build.",
+  "appUpdateUnsupported": "Application updates are not supported on this platform.",
+  "appUpdateNotConfigured": "Application updates are not configured for this build.",
+  "appUpdateBusy": "Another update operation is running. Try again when it finishes.",
+  "appUpdateCancelled": "The download was cancelled.",
+  "appUpdateTimeout": "The update operation timed out. Try again.",
+  "appUpdateNetwork": "The update could not be retrieved from an approved source.",
+  "appUpdateTooLarge": "The download does not match its expected size.",
+  "appUpdateSignature": "The update publisher or signed manifest could not be verified.",
+  "appUpdateInvalid": "The update is invalid or the download is incomplete.",
+  "appUpdateSource": "The update does not match the candidate approved for this build.",
+  "appUpdateCompatibility": "Data compatibility is unknown or unsupported.",
+  "appUpdateNotNewer": "This candidate is not newer than the installed application.",
+  "appUpdateStorage": "The update could not be safely saved or restored.",
+  "appUpdateVersion": "Candidate {version}",
+  "@appUpdateVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "appUpdateProgress": "{downloaded} / {total} bytes",
+  "@appUpdateProgress": {
+    "placeholders": {
+      "downloaded": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  }
 }

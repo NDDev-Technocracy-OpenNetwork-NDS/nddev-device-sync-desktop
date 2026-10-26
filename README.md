@@ -165,8 +165,10 @@ acceptance uses `identity-acceptance.py --vault --catalog-source` with a fresh
 
 Screen requests and viewing use the shared Rust owner, Accounts authorization
 and Core contracts. The current viewer backend is Linux X11; other targets
-report unsupported. Native subsystem qualification is separate from final
-Accounts-authenticated Flutter viewing, whose acceptance remains incomplete.
+report unsupported. Native subsystem checks and Accounts-authenticated Flutter
+viewing are separate qualification scopes. The owned Linux X11 workflow below
+exercises actual frames and termination; other target roles and final product
+and release acceptance remain separate.
 
 `scripts/screen-acceptance.py` qualifies that Linux path against an explicitly
 owned, fresh 3600-second Server `--fixture-sync3` fixture. Supply `--fixture`,

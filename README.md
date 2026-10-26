@@ -190,15 +190,35 @@ an early disconnect against the native host's expiry proof. Each invocation
 qualifies only its selected case. Receipts and cleanup remain outside
 the repository; other targets and release qualification remain separate.
 
-`python scripts/build.py linux --debug` builds committed source with an explicit,
-cache-tracked native source SHA; ordinary `flutter build` retains development
-provenance. The build wrapper restores its temporary hook configuration.
+`python scripts/build.py linux --release` builds the committed Linux AOT bundle
+and its existing GDS worker with a tracked native source SHA. An explicitly
+approved assembly policy may be passed before the target with
+`--app-update-policy /path/to/approved-policy.json`; its exact bounded JSON
+string becomes the tracked NativeAssets input. An unset policy stays empty and
+does not inherit an ambient policy. The wrapper restores the app configuration
+after success, failure or cancellation. Ordinary `flutter build` retains
+development provenance.
 
-CI pins SDK archives by SHA-256 and builds Linux, macOS (ARM64/Intel) and
-Windows. Those builds are separate from native credential/provider interaction
-acceptance. `scripts/check-artifact.py` rejects integration entrypoints and
-native test plugins in debug bundles. Integration dependencies exist only
-inside the acceptance driver's temporary scope.
+Linux application updates provide verified discovery, bounded staging,
+cancellation and authenticated local restore in a separate owned namespace.
+The existing system Updater tool retains its independent plan/report scope.
+Installation, process switching and activation are unavailable; other native
+targets report unsupported. An unconfigured build reports that updates are not
+configured. Native keys and encrypted pending operations remain with their
+existing owners.
+
+CI pins SDK archives by SHA-256, builds Linux release/AOT and macOS (ARM64/Intel)
+and Windows debug bundles. These builds are separate from native
+credential/provider interaction acceptance. `scripts/check-artifact.py` rejects
+integration entrypoints and native test plugins. Integration dependencies exist
+only inside the acceptance driver's temporary scope. The Linux qualification
+artifact binds actual bundle bytes, worker inputs, owning format metadata,
+provenance and separate native-file and declared-dependency SPDX inventories.
+The main-only workflow authenticates its complete release manifest after the
+quality gate; consumption also requires the entire exact-main run to succeed.
+Qualification uses an explicit development loopback origin. It does not publish
+a release, configure a production update feed, sign other platforms or install
+the application. A transport or CI acknowledgement is not runtime acceptance.
 
 Vault records use bounded cursor pages. The UI supports create/edit,
 encrypted tombstones and explicit conflict choices guarded by the displayed

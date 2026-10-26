@@ -22,6 +22,31 @@ pub enum AppUpdateError {
     NotNewer,
     Storage,
 }
+impl AppUpdateError {
+    fn code(&self) -> &'static str {
+        match self {
+            Self::Unsupported => "app_update_unsupported",
+            Self::NotConfigured => "app_update_not_configured",
+            Self::Busy => "app_update_busy",
+            Self::Cancelled => "app_update_cancelled",
+            Self::Timeout => "app_update_timeout",
+            Self::Network => "app_update_network",
+            Self::TooLarge => "app_update_too_large",
+            Self::Signature => "app_update_signature",
+            Self::Manifest => "app_update_manifest",
+            Self::Source => "app_update_source",
+            Self::Compatibility => "app_update_compatibility",
+            Self::NotNewer => "app_update_not_newer",
+            Self::Storage => "app_update_storage",
+        }
+    }
+}
+impl std::fmt::Display for AppUpdateError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.code())
+    }
+}
+impl std::error::Error for AppUpdateError {}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AppUpdateStatus {
@@ -159,21 +184,6 @@ impl Default for AppUpdates {
 
 #[cfg(target_os = "linux")]
 fn classify(error: &AppUpdateError) -> (String, &'static str, bool) {
-    let code = match error {
-        AppUpdateError::Unsupported => "unsupported",
-        AppUpdateError::NotConfigured => "not_configured",
-        AppUpdateError::Busy => "busy",
-        AppUpdateError::Cancelled => "cancelled",
-        AppUpdateError::Timeout => "timeout",
-        AppUpdateError::Network => "network",
-        AppUpdateError::TooLarge => "too_large",
-        AppUpdateError::Signature => "signature",
-        AppUpdateError::Manifest => "manifest",
-        AppUpdateError::Source => "source",
-        AppUpdateError::Compatibility => "compatibility",
-        AppUpdateError::NotNewer => "not_newer",
-        AppUpdateError::Storage => "storage",
-    };
     let retryable = matches!(
         error,
         AppUpdateError::Busy
@@ -182,7 +192,7 @@ fn classify(error: &AppUpdateError) -> (String, &'static str, bool) {
             | AppUpdateError::Storage
     );
     (
-        code.into(),
+        error.code().into(),
         if retryable { "error" } else { "refused" },
         retryable,
     )

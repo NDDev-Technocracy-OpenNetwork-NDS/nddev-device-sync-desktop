@@ -82,6 +82,7 @@ fn actual_lock_and_partial_cleanup_preserve_unrelated_files_and_symlinks() {
 fn committed_candidate_retention_has_one_current_and_refuses_unknown_layouts() {
     let directory = Directory::new();
     let root = &directory.0;
+    ensure_root(root).unwrap();
     let current = "a".repeat(64);
     let old_manifest = b"retention fixture metadata";
     let old = digest(old_manifest);
@@ -102,6 +103,53 @@ fn committed_candidate_retention_has_one_current_and_refuses_unknown_layouts() {
         fs::read(unknown.join("personal-data")).unwrap(),
         b"preserve"
     );
+}
+
+#[tokio::test]
+async fn restore_refuses_unmarked_work_shaped_foreign_data_before_any_mutation() {
+    let directory = Directory::new();
+    let root = &directory.0;
+    fs::set_permissions(root, fs::Permissions::from_mode(0o755)).unwrap();
+    let work = root.join(format!("work-{}", uuid::Uuid::new_v4()));
+    fs::create_dir(&work).unwrap();
+    let sentinel = work.join("sentinel");
+    let bytes = b"foreign data\0must remain byte for byte";
+    write_new(&sentinel, bytes).unwrap();
+    let updater = Updater::new(Some(policy("https://example.invalid")), Some(root.clone()));
+    assert!(matches!(updater.restore().await, Err(Error::Storage)));
+    assert_eq!(fs::read(&sentinel).unwrap(), bytes);
+    assert_eq!(
+        fs::metadata(root).unwrap().permissions().mode() & 0o777,
+        0o755
+    );
+    assert_eq!(fs::read_dir(root).unwrap().count(), 1);
+    assert_eq!(fs::read_dir(&work).unwrap().count(), 1);
+    assert!(absent(&root.join("lock")) && absent(&root.join(OWNER_FILE)));
+    // Calling cleanup helpers directly cannot bypass the ownership refusal.
+    assert!(matches!(clean_partial(root), Err(Error::Storage)));
+    assert!(matches!(retain_current(root), Err(Error::Storage)));
+    assert_eq!(fs::read(sentinel).unwrap(), bytes);
+}
+
+#[test]
+fn ownership_marker_is_fixed_regular_and_never_adopts_an_existing_layout() {
+    let directory = Directory::new();
+    let root = &directory.0;
+    ensure_root(root).unwrap();
+    assert_eq!(
+        read_bounded(&root.join(OWNER_FILE), OWNER_BYTES.len()).unwrap(),
+        OWNER_BYTES
+    );
+    fs::write(root.join(OWNER_FILE), b"unknown marker").unwrap();
+    assert!(matches!(storage_lock(root), Err(Error::Storage)));
+    fs::remove_file(root.join(OWNER_FILE)).unwrap();
+    let outside = Directory::new();
+    let sentinel = outside.0.join("sentinel");
+    write_new(&sentinel, OWNER_BYTES).unwrap();
+    std::os::unix::fs::symlink(&sentinel, root.join(OWNER_FILE)).unwrap();
+    assert!(matches!(storage_lock(root), Err(Error::Storage)));
+    assert!(absent(&root.join("lock")));
+    assert_eq!(fs::read(sentinel).unwrap(), OWNER_BYTES);
 }
 
 /// Real issued NDS manifest and DSSE bundle, never a successful verifier stub.

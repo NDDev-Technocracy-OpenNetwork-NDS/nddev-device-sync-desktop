@@ -25,6 +25,8 @@ use tokio_util::sync::CancellationToken;
 const MANIFEST_BYTES: usize = 65_536;
 const BUNDLE_BYTES: usize = 262_144;
 const CHUNK: usize = 65_536;
+const OWNER_FILE: &str = ".nds-app-update-owner";
+const OWNER_BYTES: &[u8] = b"NDS application staging namespace v1\n";
 
 #[derive(Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -625,21 +627,45 @@ fn ensure_root(root: &Path) -> Result<(), Error> {
     if !root.is_absolute() {
         return Err(Error::Storage);
     }
-    fs::create_dir_all(root).map_err(|_| Error::Storage)?;
+    if absent(root) {
+        fs::create_dir_all(root).map_err(|_| Error::Storage)?;
+    }
     let metadata = fs::symlink_metadata(root).map_err(|_| Error::Storage)?;
     if !metadata.is_dir() || metadata.file_type().is_symlink() {
         return Err(Error::Storage);
     }
+    let marker = root.join(OWNER_FILE);
+    if absent(&marker) {
+        // Claim only a new/empty namespace. A work-shaped name is never proof
+        // of ownership; no chmod, lock creation or deletion precedes this gate.
+        if fs::read_dir(root)
+            .map_err(|_| Error::Storage)?
+            .next()
+            .is_some()
+        {
+            return Err(Error::Storage);
+        }
+        write_new(&marker, OWNER_BYTES)?;
+        File::open(root)
+            .and_then(|f| f.sync_all())
+            .map_err(|_| Error::Storage)?;
+    }
+    owned_root(root)?;
     fs::set_permissions(root, fs::Permissions::from_mode(0o700)).map_err(|_| Error::Storage)
 }
-fn storage_lock(root: &Path) -> Result<File, Error> {
-    if fs::symlink_metadata(root)
+fn owned_root(root: &Path) -> Result<(), Error> {
+    if !fs::symlink_metadata(root)
         .map_err(|_| Error::Storage)?
-        .file_type()
-        .is_symlink()
+        .is_dir()
+        || read_bounded(&root.join(OWNER_FILE), OWNER_BYTES.len()).map_err(|_| Error::Storage)?
+            != OWNER_BYTES
     {
         return Err(Error::Storage);
     }
+    Ok(())
+}
+fn storage_lock(root: &Path) -> Result<File, Error> {
+    ensure_root(root)?;
     let path = root.join("lock");
     match fs::symlink_metadata(&path) {
         Ok(metadata) if !metadata.is_file() => return Err(Error::Storage),
@@ -706,6 +732,7 @@ impl Drop for Scratch {
     }
 }
 fn clean_partial(root: &Path) -> Result<(), Error> {
+    owned_root(root)?;
     let mut count = 0;
     for entry in fs::read_dir(root).map_err(|_| Error::Storage)? {
         count += 1;
@@ -736,6 +763,7 @@ fn clean_partial(root: &Path) -> Result<(), Error> {
 /// its committed candidate; interrupted work is handled by clean_partial.
 /// Never traverse or remove an unrecognized layout, symlink or external store.
 fn retain_current(root: &Path) -> Result<(), Error> {
+    owned_root(root)?;
     let current = match read_bounded(&root.join("current"), 64) {
         Ok(bytes) => {
             let id = String::from_utf8(bytes).map_err(|_| Error::Storage)?;

@@ -248,11 +248,20 @@ void main() {
           'observed_stop_ms': observedStopMs,
         });
         await tester.pageBack();
-        await waitFor(tester, find.byKey(const Key('screen-targets-error')));
-        expect(find.text('Owned screen host'), findsNothing);
+        if (screenCase == 'role') {
+          await waitFor(tester, find.byKey(const Key('screen-targets-error')));
+          expect(find.text('Owned screen host'), findsNothing);
+        } else {
+          await waitFor(tester, find.byKey(const Key('screen-targets')));
+          expect(find.byKey(const Key('screen-targets-error')), findsNothing);
+        }
         await tester.pageBack();
-        await waitFor(tester, find.text('User'));
-        expect(find.byKey(const Key('company-email')), findsNothing);
+        if (screenCase == 'role') {
+          await waitFor(tester, find.text('User'));
+          expect(find.byKey(const Key('company-email')), findsNothing);
+        } else {
+          await waitFor(tester, find.byKey(const Key('company-email')));
+        }
         expect(tester.takeException(), isNull);
         await tester.pageBack();
         await tester.pumpAndSettle();

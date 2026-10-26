@@ -155,6 +155,9 @@ try:
     if args.sync_role:
         command.append("--dart-define=NDS_TEST_SYNC_ROLE=" + args.sync_role)
     environment = os.environ.copy()
+    environment.pop("NDS_TEST_SCREEN_CASE", None)
+    if fixture.get("screen_peer_email") is not None:
+        environment["NDS_TEST_SCREEN_CASE"] = screen_case
     environment["CARGO_BUILD_JOBS"] = "4"
     status = 0
     phases = (["persist", "offline", "restore"] if args.modules else

@@ -2369,6 +2369,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Synchronization refused; existing work preserved'**
   String get repositorySyncRefused;
+
+  /// No description provided for @appUpdateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'NDS application updates'**
+  String get appUpdateTitle;
+
+  /// No description provided for @appUpdateCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates'**
+  String get appUpdateCheck;
+
+  /// No description provided for @appUpdateDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download update'**
+  String get appUpdateDownload;
+
+  /// No description provided for @appUpdateCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel download'**
+  String get appUpdateCancel;
+
+  /// No description provided for @appUpdateIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for an application update.'**
+  String get appUpdateIdle;
+
+  /// No description provided for @appUpdateChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the update…'**
+  String get appUpdateChecking;
+
+  /// No description provided for @appUpdateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'A verified update is available to download.'**
+  String get appUpdateAvailable;
+
+  /// No description provided for @appUpdateDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading the update…'**
+  String get appUpdateDownloading;
+
+  /// No description provided for @appUpdateStaged.
+  ///
+  /// In en, this message translates to:
+  /// **'The download is verified and saved. Installation is not available in this build.'**
+  String get appUpdateStaged;
+
+  /// No description provided for @appUpdateUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Application updates are not supported on this platform.'**
+  String get appUpdateUnsupported;
+
+  /// No description provided for @appUpdateNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Application updates are not configured for this build.'**
+  String get appUpdateNotConfigured;
+
+  /// No description provided for @appUpdateBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Another update operation is running. Try again when it finishes.'**
+  String get appUpdateBusy;
+
+  /// No description provided for @appUpdateCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'The download was cancelled.'**
+  String get appUpdateCancelled;
+
+  /// No description provided for @appUpdateTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The update operation timed out. Try again.'**
+  String get appUpdateTimeout;
+
+  /// No description provided for @appUpdateNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'The update could not be retrieved from an approved source.'**
+  String get appUpdateNetwork;
+
+  /// No description provided for @appUpdateTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'The download does not match its expected size.'**
+  String get appUpdateTooLarge;
+
+  /// No description provided for @appUpdateSignature.
+  ///
+  /// In en, this message translates to:
+  /// **'The update publisher or signed manifest could not be verified.'**
+  String get appUpdateSignature;
+
+  /// No description provided for @appUpdateInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The update is invalid or the download is incomplete.'**
+  String get appUpdateInvalid;
+
+  /// No description provided for @appUpdateSource.
+  ///
+  /// In en, this message translates to:
+  /// **'The update does not match the candidate approved for this build.'**
+  String get appUpdateSource;
+
+  /// No description provided for @appUpdateCompatibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Data compatibility is unknown or unsupported.'**
+  String get appUpdateCompatibility;
+
+  /// No description provided for @appUpdateNotNewer.
+  ///
+  /// In en, this message translates to:
+  /// **'This candidate is not newer than the installed application.'**
+  String get appUpdateNotNewer;
+
+  /// No description provided for @appUpdateStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'The update could not be safely saved or restored.'**
+  String get appUpdateStorage;
+
+  /// No description provided for @appUpdateVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Candidate {version}'**
+  String appUpdateVersion(String version);
+
+  /// No description provided for @appUpdateProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{downloaded} / {total} bytes'**
+  String appUpdateProgress(String downloaded, String total);
 }
 
 class _AppLocalizationsDelegate

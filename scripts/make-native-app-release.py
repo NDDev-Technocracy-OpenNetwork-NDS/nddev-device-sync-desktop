@@ -316,6 +316,7 @@ def produce(args):
     candidate = re.fullmatch(r'1\.0\.0-alpha\.([1-9][0-9]{0,9})', args.version)
     require(candidate is not None and int(candidate[1]) <= 4294967295)
     require(1024 <= args.port <= 65535)
+    require(not args.output.is_symlink() and not args.output.exists())
     bundle, worker_source, output = args.bundle.resolve(), args.worker_source.resolve(), args.output.resolve()
     require(not args.bundle.is_symlink() and not args.worker_source.is_symlink())
     require(not output.exists() and not output.is_relative_to(bundle) and not output.is_relative_to(worker_source))

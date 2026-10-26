@@ -171,8 +171,9 @@ def receipt_snapshot(original, identity):
             raise RuntimeError('Original operation is still pending')
         row = db.execute("SELECT body,receipt_body,receipt_status,server_seq FROM v3_entities WHERE kind='vault_record' AND id=?", (identity['record_id'],)).fetchone()
         if row is None or row[2] != 201 or row[3] <= 0: raise RuntimeError('Actual committed server receipt is absent')
-        wire, receipt = json.loads(bytes(row[0])), json.loads(bytes(row[1]))
-        if (wire != original['wire'] or receipt['operation_id'] != identity['pending_id'] or
+        committed = bytes(row[0])
+        wire, receipt = json.loads(committed), json.loads(bytes(row[1]))
+        if (committed != original['body'] or wire != original['wire'] or receipt['operation_id'] != identity['pending_id'] or
                 wire['device_id'] != identity['device_id'] or receipt['server_seq'] != row[3]):
             raise RuntimeError('Server receipt did not retain the original operation')
         return {'server_seq': row[3], 'receipt_sha256': hashlib.sha256(bytes(row[1])).hexdigest()}
@@ -313,9 +314,14 @@ def main():
             'manual_sync': False, 'ui_child_exit': status, 'download_network_unused_for_restore': True,
             'cleanup': {'ui_child_joined': True, 'download_server_joined': True, 'backend_restored': True, 'isolated_native_provider': 'caller must independently verify cleanup'}}
     finally:
-        if process is not None: terminate_owned(process, Path(sys.executable).resolve(), command)
-        downloads.close()
-        if load(args.fixture).get('status') == 'offline': fixture_mode(args.fixture, backend, 'online')
+        # Each owned cleanup still runs if another cleanup reports a failure.
+        # An exception prevents the final passing receipt below.
+        try:
+            if process is not None: terminate_owned(process, Path(sys.executable).resolve(), command)
+        finally:
+            try: downloads.close()
+            finally:
+                if load(args.fixture).get('status') == 'offline': fixture_mode(args.fixture, backend, 'online')
     if {str(p.relative_to(app)): sha(p) for p in protected} != source_files:
         raise RuntimeError('Owned integration configuration was not restored exactly')
     if receipt_data is not None:

@@ -193,6 +193,8 @@ mod tests {
                 .args([
                     "--exact",
                     "api::telemetry::tests::actual_sdk_events_keep_the_compiled_producer_identity",
+                    // No pretty `test ...` prefix may join a real SDK JSON line.
+                    "--quiet",
                     "--nocapture",
                 ])
                 .env(CHILD, "1")

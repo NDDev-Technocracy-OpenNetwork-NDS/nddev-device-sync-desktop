@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tarfile
 import tomllib
+import traceback
 from urllib.parse import parse_qs, urlsplit
 
 
@@ -151,10 +152,22 @@ def git(directory, *arguments):
         cwd=directory, env=command_environment(), text=True, timeout=15).strip()
 
 
-def source_identity(directory):
+def source_identity(directory, *, allow_cargo_marker=False):
     require(Path(git(directory, 'rev-parse', '--show-toplevel')).resolve() == directory)
     commit = git(directory, 'rev-parse', 'HEAD')
-    require(hex_value(commit, 40) and not git(directory, 'status', '--porcelain'))
+    require(hex_value(commit, 40))
+    status = git(directory, 'status', '--porcelain')
+    require(not status or (allow_cargo_marker and status == '?? .cargo-ok'))
+    if allow_cargo_marker:
+        # Cargo's checkout sentinel is the only permitted untracked input.
+        # Inspect an existing marker even when a Git ignore rule hides it.
+        marker = directory / '.cargo-ok'
+        try:
+            marker.lstat()
+        except FileNotFoundError:
+            require(not status)
+        else:
+            require(read_bytes(marker, 0) == b'')
     return commit
 
 
@@ -353,7 +366,7 @@ def produce(args):
     require(not args.bundle.is_symlink() and not args.worker_source.is_symlink())
     require(not output.exists() and not output.is_relative_to(bundle) and not output.is_relative_to(worker_source))
     commit = source_identity(ROOT)
-    worker_commit = source_identity(worker_source)
+    worker_commit = source_identity(worker_source, allow_cargo_marker=True)
     provenance_bytes, formats_bytes = read_bytes(args.provenance), read_bytes(args.formats, 65536)
     provenance, formats = json_object(provenance_bytes), json_object(formats_bytes)
     require(set(formats) == {'schema', 'source_commit', 'component_version', 'platform', 'architecture', 'data'})
@@ -427,7 +440,8 @@ def produce(args):
                 'declared-dependencies.spdx.json': read_bytes(declared_sbom, MAX_SBOM),
                 'dependency-lock-facts.json': json_bytes(facts),
                 **{'locks/' + name: value for name, value in lock_bytes.items()}}
-    require(source_identity(ROOT) == commit and source_identity(worker_source) == worker_commit)
+    require(source_identity(ROOT) == commit and
+            source_identity(worker_source, allow_cargo_marker=True) == worker_commit)
     require(read_bytes(native / 'Cargo.lock') == lock_bytes['shared/Cargo.lock'] and
             read_bytes(ROOT / 'pubspec.lock') == lock_bytes['shared/pubspec.lock'] and
             read_bytes(worker_source / 'Cargo.lock') == lock_bytes['worker/Cargo.lock'])
@@ -455,8 +469,12 @@ def main():
     args = parser.parse_args()
     try:
         produce(args)
-    except (OSError, ValueError, KeyError, TypeError, RecursionError, subprocess.SubprocessError, tarfile.TarError):
-        print('Native qualification producer refused invalid or incomplete inputs', file=sys.stderr)
+    except (OSError, ValueError, KeyError, TypeError, RecursionError,
+            subprocess.SubprocessError, tarfile.TarError) as error:
+        frames = traceback.extract_tb(error.__traceback__)
+        frame = frames[-2] if len(frames) > 1 and frames[-1].name == 'require' else frames[-1]
+        print('Native qualification producer refused invalid or incomplete inputs '
+              f'({type(error).__name__}: {frame.name}:{frame.lineno})', file=sys.stderr)
         return 1
     print('Native qualification payload produced; no signing, distribution or activation')
     return 0

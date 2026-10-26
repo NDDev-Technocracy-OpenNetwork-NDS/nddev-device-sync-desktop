@@ -8,14 +8,46 @@ from pathlib import Path
 import re
 import signal
 import shutil
+import stat
 import subprocess
 import sys
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--app-update-policy', type=Path, metavar='FILE',
+                    help='Trusted assembly JSON policy; specify before the Flutter target')
 parser.add_argument('flutter_arguments', nargs=argparse.REMAINDER)
 args = parser.parse_args()
 if not args.flutter_arguments:
     parser.error('a Flutter build target is required')
+
+def invalid_json_constant(_value):
+    raise ValueError('Invalid JSON constant')
+
+def read_policy(path):
+    if path is None:
+        return ''
+    try:
+        if path.is_symlink():
+            raise ValueError('Policy must be a regular file')
+        flags = os.O_RDONLY | getattr(os, 'O_NONBLOCK', 0) | getattr(os, 'O_NOFOLLOW', 0)
+        with os.fdopen(os.open(path, flags), 'rb') as policy_file:
+            if not stat.S_ISREG(os.fstat(policy_file.fileno()).st_mode):
+                raise ValueError('Policy must be a regular file')
+            payload = policy_file.read(65537)
+        if len(payload) > 65536:
+            raise ValueError('Policy exceeds its bound')
+        policy = payload.decode('utf-8')
+        if not isinstance(json.loads(policy, parse_constant=invalid_json_constant), dict):
+            raise ValueError('Policy must be an object')
+        return policy
+    except (OSError, UnicodeError, ValueError, RecursionError):
+        # Never include policy contents in parser, helper or compiler diagnostics.
+        raise SystemExit('App-update policy requires a regular UTF-8 JSON object file of at most 65536 bytes') from None
+
+app_update_policy = read_policy(args.app_update_policy)
+# Only the tracked hook input may configure the native library. Preparation,
+# worker packaging and Flutter must not inherit an ambient policy authority.
+os.environ.pop('NDS_APP_UPDATE_POLICY', None)
 source = Path(__file__).resolve().parents[1]
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(source / 'packages/nds_native/tool'))
@@ -73,7 +105,8 @@ try:
     cache_define = '      native_build_cache: ' + json.dumps(os.environ['NDS_NATIVE_BUILD_HOME']) + '\n'
     python_define = '      native_build_python: ' + json.dumps(sys.executable) + '\n'
     source_define = '' if dirty else f'      source_commit: "{commit}"\n'
-    spec.write_bytes(original + f'\nhooks:\n  user_defines:\n    nds_native:\n{source_define}{worker_define}{cache_define}{python_define}'.encode())
+    policy_define = '      app_update_policy: ' + json.dumps(app_update_policy) + '\n'
+    spec.write_bytes(original + f'\nhooks:\n  user_defines:\n    nds_native:\n{source_define}{worker_define}{cache_define}{python_define}{policy_define}'.encode())
     environment = os.environ.copy()
     environment['CARGO_BUILD_JOBS'] = '4'
     executable = shutil.which('flutter')

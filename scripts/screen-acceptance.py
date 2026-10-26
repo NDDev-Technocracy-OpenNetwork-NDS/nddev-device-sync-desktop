@@ -365,8 +365,6 @@ def main():
     parser.add_argument("--viewer", choices=["native", "flutter"], default="flutter")
     parser.add_argument("--case", choices=TESTS, default="role")
     args = parser.parse_args()
-    if args.viewer == "flutter" and args.case != "role":
-        parser.error("The Flutter workflow currently qualifies role revocation only")
     assert sys.platform == "linux" and re.fullmatch("[a-f0-9]{40}", args.source)
     for p in [args.fixture, args.native_test, args.output]:
         assert p.is_absolute() and not p.resolve().is_relative_to(ROOT)

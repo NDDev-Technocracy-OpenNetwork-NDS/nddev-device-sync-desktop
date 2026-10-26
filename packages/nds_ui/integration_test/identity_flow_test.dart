@@ -24,6 +24,10 @@ void main() {
   const company = bool.fromEnvironment('NDS_TEST_COMPANY');
   const screenPeer = String.fromEnvironment('NDS_TEST_SCREEN_PEER');
   const screenHandoff = String.fromEnvironment('NDS_TEST_SCREEN_HANDOFF');
+  const screenCase = String.fromEnvironment(
+    'NDS_TEST_SCREEN_CASE',
+    defaultValue: 'role',
+  );
   const phase = String.fromEnvironment(
     'NDS_TEST_PHASE',
     defaultValue: 'complete',
@@ -107,6 +111,14 @@ void main() {
       expect(find.byKey(const Key('enroll-device')), findsNothing);
       if (screenPeer.isNotEmpty) {
         expect(Platform.isLinux, isTrue);
+        expect([
+          'role',
+          'source-loss',
+          'cancel',
+          'local-disable',
+          'logout',
+          'expiry',
+        ], contains(screenCase));
         expect(screenPeer.endsWith('@example.invalid'), isTrue);
         expect(Directory(screenHandoff).isAbsolute, isTrue);
         await modules.tapVisible(tester, find.text('Local modules'));
@@ -206,21 +218,34 @@ void main() {
           await tester.pump(const Duration(milliseconds: 100));
           await Future<void>.delayed(const Duration(milliseconds: 100));
         }
-        await waitScreenFact(tester, screenHandoff, 'demoted.json');
+        await waitScreenFact(tester, screenHandoff, 'end-trigger.json');
         final stopped = Stopwatch()..start();
         while (image().evaluate().isNotEmpty) {
           expect(
-            stopped.elapsed < const Duration(seconds: 10),
+            stopped.elapsed <
+                Duration(seconds: screenCase == 'expiry' ? 330 : 10),
             isTrue,
-            reason: 'Flutter retained a revoked screen image',
+            reason: 'Flutter retained a screen image after $screenCase',
           );
           await tester.pump(const Duration(milliseconds: 100));
           await Future<void>.delayed(const Duration(milliseconds: 100));
         }
+        final observedStopMs = stopped.elapsedMilliseconds;
+        if (screenCase == 'expiry') {
+          await waitScreenFact(tester, screenHandoff, 'host-proof.json');
+          final hostProof = jsonDecode(
+            await File('$screenHandoff/host-proof.json').readAsString(),
+          ) as Map<String, dynamic>;
+          expect(
+            observedStopMs + 1000,
+            greaterThanOrEqualTo(hostProof['observed_stop_ms'] as int),
+            reason: 'Flutter stopped before the actual native expiry boundary',
+          );
+        }
         await writeScreenFact(screenHandoff, 'viewer-proof.json', {
           'stopped': true,
           'image_removed': true,
-          'observed_stop_ms': stopped.elapsedMilliseconds,
+          'observed_stop_ms': observedStopMs,
         });
         await tester.pageBack();
         await waitFor(tester, find.byKey(const Key('screen-targets-error')));

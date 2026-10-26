@@ -283,7 +283,8 @@ def qualify(args, fixture):
             env.update({k: v for k, v in os.environ.items() if k.startswith("NDS_CACHE_")})
             if flutter:
                 config = scope / "fixture.json"
-                write(config, fixture | {"screen_peer_email": host_email, "screen_handoff": str(root)})
+                write(config, fixture | {"screen_peer_email": host_email, "screen_handoff": str(root),
+                                         "screen_case": args.case})
                 command = [sys.executable, str(ROOT / "scripts/identity-acceptance.py"), "--fixture", str(config), "--offline-pub"]
                 extra = {"NDS_OWNED_XVFB": "1", "NDS_OWNED_XVFB_PID": str(display.pid)}
             else:

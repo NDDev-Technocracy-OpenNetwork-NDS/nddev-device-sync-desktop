@@ -16,7 +16,8 @@ import 'module_types.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `check_client`, `discover`
+// These functions are ignored because they are not marked as `pub`: `browser_request`, `cache_error`, `check_client`, `discover`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `drop`
 
 bool supportsLocalAgent() =>
     RustLib.instance.api.crateApiModulesSupportsLocalAgent();
@@ -31,6 +32,38 @@ String? updateActionPlatform({required SystemUpdateAction action}) =>
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalAgent>>
 abstract class LocalAgent implements RustOpaqueInterface {
+  /// An awaited close remains target-only. Abandoning its waiter has the same
+  /// owner-level cancellation semantics as open/execute, not global close.
+  Future<void> browserClose({
+    required NdsClient client,
+    required String project,
+    required bool closeTabs,
+  });
+
+  Future<BrowserOutcome> browserExecute({
+    required NdsClient client,
+    required String project,
+    required String code,
+    required int timeoutMs,
+    BrowserDocument? expect,
+  });
+
+  /// Dropping a mutation waiter cancels this exact owner's browser lifetime,
+  /// including its browser siblings, and retains work/ACK for owned drain.
+  /// Other owners, other modules and foreign/legacy sessions are unaffected.
+  Future<BrowserSession> browserOpen({
+    required NdsClient client,
+    required String project,
+  });
+
+  Future<List<BrowserSession>> browserSessions({required NdsClient client});
+
+  Future<BrowserStatus> browserStatus({required NdsClient client});
+
+  /// Reads the supplied base and managed markers. This neither binds/unbinds
+  /// nor authenticates the RDS route; ready=false remains an honest status.
+  Future<CacheStatus> cacheStatus({required NdsClient client});
+
   Future<Diagnostics> cleanerDiagnostics({required NdsClient client});
 
   Future<CleanerRunSummary> cleanerLastRun({required NdsClient client});
@@ -55,6 +88,14 @@ abstract class LocalAgent implements RustOpaqueInterface {
     required NdsClient client,
     required String path,
   });
+
+  /// Explicit composition boundary, never implied by readiness or a saved
+  /// enabled setting. A failed/unknown drain cannot be retried into consent.
+  Future<void> resumeBrowser({required NdsClient client});
+
+  /// Await the actual owned work and exact browser drain. Sync close/Drop
+  /// merely cancel; neither is a shutdown receipt.
+  Future<void> shutdown();
 
   Future<SystemSnapshot> systemInfo({required NdsClient client});
 

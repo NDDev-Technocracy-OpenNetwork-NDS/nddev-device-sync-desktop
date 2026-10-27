@@ -22,6 +22,20 @@ import 'passkeys_screen.dart';
 import 'company_screen.dart';
 import 'repositories_screen.dart';
 
+class _CancelledClientTransition implements Exception {}
+
+int? _assemblyCachePort() {
+  const value = String.fromEnvironment('NDS_CACHE_PORT');
+  if (value.isEmpty) return null;
+  final port = RegExp(r'^[0-9]{1,5}$').hasMatch(value)
+      ? int.tryParse(value)
+      : null;
+  if (port == null || port < 1 || port > 65535) {
+    throw const FormatException('cache_configuration_invalid');
+  }
+  return port;
+}
+
 Future<void> runNdsApp() async {
   WidgetsFlutterBinding.ensureInitialized();
   final invitationReceived = kIsWeb && Uri.base.fragment.startsWith('invite/');
@@ -279,6 +293,7 @@ class _IdentityScreenState extends State<_IdentityScreen> {
 
   @override
   void dispose() {
+    _actionEpoch++;
     _clock?.cancel();
     _poll?.cancel();
     _client?.cancel();
@@ -319,9 +334,14 @@ class _IdentityScreenState extends State<_IdentityScreen> {
       if (view.authenticated) _code.clear();
     } catch (error) {
       var code = 'unexpected';
-      if (error is native.ClientError) {
+      if (error is _CancelledClientTransition) {
+        code = 'cancelled';
+      } else if (error is native.ClientError) {
         code = error.code();
         error.dispose();
+      } else if (error is FormatException &&
+          error.message == 'cache_configuration_invalid') {
+        code = 'cache_configuration_invalid';
       } else {
         widget.diagnostics?.reportFailure(native.FailureKind.nativeBridge);
       }
@@ -343,13 +363,23 @@ class _IdentityScreenState extends State<_IdentityScreen> {
   }
 
   Future<void> _connect() => _run(() async {
+    final cachePort = _assemblyCachePort();
+    final epoch = _actionEpoch;
+    final previous = _client;
+    // Replacement waits for the exact native owner's shutdown. A failed drain
+    // leaves that client attached and prevents a new identity from being used.
+    await previous?.shutdown();
+    if (!mounted || epoch != _actionEpoch || !identical(previous, _client)) {
+      throw _CancelledClientTransition();
+    }
     widget.onClient?.call(null);
-    _client?.cancel();
-    _client?.dispose();
+    previous?.dispose();
     _client = null;
     _view = null;
-    final epoch = _actionEpoch;
-    final client = native.NdsClient(endpoint: _endpoint.text.trim());
+    final client = native.NdsClient.newWithCacheBase(
+      endpoint: _endpoint.text.trim(),
+      cacheBase: cachePort,
+    );
     if (!mounted || epoch != _actionEpoch) {
       client.cancel();
       client.dispose();
@@ -367,6 +397,49 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     }
     return view;
   }, prepare: true);
+
+  Future<void> _changeServer() async {
+    final client = _client;
+    if (_busy || client == null) return;
+    final epoch = _actionEpoch;
+    _poll?.cancel();
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await _reconciliation;
+      await client.shutdown();
+      if (!mounted || epoch != _actionEpoch || !identical(client, _client)) {
+        return;
+      }
+      widget.onClient?.call(null);
+      ApplicationActivityScope.read(context).attach(null);
+      client.dispose();
+      _client = null;
+      _browserOpened = false;
+      _code.clear();
+      setState(() => _view = null);
+    } catch (error) {
+      var code = 'unexpected';
+      if (error is native.ClientError) {
+        code = error.code();
+        error.dispose();
+      } else {
+        widget.diagnostics?.reportFailure(native.FailureKind.nativeBridge);
+      }
+      if (mounted && epoch == _actionEpoch) {
+        setState(() {
+          _error = code;
+          _view = client.snapshot();
+        });
+      }
+    } finally {
+      if (mounted && epoch == _actionEpoch) {
+        setState(() => _busy = false);
+      }
+    }
+  }
 
   void _schedulePoll() {
     _poll?.cancel();
@@ -515,6 +588,7 @@ class _IdentityScreenState extends State<_IdentityScreen> {
   }
 
   String _message(AppLocalizations l, String code) => switch (code) {
+    'cache_configuration_invalid' => l.cacheAssemblyInvalid,
     'invitation_requires_sign_out' => l.invitationSignOut,
     'invalid_endpoint' => l.endpointError,
     'recent_authentication_required' => l.recentAuthenticationRequired,
@@ -1006,21 +1080,7 @@ class _IdentityScreenState extends State<_IdentityScreen> {
                   const SizedBox(height: OpenNetworkSpacing.six),
                   if (_client != null && !kIsWeb) ...[
                     TextButton(
-                      onPressed: _busy
-                          ? null
-                          : () {
-                              _poll?.cancel();
-                              widget.onClient?.call(null);
-                              _client!.cancel();
-                              _client!.dispose();
-                              _client = null;
-                              _browserOpened = false;
-                              _code.clear();
-                              setState(() {
-                                _view = null;
-                                _error = null;
-                              });
-                            },
+                      onPressed: _busy ? null : _changeServer,
                       child: Text(l.changeServer),
                     ),
                   ],

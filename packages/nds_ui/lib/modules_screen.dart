@@ -257,6 +257,8 @@ class _ModulesScreenState extends State<ModulesScreen> {
     'updater' => l.updater,
     'gds' => 'GDS',
     'rds' => 'RDS',
+    'browser-use' => l.browserAutomation,
+    'cache' => l.networkCache,
     _ => id,
   };
 
@@ -295,6 +297,47 @@ class _ModulesScreenState extends State<ModulesScreen> {
   );
 
   Widget _resultView(AppLocalizations l) => switch (_result) {
+    native.BrowserStatus value => _rows([
+      (
+        l.browserOwnerSwitch,
+        value.enabled ? l.browserSwitchEnabled : l.browserSwitchDisabled,
+      ),
+      (l.browserHostStatus, value.browser),
+      (l.browserExtensionStatus, value.extension),
+      (l.browserSessionCount, '${value.sessions}'),
+    ]),
+    List<native.BrowserSession> value => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(l.browserSessionScope),
+        if (value.isEmpty) Text(l.noRecords),
+        for (final session in value)
+          ListTile(
+            title: Text(session.project),
+            subtitle: Text(l.browserTabCount(session.tabs.toString())),
+          ),
+      ],
+    ),
+    native.CacheStatus value => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _rows([
+          (l.cacheConfiguredPort, '${value.port}'),
+          (
+            l.cacheReachability,
+            value.ready ? l.cacheProbeReady : l.cacheProbeUnavailable,
+          ),
+        ]),
+        Text(l.cacheManagedScope),
+        for (final binding in value.bindings)
+          ListTile(
+            title: Text(binding.kind),
+            trailing: Text(
+              binding.bound ? l.cacheManagedPresent : l.cacheManagedAbsent,
+            ),
+          ),
+      ],
+    ),
     sysinfo.SystemSnapshot value => _rows([
       (l.cpuUsage, _number(value.cpu.usage, '%')),
       (l.cpuTemperature, _number(value.cpu.temp, ' °C')),
@@ -668,6 +711,28 @@ class _ModulesScreenState extends State<ModulesScreen> {
                         action(
                           l.moduleRefresh,
                           () => _agent!.remoteSessions(client: widget.client!),
+                        ),
+                      if (_selected == 'browser-use') ...[
+                        action(l.browserAllowWork, () async {
+                          await _agent!.resumeBrowser(client: widget.client!);
+                          return _agent!.browserStatus(client: widget.client!);
+                        }, key: const Key('browser-allow-work')),
+                        action(
+                          l.moduleRefresh,
+                          () => _agent!.browserStatus(client: widget.client!),
+                          key: const Key('browser-status'),
+                        ),
+                        action(
+                          l.browserSessionCount,
+                          () => _agent!.browserSessions(client: widget.client!),
+                          key: const Key('browser-sessions'),
+                        ),
+                      ],
+                      if (_selected == 'cache')
+                        action(
+                          l.moduleRefresh,
+                          () => _agent!.cacheStatus(client: widget.client!),
+                          key: const Key('cache-status'),
                         ),
                       if (_busy && !_publishing && _agent != null)
                         TextButton(

@@ -116,13 +116,6 @@ impl NdsClient {
             .clone()
     }
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
-    async fn stop_native_runtime(&self) -> Result<(), ClientError> {
-        if let Some(owner) = self.native_runtime() {
-            self.stop_native_owner(owner).await?;
-        }
-        Ok(())
-    }
-    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     async fn stop_native_owner(&self, owner: Arc<NativeReplica>) -> Result<(), ClientError> {
         owner.stop().await.map_err(replica_start_error)?;
         let mut slot = self
@@ -138,10 +131,15 @@ impl NdsClient {
         Ok(())
     }
     pub async fn refresh(&self) -> Result<View, ClientError> {
+        let generation = self.module_control.seal();
+        self.module_control.shutdown_generation(&generation).await?;
         if let Some(task) = self.cancel_work(false) {
             task.join().await;
         }
-        self.inner.refresh().await
+        let view = self.inner.refresh().await?;
+        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        self.module_control.new_identity_generation(&generation)?;
+        Ok(view)
     }
     /// Reconcile shared local authorization on foreground ticks/resume. Pending
     /// logout retries through the identity owner; no presentation auth rules.
@@ -158,7 +156,7 @@ impl NdsClient {
                 return Ok(self.inner.view());
             }
             Err(error) => {
-                self.clear_replica_fenced(&lifetime).await;
+                let _ = self.clear_replica_fenced(&lifetime).await;
                 return Err(error);
             }
         };
@@ -182,7 +180,7 @@ impl NdsClient {
                 }
                 Err(ClientError::Busy) => return Ok(self.inner.view()),
                 Err(error) => {
-                    self.clear_replica_fenced(&lifetime).await;
+                    let _ = self.clear_replica_fenced(&lifetime).await;
                     return Err(error);
                 }
             }
@@ -190,21 +188,26 @@ impl NdsClient {
         // A known device revocation closes device capabilities while the NDS
         // session remains valid for inventory and explicit sign-out.
         if !view.authenticated || revoked {
-            self.clear_replica_fenced(&lifetime).await;
+            let _ = self.clear_replica_fenced(&lifetime).await;
         }
         Ok(self.inner.view())
     }
     pub async fn request_email(&self, email: String, locale: String) -> Result<View, ClientError> {
+        self.module_control.shutdown().await?;
         self.cancel_screen();
         self.invalidate_catalog();
         self.inner.request_email(email, &locale).await
     }
     pub async fn verify_email(&self, code: String) -> Result<View, ClientError> {
+        self.module_control.shutdown().await?;
         let view = self.inner.verify_email(code).await?;
-        self.reset_replica_session().await;
+        // Verification is an owning Accounts fact even if later local cleanup
+        // fails. Do not replace local resources until the old owners drained.
+        self.reset_replica_session().await?;
         Ok(view)
     }
     pub async fn start_github(&self, locale: String) -> Result<View, ClientError> {
+        self.module_control.shutdown().await?;
         self.cancel_screen();
         self.invalidate_catalog();
         self.inner.start_github(&locale).await
@@ -215,6 +218,7 @@ impl NdsClient {
         email: Option<String>,
         locale: String,
     ) -> Result<View, ClientError> {
+        self.module_control.shutdown().await?;
         self.invalidate_catalog();
         self.inner.start_passkey(registration, email, &locale).await
     }
@@ -226,6 +230,11 @@ impl NdsClient {
         let native_owner = self.native_runtime();
         let view = self.inner.revoke_passkey(id).await?;
         if !view.authenticated {
+            if self.module_control.shutdown().await.is_err() {
+                // Preserve the verified revocation result; cleanup remains HOLD
+                // in ModuleControl and cannot grant a replacement capability.
+                return Ok(view);
+            }
             #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
             if let Some(owner) = native_owner {
                 self.stop_native_owner(owner).await?;
@@ -242,37 +251,38 @@ impl NdsClient {
     }
     pub async fn poll_passkey(&self) -> Result<View, ClientError> {
         let sign_in = self.inner.view().flow == "passkey";
+        if sign_in {
+            self.module_control.shutdown().await?;
+        }
         let view = self.inner.poll_passkey().await?;
         if sign_in && view.authenticated && view.flow.is_empty() {
-            self.reset_replica_session().await;
+            self.reset_replica_session().await?;
         }
         Ok(view)
     }
     pub async fn poll_github(&self) -> Result<View, ClientError> {
         let sign_in = self.inner.view().flow == "github";
+        if sign_in {
+            self.module_control.shutdown().await?;
+        }
         let view = self.inner.poll_github().await?;
         if sign_in && view.authenticated && view.flow.is_empty() {
-            self.reset_replica_session().await;
+            self.reset_replica_session().await?;
         }
         Ok(view)
     }
     pub async fn logout(&self) -> Result<View, ClientError> {
-        self.module_control.stop();
-        self.cancel_screen();
-        self.invalidate_catalog();
         let lifetime = self.inner.local_use_lifetime();
-        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
-        self.stop_native_runtime().await?;
+        let generation = self.module_control.seal();
+        self.module_control.shutdown_generation(&generation).await?;
+        self.retire_local_resources(&generation, &lifetime, false)
+            .await?;
         self.inner.check_captured_local_use_lifetime(&lifetime)?;
-        self.delivery
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .take();
-        self.stop_replica().await;
         let view = self.inner.logout().await?;
-        self.vault.lock().await.take();
-        {
-            let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        let mut vault = self.vault.lock().await;
+        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        if self.module_control.is_generation(&generation) {
+            vault.take();
             self.reset_replica_schedule();
         }
         Ok(view)
@@ -322,6 +332,9 @@ impl NdsClient {
             .iter()
             .any(|device| device.is_current && device.revoked)
         {
+            if self.module_control.shutdown().await.is_err() {
+                return Ok(view);
+            }
             #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
             if let Some(owner) = native_owner {
                 self.stop_native_owner(owner).await?;
@@ -386,45 +399,34 @@ impl NdsClient {
             task.join().await;
         }
     }
-    async fn reset_replica_session(&self) {
-        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
-        if let Err(error) = self.stop_native_runtime().await {
-            tracing::warn!(event.name = "sync.runtime.stop_failed", module = "vault", outcome = "error", error.type = error.code());
-        }
-        self.module_control.stop();
-        self.cancel_screen();
-        self.invalidate_catalog();
-        self.stop_replica().await;
-        self.vault.lock().await.take();
-        // Detach the old session policy: a late result cannot block the new one.
-        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
-        self.reset_replica_schedule();
-    }
-    async fn clear_replica_fenced(&self, lifetime: &nddev_device_sync_accounts::LocalUseLifetime) {
+    async fn retire_local_resources(
+        &self,
+        generation: &super::module_control::ControlGeneration,
+        lifetime: &nddev_device_sync_accounts::LocalUseLifetime,
+        clear_vault: bool,
+    ) -> Result<(), ClientError> {
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         let native_owner;
         let task = {
             let mut vault = self.vault.lock().await;
             let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
-            if self
-                .inner
-                .check_captured_local_use_lifetime(lifetime)
-                .is_err()
-            {
-                return;
+            self.inner.check_captured_local_use_lifetime(lifetime)?;
+            if !self.module_control.is_generation(generation) {
+                return Err(ClientError::Cancelled);
             }
             #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
             {
                 native_owner = self.native_runtime();
             }
-            self.module_control.stop();
             self.cancel_screen();
             self.invalidate_catalog();
             self.delivery
                 .lock()
                 .unwrap_or_else(|e| e.into_inner())
                 .take();
-            vault.take();
+            if clear_vault {
+                vault.take();
+            }
             self.replica
                 .lock()
                 .unwrap_or_else(|e| e.into_inner())
@@ -435,11 +437,40 @@ impl NdsClient {
             task.join().await;
         }
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
-        if let Some(owner) = native_owner
-            && let Err(error) = self.stop_native_owner(owner).await
-        {
-            tracing::warn!(event.name = "sync.runtime.stop_failed", module = "vault", outcome = "error", error.type = error.code());
+        if let Some(owner) = native_owner {
+            self.stop_native_owner(owner).await?;
         }
+        Ok(())
+    }
+    async fn reset_replica_session(&self) -> Result<(), ClientError> {
+        let lifetime = self.inner.local_use_lifetime();
+        let generation = self.module_control.seal();
+        self.module_control.shutdown_generation(&generation).await?;
+        self.retire_local_resources(&generation, &lifetime, true)
+            .await?;
+        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        self.inner.check_captured_local_use_lifetime(&lifetime)?;
+        self.module_control.new_identity_generation(&generation)?;
+        self.reset_replica_schedule();
+        Ok(())
+    }
+    async fn clear_replica_fenced(
+        &self,
+        lifetime: &nddev_device_sync_accounts::LocalUseLifetime,
+    ) -> Result<(), ClientError> {
+        let generation = {
+            let _vault = self.vault.lock().await;
+            let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+            self.inner.check_captured_local_use_lifetime(lifetime)?;
+            self.cancel_screen();
+            self.invalidate_catalog();
+            self.module_control.seal()
+        };
+        // Neither Vault, publication nor any module/owner mutex crosses this
+        // await. The old resources remain attached on unresolved cleanup.
+        self.module_control.shutdown_generation(&generation).await?;
+        self.retire_local_resources(&generation, lifetime, true)
+            .await
     }
     async fn start_replica_fenced(
         &self,
@@ -1108,6 +1139,22 @@ impl NdsClient {
             .as_ref()
             .map_or_else(Default::default, |delivery| delivery.snapshot())
     }
+    /// Application teardown, preserving the Accounts/native-store identity.
+    /// A browser HOLD prevents releasing/replacing the old local resources.
+    pub async fn shutdown(&self) -> Result<(), ClientError> {
+        let lifetime = self.inner.local_use_lifetime();
+        let generation = self.module_control.seal();
+        self.module_control.shutdown_generation(&generation).await?;
+        self.retire_local_resources(&generation, &lifetime, true)
+            .await?;
+        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        self.inner.check_captured_local_use_lifetime(&lifetime)?;
+        if !self.module_control.is_generation(&generation) {
+            return Err(ClientError::Cancelled);
+        }
+        self.inner.cancel();
+        Ok(())
+    }
     #[cfg_attr(feature = "flutter", frb(sync))]
     pub fn cancel(&self) {
         self.module_control.stop();
@@ -1142,6 +1189,15 @@ impl NdsClient {
             self.inner.cancel();
         }
         task
+    }
+}
+
+impl Drop for NdsClient {
+    fn drop(&mut self) {
+        // Cancellation intent only. UI/application owners must await shutdown;
+        // Drop cannot claim browser drain or erase retained unknown ACK state.
+        self.module_control.stop();
+        self.cancel_work(true);
     }
 }
 
@@ -1700,7 +1756,7 @@ mod activity_tests {
                     assert!(client.capacity_blocked());
                     // Authenticated task/inbox eligibility is covered by the owned peer fixture.
                 }
-                client.reset_replica_session().await;
+                client.reset_replica_session().await.unwrap();
                 assert!(!Arc::ptr_eq(&old, &client.schedule()));
                 let _ = old.lock().unwrap().after(BatchOutcome::CapacityExhausted);
                 assert!(!client.capacity_blocked());

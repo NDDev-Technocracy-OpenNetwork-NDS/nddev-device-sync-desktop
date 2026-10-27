@@ -125,6 +125,7 @@
   "moduleNetworkError": "The local tool did not respond in time.",
   "moduleResponseError": "The local tool returned an unsupported response.",
   "moduleCancelled": "Request cancelled.",
+  "moduleShutdownUnconfirmed": "Shutdown could not be confirmed. Access remains closed.",
   "missingReading": "No reading",
   "textPreviewLimit": "Text preview, up to 16 KiB.",
   "gdsInstall": "GDS installation",

@@ -36,9 +36,10 @@ impl LocalAgent {
         owner: std::sync::Weak<super::module_control::ModuleControl>,
         identity_lifetime: nddev_device_sync_accounts::LocalUseLifetime,
         epoch: Arc<native_ownership::Epoch>,
+        cache_base: Option<u16>,
     ) -> Result<Self, ClientError> {
         let inner = Arc::new(
-            tokio::task::spawn_blocking(NativeAgent::discover)
+            tokio::task::spawn_blocking(move || NativeAgent::discover_with_cache_base(cache_base))
                 .await
                 .map_err(|_| ClientError::InvalidResponse)?
                 .map_err(|error| ClientError::Server(error.to_string()))?,
@@ -287,6 +288,33 @@ impl LocalAgent {
             Err(ClientError::Server("module_unsupported".into()))
         }
     }
+    /// Reads the supplied base and managed markers. This neither binds/unbinds
+    /// nor authenticates the RDS route; ready=false remains an honest status.
+    pub async fn cache_status(
+        &self,
+        client: &NdsClient,
+    ) -> Result<super::module_types::CacheStatus, ClientError> {
+        self.check_client(client)?;
+        let guard = client.module_access("cache", Adapter::Native).await?;
+        #[cfg(target_os = "linux")]
+        {
+            let result = self.inner.cache_status().await;
+            // Validate the ORIGINAL admission/fence after I/O, never acquire a
+            // fresh grant. Agent retains its ready=false/Unavailable observation.
+            guard.validate().await?;
+            let _publication = client.publication.lock().unwrap_or_else(|e| e.into_inner());
+            self.check_client(client)?;
+            if guard.lifetime.is_cancelled() {
+                return Err(ClientError::Cancelled);
+            }
+            result.map_err(cache_error)
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = guard;
+            Err(ClientError::Server("module_unsupported".into()))
+        }
+    }
     pub async fn system_info(
         &self,
         client: &NdsClient,
@@ -493,6 +521,25 @@ impl Drop for LocalAgent {
     }
 }
 
+#[cfg(target_os = "linux")]
+fn cache_error(error: nddev_device_sync_agent::view::CacheError) -> ClientError {
+    use nddev_device_sync_agent::view::CacheError;
+    match error {
+        CacheError::Io(error) => match error.code() {
+            "cancelled" => ClientError::Cancelled,
+            "timeout" => ClientError::Timeout,
+            "busy" => ClientError::Busy,
+            code => ClientError::Server(format!("cache_io_{code}")),
+        },
+        CacheError::Busy => ClientError::Busy,
+        CacheError::UnsupportedPlatform => ClientError::Server("module_unsupported".into()),
+        error @ (CacheError::Conflict
+        | CacheError::Invalid
+        | CacheError::NotReady
+        | CacheError::Uncertain) => ClientError::Server(format!("cache_{}", error.code())),
+    }
+}
+
 /// Presentation access to the provider's opaque data-carrying enum. The
 /// canonical enum remains in updater; no DTO is copied or serialized to JSON.
 #[cfg_attr(feature = "flutter", frb(sync))]
@@ -523,6 +570,7 @@ pub fn update_action_platform(
 
 impl NdsClient {
     pub async fn discover_local_agent(&self) -> Result<LocalAgent, ClientError> {
+        let cache_base = self.native_cache_base();
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         let _discovery = self
             .module_control
@@ -538,6 +586,7 @@ impl NdsClient {
                 std::sync::Arc::downgrade(&self.module_control),
                 self.shared_identity().local_use_lifetime(),
                 epoch,
+                cache_base,
             )
             .await?;
             if let Err(error) = self
@@ -551,6 +600,7 @@ impl NdsClient {
         }
         #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
         {
+            let _ = cache_base;
             Err(ClientError::Server("module_unsupported".into()))
         }
     }

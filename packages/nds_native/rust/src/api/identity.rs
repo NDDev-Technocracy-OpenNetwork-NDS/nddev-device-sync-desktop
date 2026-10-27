@@ -44,6 +44,8 @@ use zeroize::Zeroizing;
 #[cfg_attr(feature = "flutter", frb(opaque))]
 pub struct NdsClient {
     inner: Arc<IdentityClient>,
+    // Ephemeral per-host assembly input, never persisted or replicated by Vault.
+    cache_base: Option<u16>,
     pub(crate) catalog: Mutex<Option<Arc<nddev_device_sync_gds::catalog_runtime::CatalogClient>>>,
     #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
     pub(crate) catalog_owner: nddev_device_sync_vault::replication::CatalogSlot,
@@ -85,8 +87,24 @@ impl NdsClient {
         self.active.load(Ordering::Relaxed)
     }
     pub fn new(endpoint: String) -> Result<Self, ClientError> {
+        Self::new_with_cache_base(endpoint, None)
+    }
+    /// The host assembly may supply its existing RDS-owned cache forward base.
+    /// This neither discovers a port nor binds a scope or starts a forward.
+    pub fn new_with_cache_base(
+        endpoint: String,
+        cache_base: Option<u16>,
+    ) -> Result<Self, ClientError> {
+        if cache_base == Some(0) {
+            return Err(ClientError::InvalidInput);
+        }
+        #[cfg(not(target_os = "linux"))]
+        if cache_base.is_some() {
+            return Err(ClientError::Server("module_unsupported".into()));
+        }
         Ok(Self {
             inner: Arc::new(IdentityClient::new(&endpoint)?),
+            cache_base,
             catalog: Mutex::default(),
             #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
             catalog_owner: Arc::default(),
@@ -106,6 +124,10 @@ impl NdsClient {
             #[cfg(not(target_arch = "wasm32"))]
             clipboard: Default::default(),
         })
+    }
+    #[cfg_attr(feature = "flutter", frb(ignore))]
+    pub(super) fn native_cache_base(&self) -> Option<u16> {
+        self.cache_base
     }
     #[cfg_attr(feature = "flutter", frb(ignore))]
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
@@ -1462,6 +1484,51 @@ pub fn new_vault_record_id() -> String {
     uuid::Uuid::new_v4().to_string()
 }
 
+#[cfg(test)]
+mod cache_assembly_tests {
+    use super::*;
+
+    #[test]
+    fn zero_cache_base_refuses_before_endpoint_construction() {
+        assert!(matches!(
+            NdsClient::new_with_cache_base("not-an-endpoint".into(), Some(0)),
+            Err(ClientError::InvalidInput)
+        ));
+        assert!(matches!(
+            NdsClient::new("not-an-endpoint".into()),
+            Err(ClientError::InvalidEndpoint)
+        ));
+    }
+
+    #[test]
+    fn existing_constructor_keeps_cache_assembly_unconfigured() {
+        let client = NdsClient::new("https://example.invalid".into()).unwrap();
+        assert_eq!(client.native_cache_base(), None);
+        let explicit =
+            NdsClient::new_with_cache_base("https://example.invalid".into(), None).unwrap();
+        assert_eq!(explicit.native_cache_base(), None);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn explicit_cache_base_is_retained_only_as_local_assembly_input() {
+        let client =
+            NdsClient::new_with_cache_base("https://example.invalid".into(), Some(u16::MAX))
+                .unwrap();
+        assert_eq!(client.native_cache_base(), Some(u16::MAX));
+        assert!(client.vault.try_lock().unwrap().is_none());
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    #[test]
+    fn explicit_cache_base_is_unsupported_before_endpoint_construction() {
+        assert!(matches!(
+            NdsClient::new_with_cache_base("not-an-endpoint".into(), Some(u16::MAX)),
+            Err(ClientError::Server(code)) if code == "module_unsupported"
+        ));
+    }
+}
+
 #[cfg(all(
     test,
     any(target_os = "linux", target_os = "macos", target_os = "windows")
@@ -1475,9 +1542,12 @@ mod activity_tests {
     async fn module_publication_rejects_foreign_and_cancelled_agent_before_capacity_preflight() {
         let client = NdsClient::new("https://example.invalid".into()).unwrap();
         let other = NdsClient::new("https://example.invalid".into()).unwrap();
+        let epoch = client.module_control.generation().unwrap();
         let agent = super::super::modules::LocalAgent::discover(
             Arc::downgrade(&client.module_control),
             client.inner.local_use_lifetime(),
+            epoch,
+            None,
         )
         .await
         .unwrap();

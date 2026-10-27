@@ -2,7 +2,7 @@
 //! no domain methods or query/observation policy are exported to Dart here.
 #[cfg(feature = "flutter")]
 use flutter_rust_bridge::frb;
-pub use nddev_device_sync_agent::view::cache::{Binding as CacheBinding, Status as CacheStatus};
+pub use nddev_device_sync_agent::view::cache::Status as CacheStatus;
 pub use nddev_device_sync_agent::view::{
     BrowserDocument,
     browser::{
@@ -98,5 +98,5 @@ pub struct _BrowserDocument {
 pub struct _CacheStatus {
     pub port: u16,
     pub ready: bool,
-    pub bindings: Vec<CacheBinding>,
+    pub bindings: Vec<nddev_device_sync_agent::view::cache::Binding>,
 }

@@ -543,12 +543,12 @@ fn cache_error(error: nddev_device_sync_agent::view::CacheError) -> ClientError 
 /// Read-only presentation of the canonical cache binding type. These accessors
 /// read metadata and never change a tool's settings.
 #[cfg_attr(feature = "flutter", frb(sync))]
-pub fn cache_binding_kind(binding: &super::module_types::CacheBinding) -> String {
+pub fn cache_binding_kind(binding: &nddev_device_sync_agent::view::cache::Binding) -> String {
     binding.kind.to_owned()
 }
 
 #[cfg_attr(feature = "flutter", frb(sync))]
-pub fn cache_binding_bound(binding: &super::module_types::CacheBinding) -> bool {
+pub fn cache_binding_bound(binding: &nddev_device_sync_agent::view::cache::Binding) -> bool {
     binding.bound
 }
 

@@ -80,13 +80,14 @@ impl LocalAgent {
             self.native_owner.close();
         }
     }
-    /// Await the actual owned work and exact browser drain. Sync close/Drop
-    /// merely cancel; neither is a shutdown receipt.
+    /// Await owned cache work and the exact browser drain. Joining a known
+    /// cache effect does not roll it back or unbind. Sync close/Drop merely
+    /// cancel admission; neither is a shutdown receipt.
     pub async fn shutdown(&self) -> Result<(), ClientError> {
         self.close();
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         {
-            let drain = self.native_owner.begin_drain();
+            let drain = self.native_owner.begin_shutdown();
             drain.wait().await?;
             if let Some(owner) = self.owner.upgrade() {
                 owner.detach_drained(&self.native_owner, &drain)?;
@@ -299,22 +300,80 @@ impl LocalAgent {
         let guard = client.module_access("cache", Adapter::Native).await?;
         #[cfg(target_os = "linux")]
         {
+            let snapshot = self.native_owner.cache_snapshot(&guard)?;
             let result = self.inner.cache_status().await;
             // Validate the ORIGINAL admission/fence after I/O, never acquire a
             // fresh grant. Agent retains its ready=false/Unavailable observation.
             guard.validate().await?;
-            let _publication = client.publication.lock().unwrap_or_else(|e| e.into_inner());
-            self.check_client(client)?;
-            if guard.lifetime.is_cancelled() {
-                return Err(ClientError::Cancelled);
-            }
-            result.map_err(cache_error)
+            self.native_owner.publish_cache(&guard, &snapshot, || {
+                self.check_client(client)?;
+                result.map_err(|error| cache_error(&error))
+            })
         }
         #[cfg(not(target_os = "linux"))]
         {
             let _ = guard;
             Err(ClientError::Server("module_unsupported".into()))
         }
+    }
+
+    /// Explicit device-local mutation. A dropped caller abandons publication,
+    /// never the retained write task and never this owner's browser lifetime.
+    pub async fn cache_bind(
+        &self,
+        client: &NdsClient,
+    ) -> Result<super::module_types::CacheStatus, ClientError> {
+        #[cfg(target_os = "linux")]
+        {
+            self.cache_request(client, true).await
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = client;
+            Err(ClientError::Server("module_unsupported".into()))
+        }
+    }
+
+    /// Only this explicit action removes managed bindings. Revoke/logout and
+    /// owner shutdown join outstanding work without unbinding or retrying it.
+    pub async fn cache_unbind(
+        &self,
+        client: &NdsClient,
+    ) -> Result<super::module_types::CacheStatus, ClientError> {
+        #[cfg(target_os = "linux")]
+        {
+            self.cache_request(client, false).await
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = client;
+            Err(ClientError::Server("module_unsupported".into()))
+        }
+    }
+
+    #[cfg_attr(feature = "flutter", frb(ignore))]
+    #[cfg(target_os = "linux")]
+    async fn cache_request(
+        &self,
+        client: &NdsClient,
+        bind: bool,
+    ) -> Result<super::module_types::CacheStatus, ClientError> {
+        self.check_client(client)?;
+        let guard = Arc::new(client.module_access("cache", Adapter::Native).await?);
+        let agent = self.inner.clone();
+        self.native_owner
+            .start_cache_request(
+                &guard,
+                native_ownership::checked_cache(guard.clone(), async move {
+                    if bind {
+                        agent.cache_bind().await
+                    } else {
+                        agent.cache_unbind().await
+                    }
+                }),
+            )?
+            .wait(guard)
+            .await
     }
     pub async fn system_info(
         &self,
@@ -523,7 +582,7 @@ impl Drop for LocalAgent {
 }
 
 #[cfg(target_os = "linux")]
-fn cache_error(error: nddev_device_sync_agent::view::CacheError) -> ClientError {
+pub(super) fn cache_error(error: &nddev_device_sync_agent::view::CacheError) -> ClientError {
     use nddev_device_sync_agent::view::CacheError;
     match error {
         CacheError::Io(error) => match error.code() {

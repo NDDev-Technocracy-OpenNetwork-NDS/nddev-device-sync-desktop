@@ -212,7 +212,7 @@ impl ModuleControl {
                 }
                 owners.owners.clone()
             };
-            let drains: Vec<_> = owners.iter().map(|owner| owner.begin_drain()).collect();
+            let drains: Vec<_> = owners.iter().map(|owner| owner.begin_shutdown()).collect();
             let mut failure = None;
             for (owner, drain) in owners.iter().zip(drains) {
                 match drain.wait().await {
@@ -510,6 +510,21 @@ impl NdsClient {
                 owner.begin_drain();
             }
         }
+        #[cfg(target_os = "linux")]
+        if module == "cache" {
+            let owners = self
+                .module_control
+                .native
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .owners
+                .clone();
+            // Settings persistence already succeeded. Await cleanup separately;
+            // its retained row/HOLD must not rewrite durable user intent.
+            for owner in owners {
+                let _ = owner.join_cache().await;
+            }
+        }
     }
     async fn native_module_observations(&self) -> Result<Vec<ModuleObservation>, ClientError> {
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
@@ -540,6 +555,25 @@ impl NdsClient {
                 value.reachability = Reachability::NotChecked;
                 value.observed_at_ms = None;
                 value.error = Some(error);
+            }
+            #[cfg(target_os = "linux")]
+            {
+                let cache_blocked = self
+                    .module_control
+                    .native
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .owners
+                    .iter()
+                    .filter_map(|owner| owner.cache_blocked())
+                    .max_by_key(|error| u8::from(*error == ModuleError::Unavailable));
+                if let Some(error) = cache_blocked
+                    && let Some(value) = values.iter_mut().find(|value| value.id == "cache")
+                {
+                    value.reachability = Reachability::NotChecked;
+                    value.observed_at_ms = None;
+                    value.error = Some(error);
+                }
             }
             Ok(values)
         }
@@ -816,7 +850,13 @@ pub(crate) fn observe<T>(
 /// flutter_rust_bridge:ignore
 pub(crate) mod native_ownership {
     use super::*;
+    #[cfg(target_os = "linux")]
+    use cache_ownership::CacheState;
+    #[cfg(target_os = "linux")]
+    pub(crate) use cache_ownership::checked_cache;
     use nddev_device_sync_accounts::runtime::{self, Task};
+    #[cfg(target_os = "linux")]
+    use nddev_device_sync_agent::view::{CacheError, cache};
     use nddev_device_sync_agent::{
         NativeAgent,
         view::{BrowserError, browser},
@@ -1044,6 +1084,8 @@ pub(crate) mod native_ownership {
         agent: NativePort,
         pub(crate) epoch: Arc<Epoch>,
         browser: Mutex<BrowserState>,
+        #[cfg(target_os = "linux")]
+        cache: Mutex<CacheState>,
     }
     impl NativeOwner {
         pub(super) fn new(agent: Arc<NativeAgent>, epoch: Arc<Epoch>) -> Arc<Self> {
@@ -1058,9 +1100,13 @@ pub(crate) mod native_ownership {
                     rows: Vec::new(),
                     drain: None,
                 }),
+                #[cfg(target_os = "linux")]
+                cache: Mutex::default(),
             })
         }
         pub(crate) fn close(&self) {
+            #[cfg(target_os = "linux")]
+            self.close_cache();
             let mut state = self.browser.lock().unwrap_or_else(|e| e.into_inner());
             state.life.stop.cancel();
             if !state.closing {
@@ -1070,6 +1116,10 @@ pub(crate) mod native_ownership {
             }
         }
         pub(super) fn invalidate_module(&self, module: &str) {
+            #[cfg(target_os = "linux")]
+            if module == "cache" {
+                self.seal_cache();
+            }
             match &self.agent {
                 NativePort::Agent(agent) => {
                     let _ = agent.invalidate_module(module);
@@ -1117,6 +1167,15 @@ pub(crate) mod native_ownership {
                         ModuleError::Busy
                     },
                 );
+            }
+            drop(state);
+            #[cfg(target_os = "linux")]
+            if let Some(error) = self.cache_blocked()
+                && let Some(value) = values.iter_mut().find(|value| value.id == "cache")
+            {
+                value.reachability = Reachability::NotChecked;
+                value.observed_at_ms = None;
+                value.error = Some(error);
             }
             values
         }
@@ -1277,6 +1336,13 @@ pub(crate) mod native_ownership {
             drain
         }
         pub(crate) fn drained_by(&self, drain: &Arc<DrainState>) -> bool {
+            #[cfg(target_os = "linux")]
+            if let Some(result) = self.cache_drained_by(drain) {
+                return result;
+            }
+            self.browser_drained_by(drain)
+        }
+        fn browser_drained_by(&self, drain: &Arc<DrainState>) -> bool {
             let state = self.browser.lock().unwrap_or_else(|e| e.into_inner());
             state.phase == Phase::Drained
                 && state.rows.is_empty()
@@ -1322,6 +1388,873 @@ pub(crate) mod native_ownership {
         pub(crate) fn can_resume(&self) -> bool {
             let state = self.browser.lock().unwrap_or_else(|e| e.into_inner());
             !state.closing && (state.phase != Phase::Active || state.life.stop.is_cancelled())
+        }
+        #[cfg(not(target_os = "linux"))]
+        pub(crate) fn begin_shutdown(self: &Arc<Self>) -> Arc<DrainState> {
+            self.close();
+            self.begin_drain()
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    mod cache_ownership {
+        use super::*;
+
+        // Private provider evidence, never a DTO/log field or a new authority.
+        pub(crate) enum CacheFailure {
+            Admission(ClientError),
+            Provider(CacheError),
+            Invalidated {
+                effect: Box<CacheResult>,
+                error: ClientError,
+            },
+            Interrupted,
+        }
+        pub(crate) type CacheResult = Result<cache::Status, CacheFailure>;
+        type ResultCell = watch::Sender<Option<Arc<CacheResult>>>;
+        impl CacheFailure {
+            fn client_error(&self) -> ClientError {
+                match self {
+                    Self::Admission(error) | Self::Invalidated { error, .. } => error.clone(),
+                    Self::Provider(error) => super::super::super::modules::cache_error(error),
+                    Self::Interrupted => unresolved(),
+                }
+            }
+            fn unresolved(&self) -> bool {
+                match self {
+                    Self::Interrupted => true,
+                    Self::Provider(CacheError::Io(error)) => error.code() == "transport",
+                    Self::Invalidated { effect, .. } => {
+                        effect.as_ref().as_ref().err().is_some_and(Self::unresolved)
+                    }
+                    _ => false,
+                }
+            }
+        }
+        fn unresolved() -> ClientError {
+            ClientError::Server("cache_cleanup_unresolved".into())
+        }
+        pub(crate) async fn checked_cache<F>(guard: Arc<ModuleUseGuard>, work: F) -> CacheResult
+        where
+            F: Future<Output = Result<cache::Status, CacheError>>,
+        {
+            guard.validate().await.map_err(CacheFailure::Admission)?;
+            let effect = work.await.map_err(CacheFailure::Provider);
+            match guard.validate().await {
+                Ok(()) => effect,
+                Err(error) => Err(CacheFailure::Invalidated {
+                    effect: Box::new(effect),
+                    error,
+                }),
+            }
+        }
+
+        #[derive(Default)]
+        pub(super) struct CacheState {
+            generation: Arc<()>,
+            lifetime: Option<Arc<CancellationToken>>,
+            sealed: bool,
+            closing: bool,
+            row: Option<Arc<CacheRow>>,
+            shutdown: Option<Arc<DrainState>>,
+        }
+        pub(crate) struct CacheSnapshot(Arc<()>);
+        impl NativeOwner {
+            pub(super) fn close_cache(&self) {
+                let mut state = self.cache.lock().unwrap_or_else(|e| e.into_inner());
+                state.closing = true;
+                state.sealed = true;
+                state.generation = Arc::new(());
+            }
+            pub(super) fn seal_cache(&self) {
+                let mut state = self.cache.lock().unwrap_or_else(|e| e.into_inner());
+                state.sealed = true;
+                state.generation = Arc::new(());
+            }
+            fn with_cache_guard<T>(
+                &self,
+                guard: &ModuleUseGuard,
+                apply: impl FnOnce(&mut CacheState) -> Result<T, ClientError>,
+            ) -> Result<T, ClientError> {
+                let _publication = guard.publication.lock().unwrap_or_else(|e| e.into_inner());
+                let slots = guard
+                    .control
+                    .slots
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
+                guard.identity.check_local_use_lifetime(&guard.fence)?;
+                let current = slots.get("cache").is_some_and(|slot| {
+                    Arc::ptr_eq(&slot.lifetime, &guard.lifetime)
+                        && !slot.lifetime.is_cancelled()
+                        && !slot.conflicted
+                        && slot.configuration == guard.configuration
+                        && slot.operation_id == guard.operation_id
+                });
+                if !current || self.epoch.is_stopped() {
+                    return Err(ClientError::Cancelled);
+                }
+                let mut state = self.cache.lock().unwrap_or_else(|e| e.into_inner());
+                if state.closing {
+                    return Err(ClientError::Cancelled);
+                }
+                apply(&mut state)
+            }
+            fn prepare_cache(
+                state: &mut CacheState,
+                lifetime: &Arc<CancellationToken>,
+            ) -> Result<(), ClientError> {
+                if state.closing {
+                    return Err(ClientError::Cancelled);
+                }
+                if state.sealed
+                    && state
+                        .lifetime
+                        .as_ref()
+                        .is_some_and(|old| Arc::ptr_eq(old, lifetime))
+                {
+                    return Err(ClientError::Cancelled);
+                }
+                if let Some(row) = &state.row {
+                    if row.unresolved() {
+                        return Err(unresolved());
+                    }
+                    if !row.reclaimable() {
+                        return Err(ClientError::Busy);
+                    }
+                    state.row = None;
+                }
+                if state
+                    .lifetime
+                    .as_ref()
+                    .is_none_or(|old| !Arc::ptr_eq(old, lifetime))
+                {
+                    state.generation = Arc::new(());
+                    state.lifetime = Some(lifetime.clone());
+                }
+                state.sealed = false;
+                Ok(())
+            }
+            fn snapshot_cache_state(
+                state: &mut CacheState,
+                lifetime: &Arc<CancellationToken>,
+            ) -> Result<CacheSnapshot, ClientError> {
+                Self::prepare_cache(state, lifetime)?;
+                Ok(CacheSnapshot(state.generation.clone()))
+            }
+            fn publish_cache_state<T>(
+                state: &CacheState,
+                snapshot: &CacheSnapshot,
+                publish: impl FnOnce() -> Result<T, ClientError>,
+            ) -> Result<T, ClientError> {
+                if state.closing
+                    || state.sealed
+                    || !Arc::ptr_eq(&state.generation, &snapshot.0)
+                    || state.row.is_some()
+                {
+                    return Err(ClientError::Busy);
+                }
+                publish()
+            }
+            pub(crate) fn cache_snapshot(
+                &self,
+                guard: &ModuleUseGuard,
+            ) -> Result<CacheSnapshot, ClientError> {
+                self.with_cache_guard(guard, |state| {
+                    Self::snapshot_cache_state(state, &guard.lifetime)
+                })
+            }
+            pub(crate) fn publish_cache<T>(
+                &self,
+                guard: &ModuleUseGuard,
+                snapshot: &CacheSnapshot,
+                publish: impl FnOnce() -> Result<T, ClientError>,
+            ) -> Result<T, ClientError> {
+                self.with_cache_guard(guard, |state| {
+                    Self::publish_cache_state(state, snapshot, publish)
+                })
+            }
+            pub(crate) fn start_cache_request<F>(
+                self: &Arc<Self>,
+                guard: &ModuleUseGuard,
+                work: F,
+            ) -> Result<CacheWaiter, ClientError>
+            where
+                F: Future<Output = CacheResult> + Send + 'static,
+            {
+                let waiter = self.with_cache_guard(guard, |state| {
+                    Self::prepare_cache(state, &guard.lifetime)?;
+                    Ok(self.install_cache_row(state, work))
+                })?;
+                waiter.row.admitted.cancel();
+                Ok(waiter)
+            }
+            fn install_cache_row<F>(
+                self: &Arc<Self>,
+                state: &mut CacheState,
+                work: F,
+            ) -> CacheWaiter
+            where
+                F: Future<Output = CacheResult> + Send + 'static,
+            {
+                state.generation = Arc::new(());
+                let row = CacheRow::new(state.generation.clone());
+                state.row = Some(row.clone());
+                // Both guards and task handles are registered under the short
+                // owner lock before admission. Neither task is polled here.
+                row.launch(self.clone(), work);
+                CacheWaiter {
+                    owner: self.clone(),
+                    row,
+                    delivered: false,
+                }
+            }
+            pub(crate) async fn join_cache(&self) -> Result<(), ClientError> {
+                let row = self
+                    .cache
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .row
+                    .clone();
+                if let Some(row) = row {
+                    row.joined_result().await;
+                    if row.unresolved() {
+                        return Err(unresolved());
+                    }
+                }
+                Ok(())
+            }
+            pub(crate) fn cache_blocked(&self) -> Option<ModuleError> {
+                let state = self.cache.lock().unwrap_or_else(|e| e.into_inner());
+                if state.row.as_ref().is_some_and(|row| row.unresolved())
+                    || state.shutdown.as_ref().is_some_and(|drain| {
+                        drain.result.borrow().as_ref().is_some_and(Result::is_err)
+                    })
+                {
+                    Some(ModuleError::Unavailable)
+                } else if state.sealed
+                    || state.closing
+                    || state
+                        .row
+                        .as_ref()
+                        .is_some_and(|row| row.joined.borrow().is_none())
+                {
+                    Some(ModuleError::Busy)
+                } else {
+                    None
+                }
+            }
+            pub(crate) fn begin_shutdown(self: &Arc<Self>) -> Arc<DrainState> {
+                self.close();
+                let mut state = self.cache.lock().unwrap_or_else(|e| e.into_inner());
+                if let Some(drain) = &state.shutdown {
+                    return drain.clone();
+                }
+                let row = state.row.clone();
+                let drain = DrainState::new();
+                state.shutdown = Some(drain.clone());
+                let owner = self.clone();
+                let exact = drain.clone();
+                drain.launch(async move {
+                    let mut failure = None;
+                    // Start the existing retained browser drain before waiting
+                    // on cache; neither failure may skip the other cleanup.
+                    let browser = owner.begin_drain();
+                    if let Some(row) = &row
+                        && let Err(error) = row.join_shutdown().await
+                    {
+                        failure.get_or_insert(error);
+                    }
+                    if let Err(error) = browser.wait().await {
+                        failure.get_or_insert(error);
+                    }
+                    let mut state = owner.cache.lock().unwrap_or_else(|e| e.into_inner());
+                    if state
+                        .shutdown
+                        .as_ref()
+                        .is_none_or(|value| !Arc::ptr_eq(value, &exact))
+                    {
+                        return Err(ClientError::Cancelled);
+                    }
+                    if failure.is_none() {
+                        state.row = None;
+                    }
+                    failure.map_or(Ok(()), Err)
+                });
+                drop(state);
+                drain.admitted.cancel();
+                drain
+            }
+            pub(super) fn cache_drained_by(&self, drain: &Arc<DrainState>) -> Option<bool> {
+                let state = self.cache.lock().unwrap_or_else(|e| e.into_inner());
+                let Some(full) = &state.shutdown else {
+                    return state.row.is_some().then_some(false);
+                };
+                let cache_drained = Arc::ptr_eq(full, drain)
+                    && state.closing
+                    && state.row.is_none()
+                    && drain.result.borrow().as_ref().is_some_and(Result::is_ok);
+                drop(state);
+                let browser = self
+                    .browser
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .drain
+                    .clone();
+                Some(
+                    cache_drained
+                        && browser
+                            .as_ref()
+                            .is_some_and(|browser| self.browser_drained_by(browser)),
+                )
+            }
+        }
+
+        struct CacheRow {
+            generation: Arc<()>,
+            work: ResultCell,
+            joined: ResultCell,
+            interest: watch::Sender<Interest>,
+            work_task: Mutex<Option<Task>>,
+            completion_task: Mutex<Option<Task>>,
+            admitted: CancellationToken,
+            failed: AtomicBool,
+            bookkeeping: AtomicBool,
+        }
+        impl CacheRow {
+            fn new(generation: Arc<()>) -> Arc<Self> {
+                Arc::new(Self {
+                    generation,
+                    work: watch::channel(None).0,
+                    joined: watch::channel(None).0,
+                    interest: watch::channel(Interest::Waiting).0,
+                    work_task: Mutex::default(),
+                    completion_task: Mutex::default(),
+                    admitted: CancellationToken::new(),
+                    failed: AtomicBool::new(false),
+                    bookkeeping: AtomicBool::new(false),
+                })
+            }
+            fn launch<F>(self: &Arc<Self>, owner: Arc<NativeOwner>, work: F)
+            where
+                F: Future<Output = CacheResult> + Send + 'static,
+            {
+                let terminal = CacheWorkTerminal(self.clone());
+                let joined = CacheJoinTerminal {
+                    row: self.clone(),
+                    finished: false,
+                };
+                let admitted = self.clone();
+                *self.work_task.lock().unwrap_or_else(|e| e.into_inner()) =
+                    Some(runtime::spawn(async move {
+                        admitted.admitted.cancelled().await;
+                        let result = if admitted.failed.load(Ordering::Acquire) {
+                            Err(CacheFailure::Interrupted)
+                        } else {
+                            work.await
+                        };
+                        terminal.finish(result);
+                    }));
+                let row = self.clone();
+                *self
+                    .completion_task
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner()) = Some(runtime::spawn(async move {
+                    // Keep the exact owner, not only its I/O future, through
+                    // actual join and terminal publication after caller loss.
+                    let _owner = owner;
+                    row.admitted.cancelled().await;
+                    let work = row
+                        .work_task
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner())
+                        .take();
+                    if let Some(work) = work {
+                        work.join().await;
+                    } else {
+                        row.failed.store(true, Ordering::Release);
+                    }
+                    let result = row.work.borrow().clone().unwrap_or_else(|| {
+                        row.failed.store(true, Ordering::Release);
+                        Arc::new(Err(CacheFailure::Interrupted))
+                    });
+                    joined.finish(result);
+                }));
+            }
+            async fn joined_result(&self) -> Arc<CacheResult> {
+                let mut result = self.joined.subscribe();
+                loop {
+                    if let Some(result) = result.borrow_and_update().clone() {
+                        return result;
+                    }
+                    if result.changed().await.is_err() {
+                        self.failed.store(true, Ordering::Release);
+                        return Arc::new(Err(CacheFailure::Interrupted));
+                    }
+                }
+            }
+            fn unresolved(&self) -> bool {
+                self.failed.load(Ordering::Acquire)
+                    || self.joined.borrow().as_ref().is_some_and(|result| {
+                        result
+                            .as_ref()
+                            .as_ref()
+                            .err()
+                            .is_some_and(CacheFailure::unresolved)
+                    })
+            }
+            fn reclaimable(&self) -> bool {
+                self.bookkeeping.load(Ordering::Acquire)
+                    && !self.unresolved()
+                    && *self.interest.borrow() != Interest::Waiting
+                    && self
+                        .completion_task
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner())
+                        .as_ref()
+                        .is_some_and(Task::is_finished)
+            }
+            async fn join_shutdown(&self) -> Result<(), ClientError> {
+                let completion = self
+                    .completion_task
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .take();
+                if let Some(task) = completion {
+                    task.join().await;
+                }
+                let work = self
+                    .work_task
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .take();
+                if let Some(task) = work {
+                    task.join().await;
+                }
+                if self.unresolved()
+                    || !self.bookkeeping.load(Ordering::Acquire)
+                    || self.joined.borrow().is_none()
+                {
+                    Err(unresolved())
+                } else {
+                    Ok(())
+                }
+            }
+        }
+        struct CacheWorkTerminal(Arc<CacheRow>);
+        impl CacheWorkTerminal {
+            fn finish(self, result: CacheResult) {
+                self.0.work.send_replace(Some(Arc::new(result)));
+            }
+        }
+        impl Drop for CacheWorkTerminal {
+            fn drop(&mut self) {
+                if self.0.work.borrow().is_none() {
+                    self.0.failed.store(true, Ordering::Release);
+                    self.0.admitted.cancel();
+                    self.0
+                        .work
+                        .send_replace(Some(Arc::new(Err(CacheFailure::Interrupted))));
+                }
+            }
+        }
+        struct CacheJoinTerminal {
+            row: Arc<CacheRow>,
+            finished: bool,
+        }
+        impl CacheJoinTerminal {
+            fn finish(mut self, result: Arc<CacheResult>) {
+                self.row.bookkeeping.store(true, Ordering::Release);
+                self.row.joined.send_replace(Some(result));
+                self.finished = true;
+            }
+        }
+        impl Drop for CacheJoinTerminal {
+            fn drop(&mut self) {
+                if !self.finished {
+                    self.row.failed.store(true, Ordering::Release);
+                    self.row.admitted.cancel();
+                    // Preserve a provider effect already recorded; panic is
+                    // additional cleanup failure, never an erased result.
+                    if self.row.joined.borrow().is_none() {
+                        self.row
+                            .joined
+                            .send_replace(Some(Arc::new(Err(CacheFailure::Interrupted))));
+                    }
+                }
+            }
+        }
+        pub(crate) struct CacheWaiter {
+            owner: Arc<NativeOwner>,
+            row: Arc<CacheRow>,
+            delivered: bool,
+        }
+        impl CacheWaiter {
+            pub(crate) async fn wait(
+                self,
+                guard: Arc<ModuleUseGuard>,
+            ) -> Result<cache::Status, ClientError> {
+                let captured = guard.clone();
+                self.wait_validated(guard.validate(), move |waiter| {
+                    waiter
+                        .owner
+                        .with_cache_guard(&captured, |state| waiter.check_publication(state))
+                })
+                .await
+            }
+            fn check_publication(&self, state: &CacheState) -> Result<(), ClientError> {
+                if self.owner.epoch.is_stopped()
+                    || state.closing
+                    || state.sealed
+                    || !Arc::ptr_eq(&state.generation, &self.row.generation)
+                    || !state
+                        .row
+                        .as_ref()
+                        .is_some_and(|row| Arc::ptr_eq(row, &self.row))
+                {
+                    return Err(ClientError::Cancelled);
+                }
+                Ok(())
+            }
+            #[cfg(test)]
+            async fn wait_inert(self) -> Result<cache::Status, ClientError> {
+                // Only ownership/publication is exercised. Identity/Vault
+                // admission stays in the existing real owning integration gate.
+                self.wait_validated(async { Ok(()) }, |waiter| {
+                    let state = waiter.owner.cache.lock().unwrap();
+                    waiter.check_publication(&state)
+                })
+                .await
+            }
+            async fn wait_validated<V, P>(
+                mut self,
+                validate: V,
+                publish: P,
+            ) -> Result<cache::Status, ClientError>
+            where
+                V: Future<Output = Result<(), ClientError>>,
+                P: FnOnce(&Self) -> Result<(), ClientError>,
+            {
+                let result = self.row.joined_result().await;
+                validate.await?;
+                publish(&self)?;
+                // Interest/Drop lives through validation; no await after the
+                // final original-fence publication check. Never replay work.
+                self.delivered = true;
+                self.row.interest.send_replace(Interest::Delivered);
+                match result.as_ref() {
+                    Ok(status) => Ok(status.clone()),
+                    Err(error) => Err(error.client_error()),
+                }
+            }
+        }
+        impl Drop for CacheWaiter {
+            fn drop(&mut self) {
+                if !self.delivered {
+                    self.row.interest.send_replace(Interest::Abandoned);
+                }
+                // Cache-only caller loss NEVER cancels any browser lifetime.
+            }
+        }
+
+        #[cfg(test)]
+        mod tests {
+            use super::super::ownership_tests::{owner, run};
+            use super::*;
+            use tokio::sync::oneshot;
+
+            fn status() -> cache::Status {
+                // Opaque inert result, never an actual port/route/readiness proof.
+                cache::Status {
+                    port: 1,
+                    ready: false,
+                    bindings: Vec::new(),
+                }
+            }
+            fn start<F>(
+                owner: &Arc<NativeOwner>,
+                lifetime: Arc<CancellationToken>,
+                work: F,
+            ) -> Result<CacheWaiter, ClientError>
+            where
+                F: Future<Output = CacheResult> + Send + 'static,
+            {
+                let waiter = {
+                    let mut state = owner.cache.lock().unwrap();
+                    // Reuse production row admission/registration. Real
+                    // identity/Vault checks are outside this inert fixture.
+                    NativeOwner::prepare_cache(&mut state, &lifetime)?;
+                    owner.install_cache_row(&mut state, work)
+                };
+                waiter.row.admitted.cancel();
+                Ok(waiter)
+            }
+
+            #[test]
+            fn dropped_cache_waiter_retains_work_and_revoke_never_cancels_browser() {
+                run(async {
+                    let (owner, port) = owner(Arc::default(), false, Ok(()));
+                    let (entered, receiving) = oneshot::channel();
+                    let (release, held) = oneshot::channel();
+                    let waiter = start(&owner, Arc::default(), async move {
+                        entered.send(()).unwrap();
+                        held.await.unwrap();
+                        Ok(status())
+                    })
+                    .unwrap();
+                    let row = waiter.row.clone();
+                    receiving.await.unwrap();
+                    drop(waiter);
+                    owner.seal_cache();
+                    let competing = start(&owner, Arc::default(), async { Ok(status()) }).err();
+                    let before = (
+                        port.cancelled.load(Ordering::Acquire),
+                        port.drains.load(Ordering::Acquire),
+                    );
+                    let pending = row.joined.borrow().is_none();
+                    release.send(()).unwrap();
+                    let joined = owner.join_cache().await;
+                    let work_known = matches!(row.joined.borrow().as_deref(), Some(Ok(_)));
+                    // A new explicitly validated configuration lifetime may
+                    // attempt again only after the prior row actually joined.
+                    let next = start(&owner, Arc::default(), async { Ok(status()) }).unwrap();
+                    let next_result = next.wait_inert().await;
+                    let drain = owner.begin_shutdown();
+                    let shutdown = drain.wait().await;
+                    assert_eq!(competing, Some(ClientError::Busy));
+                    assert_eq!(before, (0, 0));
+                    assert!(pending && work_known);
+                    assert_eq!(joined, Ok(()));
+                    assert!(next_result.is_ok());
+                    assert_eq!(shutdown, Ok(()));
+                    assert!(row.bookkeeping.load(Ordering::Acquire));
+                    assert!(owner.drained_by(&drain));
+                });
+            }
+
+            #[test]
+            fn joined_uncertain_is_not_a_missing_or_panicked_terminal() {
+                run(async {
+                    for kind in 0..4 {
+                        let (owner, port) = owner(Arc::default(), false, Ok(()));
+                        let waiter = start(&owner, Arc::default(), async move {
+                            match kind {
+                                0 => Err(CacheFailure::Provider(CacheError::Uncertain)),
+                                // Existing RDS re-exports the SAME singleton F0
+                                // IoError. No new dep/provider is introduced.
+                                1 => Err(CacheFailure::Provider(CacheError::Io(
+                                    nddev_device_sync_rds::IoError::Transport,
+                                ))),
+                                3 => Err(CacheFailure::Invalidated {
+                                    effect: Box::new(Err(CacheFailure::Provider(
+                                        CacheError::Uncertain,
+                                    ))),
+                                    error: ClientError::Cancelled,
+                                }),
+                                _ => panic!("inert cache task failure"),
+                            }
+                        })
+                        .unwrap();
+                        let row = waiter.row.clone();
+                        let delivered = waiter.wait_inert().await;
+                        let drain = owner.begin_shutdown();
+                        let shutdown = drain.wait().await;
+                        assert!(delivered.is_err());
+                        assert_eq!(shutdown.is_ok(), kind == 0 || kind == 3);
+                        assert_eq!(owner.drained_by(&drain), kind == 0 || kind == 3);
+                        assert_eq!(
+                            port.drains.load(Ordering::Acquire),
+                            1,
+                            "browser drain attempted after cache failure"
+                        );
+                        let effect = row.joined.borrow();
+                        match effect.as_deref() {
+                            Some(Err(CacheFailure::Provider(CacheError::Uncertain))) => {
+                                assert_eq!(kind, 0)
+                            }
+                            Some(Err(CacheFailure::Provider(CacheError::Io(error)))) => {
+                                assert_eq!(kind, 1);
+                                assert_eq!(error.code(), "transport");
+                            }
+                            Some(Err(CacheFailure::Interrupted)) => assert_eq!(kind, 2),
+                            Some(Err(CacheFailure::Invalidated { effect, error })) => {
+                                assert_eq!(kind, 3);
+                                assert_eq!(*error, ClientError::Cancelled);
+                                assert!(matches!(
+                                    effect.as_ref(),
+                                    Err(CacheFailure::Provider(CacheError::Uncertain))
+                                ));
+                            }
+                            _ => panic!("typed effect was lost"),
+                        }
+                    }
+                });
+            }
+
+            #[test]
+            fn stale_cache_delivery_is_denied_without_erasing_joined_result() {
+                run(async {
+                    let (owner, port) = owner(Arc::default(), false, Ok(()));
+                    let waiter = start(&owner, Arc::default(), async { Ok(status()) }).unwrap();
+                    let row = waiter.row.clone();
+                    row.joined_result().await;
+                    let (entered, receiving) = oneshot::channel();
+                    let (release, held) = oneshot::channel();
+                    let caller = tokio::spawn(async move {
+                        waiter
+                            .wait_validated(
+                                async move {
+                                    entered.send(()).unwrap();
+                                    held.await.unwrap();
+                                    Ok(())
+                                },
+                                |waiter| {
+                                    waiter.check_publication(&waiter.owner.cache.lock().unwrap())
+                                },
+                            )
+                            .await
+                    });
+                    receiving.await.unwrap();
+                    owner.seal_cache();
+                    release.send(()).unwrap();
+                    let delivered = caller.await.unwrap();
+                    let before = port.cancelled.load(Ordering::Acquire);
+                    owner.begin_shutdown().wait().await.unwrap();
+                    assert_eq!(delivered, Err(ClientError::Cancelled));
+                    assert_eq!(before, 0);
+                    assert!(matches!(row.joined.borrow().as_deref(), Some(Ok(_))));
+                });
+            }
+
+            #[test]
+            fn abandoned_final_cache_validation_never_cancels_browser() {
+                run(async {
+                    let (owner, port) = owner(Arc::default(), false, Ok(()));
+                    let waiter = start(&owner, Arc::default(), async { Ok(status()) }).unwrap();
+                    let row = waiter.row.clone();
+                    row.joined_result().await;
+                    let (entered, receiving) = oneshot::channel();
+                    let caller = tokio::spawn(async move {
+                        waiter
+                            .wait_validated(
+                                async move {
+                                    entered.send(()).unwrap();
+                                    std::future::pending::<()>().await;
+                                    Ok(())
+                                },
+                                |_| Ok(()),
+                            )
+                            .await
+                    });
+                    receiving.await.unwrap();
+                    caller.abort();
+                    let _ = caller.await;
+                    let before = port.cancelled.load(Ordering::Acquire);
+                    let interest = *row.interest.borrow();
+                    owner.begin_shutdown().wait().await.unwrap();
+                    assert_eq!(before, 0);
+                    assert!(interest == Interest::Abandoned);
+                    assert!(matches!(row.joined.borrow().as_deref(), Some(Ok(_))));
+                });
+            }
+
+            #[test]
+            fn status_generation_survives_a_later_validation_await() {
+                run(async {
+                    let (owner, _) = owner(Arc::default(), false, Ok(()));
+                    let life = Arc::default();
+                    let snapshot =
+                        NativeOwner::snapshot_cache_state(&mut owner.cache.lock().unwrap(), &life)
+                            .unwrap();
+                    let old_generation = snapshot.0.clone();
+                    let (entered, receiving) = oneshot::channel();
+                    let (release, held) = oneshot::channel();
+                    let captured = owner.clone();
+                    let caller = tokio::spawn(async move {
+                        // Native read completed; final original-guard validation
+                        // is still pending. No status may cross this mutation.
+                        entered.send(()).unwrap();
+                        held.await.unwrap();
+                        NativeOwner::publish_cache_state(
+                            &captured.cache.lock().unwrap(),
+                            &snapshot,
+                            || Ok(status()),
+                        )
+                    });
+                    receiving.await.unwrap();
+                    let waiter = start(&owner, life.clone(), async {
+                        Err(CacheFailure::Provider(CacheError::Uncertain))
+                    })
+                    .unwrap();
+                    let effect = waiter.wait_inert().await;
+                    // Same production reclaim/snapshot path: the known joined
+                    // row is gone, so generation alone must reject the old read.
+                    let new_snapshot =
+                        NativeOwner::snapshot_cache_state(&mut owner.cache.lock().unwrap(), &life)
+                            .unwrap();
+                    release.send(()).unwrap();
+                    let published = caller.await.unwrap();
+                    owner.begin_shutdown().wait().await.unwrap();
+                    assert!(effect.is_err());
+                    assert_eq!(published, Err(ClientError::Busy));
+                    assert!(!Arc::ptr_eq(&old_generation, &new_snapshot.0));
+                });
+            }
+
+            #[test]
+            fn concurrent_full_drains_still_attempt_browser_after_cache_failure() {
+                run(async {
+                    let (owner, port) = owner(Arc::default(), true, Ok(()));
+                    let (entered, receiving) = oneshot::channel();
+                    let (release, held) = oneshot::channel();
+                    let waiter = start(&owner, Arc::default(), async move {
+                        entered.send(()).unwrap();
+                        held.await.unwrap();
+                        Err(CacheFailure::Interrupted)
+                    })
+                    .unwrap();
+                    receiving.await.unwrap();
+                    drop(waiter);
+                    let first = owner.begin_shutdown();
+                    let second = owner.begin_shutdown();
+                    let same = Arc::ptr_eq(&first, &second);
+                    let abandoned = {
+                        let first = first.clone();
+                        tokio::spawn(async move { first.wait().await })
+                    };
+                    abandoned.abort();
+                    let _ = abandoned.await;
+                    release.send(()).unwrap();
+                    port.drain_started.cancelled().await;
+                    port.release.cancel();
+                    let result = second.wait().await;
+                    assert!(same);
+                    assert!(result.is_err());
+                    assert_eq!(first.wait().await, result);
+                    assert_eq!(port.drains.load(Ordering::Acquire), 1);
+                    assert!(!owner.drained_by(&second));
+                });
+            }
+
+            #[test]
+            fn unpolled_cache_terminals_are_hold_not_uncertain_or_success() {
+                let row = CacheRow::new(Arc::default());
+                drop(CacheWorkTerminal(row.clone()));
+                drop(CacheJoinTerminal {
+                    row: row.clone(),
+                    finished: false,
+                });
+                assert!(row.unresolved());
+                assert!(row.admitted.is_cancelled());
+                assert!(!row.reclaimable());
+                assert!(matches!(
+                    row.work.borrow().as_deref(),
+                    Some(Err(CacheFailure::Interrupted))
+                ));
+                assert!(matches!(
+                    row.joined.borrow().as_deref(),
+                    Some(Err(CacheFailure::Interrupted))
+                ));
+            }
         }
     }
 
@@ -1653,7 +2586,7 @@ pub(crate) mod native_ownership {
         use std::sync::atomic::AtomicUsize;
         use tokio::sync::oneshot;
 
-        fn run(work: impl Future<Output = ()>) {
+        pub(super) fn run(work: impl Future<Output = ()>) {
             tokio::runtime::Builder::new_current_thread()
                 .enable_all()
                 .build()
@@ -1664,7 +2597,7 @@ pub(crate) mod native_ownership {
                         .expect("bounded inert ownership fixture");
                 });
         }
-        fn owner(
+        pub(super) fn owner(
             epoch: Arc<Epoch>,
             held: bool,
             result: Result<(), ClientError>,
@@ -1692,6 +2625,8 @@ pub(crate) mod native_ownership {
                         rows: Vec::new(),
                         drain: None,
                     }),
+                    #[cfg(target_os = "linux")]
+                    cache: Mutex::default(),
                 }),
                 port,
             )

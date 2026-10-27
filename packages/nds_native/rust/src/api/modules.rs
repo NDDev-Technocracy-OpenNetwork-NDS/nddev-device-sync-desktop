@@ -360,6 +360,7 @@ impl LocalAgent {
     ) -> Result<super::module_types::CacheStatus, ClientError> {
         self.check_client(client)?;
         let guard = Arc::new(client.module_access("cache", Adapter::Native).await?);
+        self.check_client(client)?;
         let agent = self.inner.clone();
         self.native_owner
             .start_cache_request(
@@ -372,7 +373,7 @@ impl LocalAgent {
                     }
                 }),
             )?
-            .wait(guard)
+            .wait(guard, || self.check_client(client))
             .await
     }
     pub async fn system_info(

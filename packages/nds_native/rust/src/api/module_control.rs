@@ -1889,17 +1889,29 @@ pub(crate) mod native_ownership {
             delivered: bool,
         }
         impl CacheWaiter {
-            pub(crate) async fn wait(
+            pub(crate) async fn wait<P>(
                 self,
                 guard: Arc<ModuleUseGuard>,
-            ) -> Result<cache::Status, ClientError> {
+                caller_publication: P,
+            ) -> Result<cache::Status, ClientError>
+            where
+                P: FnOnce() -> Result<(), ClientError>,
+            {
                 let captured = guard.clone();
                 self.wait_validated(guard.validate(), move |waiter| {
-                    waiter
-                        .owner
-                        .with_cache_guard(&captured, |state| waiter.check_publication(state))
+                    waiter.owner.with_cache_guard(&captured, |state| {
+                        waiter.publish_caller(state, caller_publication)
+                    })
                 })
                 .await
+            }
+            fn publish_caller(
+                &self,
+                state: &CacheState,
+                caller: impl FnOnce() -> Result<(), ClientError>,
+            ) -> Result<(), ClientError> {
+                self.check_publication(state)?;
+                caller()
             }
             fn check_publication(&self, state: &CacheState) -> Result<(), ClientError> {
                 if self.owner.epoch.is_stopped()
@@ -2154,6 +2166,58 @@ pub(crate) mod native_ownership {
                     assert_eq!(before, 0);
                     assert!(interest == Interest::Abandoned);
                     assert!(matches!(row.joined.borrow().as_deref(), Some(Ok(_))));
+                });
+            }
+
+            #[test]
+            fn held_captured_caller_denial_preserves_effect_and_abandons_delivery() {
+                run(async {
+                    let (owner, port) = owner(Arc::default(), false, Ok(()));
+                    let waiter = start(&owner, Arc::default(), async {
+                        Err(CacheFailure::Provider(CacheError::Uncertain))
+                    })
+                    .unwrap();
+                    let row = waiter.row.clone();
+                    row.joined_result().await;
+                    let (entered, receiving) = oneshot::channel();
+                    let (release, held) = oneshot::channel();
+                    let checked = Arc::new(AtomicBool::new(false));
+                    let observed = checked.clone();
+                    let caller = tokio::spawn(async move {
+                        waiter
+                            .wait_validated(
+                                async move {
+                                    entered.send(()).unwrap();
+                                    held.await.unwrap();
+                                    Ok(())
+                                },
+                                |waiter| {
+                                    let state = waiter.owner.cache.lock().unwrap();
+                                    // Invoke the production publication seam after the
+                                    // held validation; this is no real identity fixture.
+                                    waiter.publish_caller(&state, || {
+                                        observed.store(true, Ordering::Release);
+                                        Err(ClientError::RevalidationRequired)
+                                    })
+                                },
+                            )
+                            .await
+                    });
+                    receiving.await.unwrap();
+                    release.send(()).unwrap();
+                    let delivered = caller.await.unwrap();
+                    let interest = *row.interest.borrow();
+                    let before = port.cancelled.load(Ordering::Acquire);
+                    let joined = owner.begin_shutdown().wait().await;
+                    assert_eq!(delivered, Err(ClientError::RevalidationRequired));
+                    assert!(checked.load(Ordering::Acquire));
+                    assert!(interest == Interest::Abandoned);
+                    assert_eq!(before, 0);
+                    assert_eq!(joined, Ok(()));
+                    assert!(matches!(
+                        row.joined.borrow().as_deref(),
+                        Some(Err(CacheFailure::Provider(CacheError::Uncertain)))
+                    ));
                 });
             }
 

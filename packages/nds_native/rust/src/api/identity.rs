@@ -1478,6 +1478,7 @@ mod activity_tests {
         let agent = super::super::modules::LocalAgent::discover(
             Arc::downgrade(&client.module_control),
             client.inner.local_use_lifetime(),
+            client.module_control.generation().unwrap(),
         )
         .await
         .unwrap();

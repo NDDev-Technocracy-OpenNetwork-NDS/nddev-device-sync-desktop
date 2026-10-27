@@ -373,6 +373,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moduleCancelled => 'Request cancelled.';
 
   @override
+  String get moduleShutdownUnconfirmed =>
+      'Shutdown could not be confirmed. Access remains closed.';
+
+  @override
   String get missingReading => 'No reading';
 
   @override

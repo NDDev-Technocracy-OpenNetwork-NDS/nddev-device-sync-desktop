@@ -764,6 +764,12 @@ abstract class AppLocalizations {
   /// **'Request cancelled.'**
   String get moduleCancelled;
 
+  /// No description provided for @moduleShutdownUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Shutdown could not be confirmed. Access remains closed.'**
+  String get moduleShutdownUnconfirmed;
+
   /// No description provided for @missingReading.
   ///
   /// In en, this message translates to:

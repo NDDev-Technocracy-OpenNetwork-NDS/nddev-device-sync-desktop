@@ -375,6 +375,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get moduleCancelled => 'Запрос отменён.';
 
   @override
+  String get moduleShutdownUnconfirmed =>
+      'Не удалось подтвердить завершение работы. Доступ остаётся закрытым.';
+
+  @override
   String get missingReading => 'Нет показания';
 
   @override

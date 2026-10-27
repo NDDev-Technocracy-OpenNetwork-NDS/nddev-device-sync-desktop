@@ -1403,4 +1403,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String appUpdateProgress(String downloaded, String total) {
     return '$downloaded / $total bytes';
   }
+
+  @override
+  String get browserAutomation => 'Browser automation';
+
+  @override
+  String get networkCache => 'Network cache';
+
+  @override
+  String get browserOwnerSwitch => 'Browser owner switch';
+
+  @override
+  String get browserHostStatus => 'Browser';
+
+  @override
+  String get browserExtensionStatus => 'Extension';
+
+  @override
+  String get browserSessionCount => 'Browser sessions';
+
+  @override
+  String get browserSessionScope =>
+      'This list includes the browser host’s sessions. It does not grant control over sessions owned by another agent.';
+
+  @override
+  String browserTabCount(String count) {
+    return 'Tabs: $count';
+  }
+
+  @override
+  String get browserAllowWork => 'Allow this agent’s browser work';
+
+  @override
+  String get cacheConfiguredPort => 'Configured loopback port';
+
+  @override
+  String get cacheReachability => 'Cache reachability';
+
+  @override
+  String get cacheProbeReady => 'Responding';
+
+  @override
+  String get cacheProbeUnavailable => 'Not responding';
+
+  @override
+  String get cacheManagedScope =>
+      'Managed settings are shown separately from reachability. This does not confirm that existing tools use the configured port.';
+
+  @override
+  String get cacheManagedPresent => 'Managed settings present';
+
+  @override
+  String get cacheManagedAbsent => 'Managed settings not detected';
+
+  @override
+  String get cacheAssemblyInvalid =>
+      'Cache configuration is invalid for this app.';
+
+  @override
+  String get browserSwitchEnabled => 'Enabled';
+
+  @override
+  String get browserSwitchDisabled => 'Disabled';
 }

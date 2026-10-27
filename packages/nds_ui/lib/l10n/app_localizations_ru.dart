@@ -1414,4 +1414,66 @@ class AppLocalizationsRu extends AppLocalizations {
   String appUpdateProgress(String downloaded, String total) {
     return '$downloaded / $total байт';
   }
+
+  @override
+  String get browserAutomation => 'Автоматизация браузера';
+
+  @override
+  String get networkCache => 'Сетевой кеш';
+
+  @override
+  String get browserOwnerSwitch => 'Переключатель владельца браузера';
+
+  @override
+  String get browserHostStatus => 'Браузер';
+
+  @override
+  String get browserExtensionStatus => 'Расширение';
+
+  @override
+  String get browserSessionCount => 'Сессии браузера';
+
+  @override
+  String get browserSessionScope =>
+      'Здесь показаны сессии хоста браузера. Этот список не даёт управление сессиями другого агента.';
+
+  @override
+  String browserTabCount(String count) {
+    return 'Вкладок: $count';
+  }
+
+  @override
+  String get browserAllowWork => 'Разрешить работу этого агента в браузере';
+
+  @override
+  String get cacheConfiguredPort => 'Заданный локальный порт';
+
+  @override
+  String get cacheReachability => 'Доступность кеша';
+
+  @override
+  String get cacheProbeReady => 'Отвечает';
+
+  @override
+  String get cacheProbeUnavailable => 'Не отвечает';
+
+  @override
+  String get cacheManagedScope =>
+      'Управляемые настройки показаны отдельно от доступности кеша. Это не подтверждает, что запущенные инструменты используют заданный порт.';
+
+  @override
+  String get cacheManagedPresent => 'Управляемые настройки найдены';
+
+  @override
+  String get cacheManagedAbsent => 'Управляемые настройки не найдены';
+
+  @override
+  String get cacheAssemblyInvalid =>
+      'Настройка кеша для этого приложения недействительна.';
+
+  @override
+  String get browserSwitchEnabled => 'Включён';
+
+  @override
+  String get browserSwitchDisabled => 'Выключен';
 }

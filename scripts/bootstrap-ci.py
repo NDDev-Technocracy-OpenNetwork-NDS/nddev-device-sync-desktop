@@ -21,7 +21,9 @@ destination = Path(os.environ['RUNNER_TEMP']) / 'nds-flutter'
 destination.mkdir(exist_ok=False)
 archive = destination / Path(entry['archive']).name
 url = 'https://storage.googleapis.com/flutter_infra_release/releases/' + entry['archive']
-subprocess.run(['curl','--fail','--location','--show-error','--retry','2','--max-time','600',url,'--output',str(archive)],check=True,timeout=650)
+# This pinned GET writes a regular file, so curl can reset a partial transfer
+# before retrying receive failures; the outer 650-second bound remains strict.
+subprocess.run(['curl','--fail','--location','--show-error','--retry','2','--retry-all-errors','--max-time','600',url,'--output',str(archive)],check=True,timeout=650)
 with archive.open('rb') as source:
     actual = hashlib.file_digest(source, 'sha256').hexdigest()
 if actual != entry['sha256']:

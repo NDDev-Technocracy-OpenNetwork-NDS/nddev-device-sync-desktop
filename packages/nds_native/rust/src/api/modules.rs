@@ -540,6 +540,18 @@ fn cache_error(error: nddev_device_sync_agent::view::CacheError) -> ClientError 
     }
 }
 
+/// Read-only presentation of the canonical cache binding type. These accessors
+/// read metadata and never change a tool's settings.
+#[cfg_attr(feature = "flutter", frb(sync))]
+pub fn cache_binding_kind(binding: &super::module_types::CacheBinding) -> String {
+    binding.kind.to_owned()
+}
+
+#[cfg_attr(feature = "flutter", frb(sync))]
+pub fn cache_binding_bound(binding: &super::module_types::CacheBinding) -> bool {
+    binding.bound
+}
+
 /// Presentation access to the provider's opaque data-carrying enum. The
 /// canonical enum remains in updater; no DTO is copied or serialized to JSON.
 #[cfg_attr(feature = "flutter", frb(sync))]

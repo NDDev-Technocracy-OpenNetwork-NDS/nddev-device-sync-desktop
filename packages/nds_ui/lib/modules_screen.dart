@@ -303,7 +303,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
         value.enabled ? l.browserSwitchEnabled : l.browserSwitchDisabled,
       ),
       (l.browserHostStatus, value.browser),
-      (l.browserExtensionStatus, value.extension),
+      (l.browserExtensionStatus, value.extension_),
       (l.browserSessionCount, '${value.sessions}'),
     ]),
     List<native.BrowserSession> value => Column(
@@ -331,9 +331,11 @@ class _ModulesScreenState extends State<ModulesScreen> {
         Text(l.cacheManagedScope),
         for (final binding in value.bindings)
           ListTile(
-            title: Text(binding.kind),
+            title: Text(native.cacheBindingKind(binding: binding)),
             trailing: Text(
-              binding.bound ? l.cacheManagedPresent : l.cacheManagedAbsent,
+              native.cacheBindingBound(binding: binding)
+                  ? l.cacheManagedPresent
+                  : l.cacheManagedAbsent,
             ),
           ),
       ],

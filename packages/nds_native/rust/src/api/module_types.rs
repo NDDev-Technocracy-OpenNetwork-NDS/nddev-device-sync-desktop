@@ -92,12 +92,8 @@ pub struct _BrowserDocument {
     pub document: String,
 }
 
-#[cfg_attr(feature = "flutter", frb(mirror(CacheBinding)))]
-pub struct _CacheBinding {
-    pub kind: &'static str,
-    pub bound: bool,
-}
-
+// Binding contains an owning static string. Keep that owner type opaque and
+// expose its read-only presentation through the canonical field accessors.
 #[cfg_attr(feature = "flutter", frb(mirror(CacheStatus)))]
 pub struct _CacheStatus {
     pub port: u16,

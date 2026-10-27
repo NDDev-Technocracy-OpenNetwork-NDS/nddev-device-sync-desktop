@@ -154,7 +154,7 @@ impl LocalAgent {
     pub async fn browser_status(
         &self,
         client: &NdsClient,
-    ) -> Result<nddev_device_sync_agent::view::browser::Status, ClientError> {
+    ) -> Result<super::module_types::BrowserStatus, ClientError> {
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         {
             match self
@@ -176,7 +176,7 @@ impl LocalAgent {
     pub async fn browser_sessions(
         &self,
         client: &NdsClient,
-    ) -> Result<Vec<nddev_device_sync_agent::view::browser::Session>, ClientError> {
+    ) -> Result<Vec<super::module_types::BrowserSession>, ClientError> {
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         {
             match self
@@ -202,7 +202,7 @@ impl LocalAgent {
         &self,
         client: &NdsClient,
         project: String,
-    ) -> Result<nddev_device_sync_agent::view::browser::Session, ClientError> {
+    ) -> Result<super::module_types::BrowserSession, ClientError> {
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         {
             match self
@@ -230,8 +230,8 @@ impl LocalAgent {
         project: String,
         code: String,
         timeout_ms: u32,
-        expect: Option<nddev_device_sync_agent::view::BrowserDocument>,
-    ) -> Result<nddev_device_sync_agent::view::browser::Outcome, ClientError> {
+        expect: Option<super::module_types::BrowserDocument>,
+    ) -> Result<super::module_types::BrowserOutcome, ClientError> {
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         {
             match self

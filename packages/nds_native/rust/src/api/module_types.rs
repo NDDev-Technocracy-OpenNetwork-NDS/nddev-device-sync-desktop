@@ -1,7 +1,14 @@
-//! Presentation shape only. FRB checks mirrors against the canonical core types;
+//! Presentation shape only. FRB checks mirrors against the canonical owning types;
 //! no domain methods or query/observation policy are exported to Dart here.
 #[cfg(feature = "flutter")]
 use flutter_rust_bridge::frb;
+pub use nddev_device_sync_agent::view::{
+    BrowserDocument,
+    browser::{
+        Outcome as BrowserOutcome, ScriptFailure as BrowserScriptFailure,
+        Session as BrowserSession, Status as BrowserStatus, Tab as BrowserTab,
+    },
+};
 pub use nddev_device_sync_domain::{
     modules::{ModuleError, ModuleObservation},
     state::Reachability,
@@ -36,4 +43,50 @@ pub enum _Reachability {
     Reachable,
     Unavailable,
     Failed,
+}
+
+// These names alias the owning browser types. Only their checked presentation
+// shapes cross the bridge; owned handles and protocol frames remain in Rust.
+#[cfg_attr(feature = "flutter", frb(mirror(BrowserStatus)))]
+pub struct _BrowserStatus {
+    pub enabled: bool,
+    pub browser: String,
+    pub extension: String,
+    pub sessions: usize,
+}
+
+#[cfg_attr(feature = "flutter", frb(mirror(BrowserSession)))]
+pub struct _BrowserSession {
+    pub project: String,
+    pub tabs: usize,
+    pub executor: bool,
+}
+
+#[cfg_attr(feature = "flutter", frb(mirror(BrowserTab)))]
+pub struct _BrowserTab {
+    pub target: String,
+    pub document: Option<String>,
+    pub url: String,
+    pub title: String,
+}
+
+#[cfg_attr(feature = "flutter", frb(mirror(BrowserOutcome)))]
+pub struct _BrowserOutcome {
+    pub failure: Option<BrowserScriptFailure>,
+    pub output: String,
+    pub truncated: bool,
+    pub tabs: Vec<BrowserTab>,
+}
+
+#[cfg_attr(feature = "flutter", frb(mirror(BrowserScriptFailure)))]
+pub enum _BrowserScriptFailure {
+    ScriptError,
+    TargetClosed,
+    BrowserDisconnected,
+}
+
+#[cfg_attr(feature = "flutter", frb(mirror(BrowserDocument)))]
+pub struct _BrowserDocument {
+    pub target: String,
+    pub document: String,
 }

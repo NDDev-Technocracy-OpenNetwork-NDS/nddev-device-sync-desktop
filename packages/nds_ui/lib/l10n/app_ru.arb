@@ -125,6 +125,7 @@
   "moduleNetworkError": "Локальный инструмент не ответил вовремя.",
   "moduleResponseError": "Локальный инструмент вернул неподдерживаемый ответ.",
   "moduleCancelled": "Запрос отменён.",
+  "moduleShutdownUnconfirmed": "Не удалось подтвердить завершение работы. Доступ остаётся закрытым.",
   "missingReading": "Нет показания",
   "textPreviewLimit": "Предпросмотр текста, до 16 КиБ.",
   "gdsInstall": "Установка GDS",
@@ -545,6 +546,8 @@
   "catalogClearSource": "Сбросить выбор GitHub",
   "moduleStateQueued": "Локальные состояния поставлены в очередь синхронизации.",
   "permissionGitWrite": "Подключать репозитории и синхронизировать Git-коммиты",
+  "permissionBrowserControl": "Управление вкладками браузера агента",
+  "browserControlScope": "Разрешает агентам автоматизацию вкладок в группах NDS. На остальные вкладки браузера это разрешение не распространяется.",
   "repositoryConnect": "Подключить репозиторий",
   "repositoryConnected": "Репозиторий подключён: {path}",
   "@repositoryConnected": {
@@ -615,5 +618,36 @@
         "type": "String"
       }
     }
-  }
+  },
+  "browserAutomation": "Автоматизация браузера",
+  "networkCache": "Сетевой кеш",
+  "browserOwnerSwitch": "Переключатель владельца браузера",
+  "browserHostStatus": "Браузер",
+  "browserExtensionStatus": "Расширение",
+  "browserSessionCount": "Сессии браузера",
+  "browserSessionScope": "Здесь показаны сессии хоста браузера. Этот список не даёт управление сессиями другого агента.",
+  "browserTabCount": "Вкладок: {count}",
+  "@browserTabCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "browserAllowWork": "Разрешить работу этого агента в браузере",
+  "cacheConfiguredPort": "Заданный локальный порт",
+  "cacheReachability": "Доступность кеша",
+  "cacheProbeReady": "Отвечает",
+  "cacheProbeUnavailable": "Не отвечает",
+  "cacheManagedScope": "Управляемые настройки показаны отдельно от доступности кеша. Это не подтверждает, что запущенные инструменты используют заданный порт.",
+  "cacheManagedPresent": "Управляемые настройки найдены",
+  "cacheManagedAbsent": "Управляемые настройки не найдены",
+  "cacheAssemblyInvalid": "Настройка кеша для этого приложения недействительна.",
+  "cacheBindTools": "Загружать через кеш",
+  "cacheUnbindTools": "Загружать напрямую",
+  "cacheMutationWorking": "Применяются настройки загрузки…",
+  "cacheStateUncertain": "Настройки загрузки могли измениться. Обновите статус перед следующим действием.",
+  "cacheCompletionUnconfirmed": "Не удалось подтвердить изменения. Новые изменения заблокированы.",
+  "browserSwitchEnabled": "Включён",
+  "browserSwitchDisabled": "Выключен"
 }

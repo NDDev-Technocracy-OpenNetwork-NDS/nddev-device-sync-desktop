@@ -16,7 +16,7 @@ import 'diagnostics.dart';
 import 'module_settings.dart';
 
 /// Presentation over canonical native responses. Local tools retain their state
-/// and safety policies; this screen exposes bounded read/preview operations.
+/// and safety policies; cache binding is an explicit user action.
 class ModulesScreen extends StatefulWidget {
   const ModulesScreen({
     super.key,
@@ -41,13 +41,30 @@ class _ModulesScreenState extends State<ModulesScreen> {
   Object? _result;
   String? _error;
   bool _busy = true;
+  bool _cacheMutation = false;
+  bool _cacheReadbackRequired = false;
+  bool _cacheCompletionUnconfirmed = false;
   bool _publishing = false;
   bool _cancelled = false;
   int _epoch = 0;
+  native.LocalAgent? _retiringAgent;
+  Future<bool>? _agentShutdown;
+  String? _shutdownError;
+  bool get _cleanupHeld => _retiringAgent != null && _shutdownError != null;
+  Future<void>? _transition;
+  Future<void>? _operation;
+  bool _rediscover = false;
   final _repository = TextEditingController();
   bool _published = false;
 
-  Future<void> _publish() async {
+  Future<void> _publish() {
+    if (_busy || _retiringAgent != null || _transition != null) {
+      return Future.value();
+    }
+    return _operation = _publishInner();
+  }
+
+  Future<void> _publishInner() async {
     final client = widget.client;
     final agent = _agent;
     final epoch = _epoch;
@@ -88,10 +105,15 @@ class _ModulesScreenState extends State<ModulesScreen> {
   }
 
   String? _currentScope() {
-    final view = widget.client?.snapshot();
-    return view == null
-        ? null
-        : '${view.authenticated}:${view.tenantId}:${view.userId}:${view.currentDeviceId}';
+    try {
+      final view = widget.client?.snapshot();
+      return view == null
+          ? null
+          : '${view.authenticated}:${view.tenantId}:${view.userId}:${view.currentDeviceId}';
+    } catch (error) {
+      if (error is native.ClientError) error.dispose();
+      return null;
+    }
   }
 
   @override
@@ -100,15 +122,14 @@ class _ModulesScreenState extends State<ModulesScreen> {
     if (!identical(oldWidget.client, widget.client) ||
         _scope != _currentScope()) {
       _epoch++;
+      _scope = _currentScope();
       _agent?.close();
-      _agent?.dispose();
-      _agent = null;
       _modules = [];
       _result = null;
-      _error = null;
+      _error = _shutdownError;
       _published = false;
       _publishing = false;
-      _metadataRead = null;
+      _busy = true;
       _discover();
     } else if (!_busy && _metadataError) {
       _refreshModules();
@@ -143,11 +164,95 @@ class _ModulesScreenState extends State<ModulesScreen> {
     }
   }
 
-  Future<void> _discover() async {
+  Future<bool> _retireAgent(native.LocalAgent? agent) {
+    if (_retiringAgent != null) return _agentShutdown!;
+    if (agent == null) return Future.value(true);
+    _retiringAgent = agent;
+    _cancelled = true;
+    agent.close();
+    _agentShutdown = _shutdownAgent(agent);
+    return _agentShutdown!;
+  }
+
+  Future<bool> _shutdownAgent(native.LocalAgent agent) async {
+    try {
+      await agent.shutdown();
+      if (identical(_agent, agent)) _agent = null;
+      agent.dispose();
+      _retiringAgent = null;
+      return true;
+    } catch (error) {
+      var code = 'unavailable';
+      if (error is native.ClientError) {
+        code = error.code();
+        error.dispose();
+      } else if (mounted) {
+        widget.diagnostics?.reportFailure(native.FailureKind.nativeBridge);
+      }
+      // The exact closed owner and this completed failure stay retained. A new
+      // desired client cannot replace an unresolved drain or retry it as ready.
+      _shutdownError = code;
+      if (mounted) {
+        setState(() {
+          _error = code;
+          _busy = true;
+        });
+      }
+      return false;
+    }
+  }
+
+  Future<void> _discover() {
+    _rediscover = true;
+    if (_transition case final transition?) return transition;
+    late final Future<void> owned;
+    owned = _discoverCurrent().whenComplete(() {
+      if (identical(_transition, owned)) _transition = null;
+    });
+    _transition = owned;
+    return owned;
+  }
+
+  Future<void> _discoverCurrent() async {
+    while (_rediscover) {
+      _rediscover = false;
+      // Cancel first, then let the captured Dart operation finish without
+      // replacing/disposal of the opaque it may still reference after an await.
+      _agent?.close();
+      await _operation;
+      await _metadataRead;
+      if (!await _retireAgent(_agent)) return;
+      if (!mounted) return;
+      _cancelled = false;
+      _publishing = false;
+      // Coalesce changes received while the previous owner was draining. The
+      // discovery below captures the latest client, not a queued intermediate.
+      _rediscover = false;
+      await _discoverOne();
+      if (!mounted) {
+        await _retireAgent(_agent);
+        return;
+      }
+    }
+  }
+
+  Future<void> _discoverOne() async {
     final client = widget.client;
     final epoch = _epoch;
     _scope = _currentScope();
-    final view = client?.snapshot();
+    native.View? view;
+    try {
+      view = client?.snapshot();
+    } catch (error) {
+      if (error is native.ClientError) error.dispose();
+      if (mounted && epoch == _epoch) {
+        setState(() {
+          _busy = false;
+          _error = 'unavailable';
+        });
+      }
+      return;
+    }
     if (client == null ||
         view == null ||
         !view.authenticated ||
@@ -172,8 +277,8 @@ class _ModulesScreenState extends State<ModulesScreen> {
         agent = await client.discoverLocalAgent();
       }
       if (!mounted || epoch != _epoch || !identical(client, widget.client)) {
-        agent?.close();
-        agent?.dispose();
+        if (!await _retireAgent(agent)) return;
+        _rediscover = mounted;
         return;
       }
       _agent = agent;
@@ -188,21 +293,48 @@ class _ModulesScreenState extends State<ModulesScreen> {
       }
       if (mounted && epoch == _epoch) setState(() => _error = code);
     } finally {
-      if (mounted && epoch == _epoch) setState(() => _busy = false);
+      if (mounted && epoch == _epoch) {
+        setState(() => _busy = _retiringAgent != null);
+      }
     }
   }
 
-  Future<void> _load(Future<Object> Function() operation) async {
-    if (_busy || _agent == null) return;
+  Future<void> _load(
+    Future<Object> Function() operation, {
+    bool cacheMutation = false,
+  }) {
+    if (_busy ||
+        (cacheMutation && _cacheReadbackRequired) ||
+        _agent == null ||
+        _retiringAgent != null ||
+        _transition != null) {
+      return Future.value();
+    }
+    return _operation = _loadInner(operation, cacheMutation: cacheMutation);
+  }
+
+  Future<void> _loadInner(
+    Future<Object> Function() operation, {
+    required bool cacheMutation,
+  }) async {
     final epoch = _epoch;
     setState(() {
       _busy = true;
+      _cacheMutation = cacheMutation;
       _error = null;
       _result = null;
     });
     try {
       final result = await operation();
-      if (mounted && epoch == _epoch) setState(() => _result = result);
+      if (mounted && epoch == _epoch) {
+        setState(() {
+          _result = result;
+          if (result is native.CacheStatus) {
+            _cacheReadbackRequired = false;
+            _cacheCompletionUnconfirmed = false;
+          }
+        });
+      }
     } catch (error) {
       var code = 'unknown';
       if (error is native.ClientError) {
@@ -211,27 +343,45 @@ class _ModulesScreenState extends State<ModulesScreen> {
       } else {
         widget.diagnostics?.reportFailure(native.FailureKind.nativeBridge);
       }
-      if (mounted && epoch == _epoch) setState(() => _error = code);
+      if (mounted && epoch == _epoch) {
+        setState(() {
+          _error = code;
+          // Public cancellation/revalidation or a bridge error does not reveal
+          // whether an admitted write completed behind its publication fence.
+          // Only these owner-specific pre-write refusals prove no new effect.
+          if (cacheMutation &&
+              !const {
+                'cache_conflict',
+                'cache_invalid',
+                'cache_not_ready',
+                'module_unsupported',
+              }.contains(code)) {
+            _cacheReadbackRequired = true;
+            _cacheCompletionUnconfirmed = code != 'cache_uncertain';
+          }
+        });
+      }
     } finally {
       if (mounted && epoch == _epoch) {
         setState(() {
           _busy = false;
+          _cacheMutation = false;
           // Metadata refresh is separate from the completed operation result.
         });
         await _refreshModules();
-      } else if (mounted && _cancelled) {
-        // Close is terminal. Wait for the owned operation to finish before
-        // creating another engine, so repeated cancellation cannot queue work.
-        _agent?.dispose();
-        _agent = null;
-        _cancelled = false;
-        _discover();
       }
     }
   }
 
   void _cancel() {
-    if (!_busy || _publishing || _agent == null || _cancelled) return;
+    if (!_busy ||
+        _cacheMutation ||
+        _publishing ||
+        _agent == null ||
+        _cancelled ||
+        _retiringAgent != null) {
+      return;
+    }
     _epoch++;
     _agent!.close();
     setState(() {
@@ -239,13 +389,17 @@ class _ModulesScreenState extends State<ModulesScreen> {
       _error = 'cancelled';
       _cancelled = true;
     });
+    _discover();
   }
 
   @override
   void dispose() {
     _epoch++;
+    _rediscover = false;
     _agent?.close();
-    _agent?.dispose();
+    _retiringAgent?.close();
+    // Sync cancellation only. A retained transition handles any already-started
+    // discovery/shutdown; dispose never invents a positive drain receipt.
     _repository.dispose();
     super.dispose();
   }
@@ -257,10 +411,16 @@ class _ModulesScreenState extends State<ModulesScreen> {
     'updater' => l.updater,
     'gds' => 'GDS',
     'rds' => 'RDS',
+    'browser-use' => l.browserAutomation,
+    'cache' => l.networkCache,
     _ => id,
   };
 
   String _errorMessage(AppLocalizations l, String error) => switch (error) {
+    _ when _selected == 'cache' && _cacheReadbackRequired =>
+      _cacheCompletionUnconfirmed
+          ? l.cacheCompletionUnconfirmed
+          : l.cacheStateUncertain,
     'unavailable' || 'unsupportedPlatform' => l.providerUnavailable,
     'busy' => l.rateError,
     'timeout' => l.moduleNetworkError,
@@ -270,6 +430,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
     'sync_capacity_exhausted' => l.serverCapacityExhausted,
     'publish' => l.statePublishError,
     'module_device_required' => l.moduleDeviceRequired,
+    'cache_uncertain' => l.cacheStateUncertain,
     _ => moduleFailureLabel(l, error),
   };
 
@@ -295,6 +456,49 @@ class _ModulesScreenState extends State<ModulesScreen> {
   );
 
   Widget _resultView(AppLocalizations l) => switch (_result) {
+    native.BrowserStatus value => _rows([
+      (
+        l.browserOwnerSwitch,
+        value.enabled ? l.browserSwitchEnabled : l.browserSwitchDisabled,
+      ),
+      (l.browserHostStatus, value.browser),
+      (l.browserExtensionStatus, value.extension_),
+      (l.browserSessionCount, '${value.sessions}'),
+    ]),
+    List<native.BrowserSession> value => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(l.browserSessionScope),
+        if (value.isEmpty) Text(l.noRecords),
+        for (final session in value)
+          ListTile(
+            title: Text(session.project),
+            subtitle: Text(l.browserTabCount(session.tabs.toString())),
+          ),
+      ],
+    ),
+    native.CacheStatus value => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _rows([
+          (l.cacheConfiguredPort, '${value.port}'),
+          (
+            l.cacheReachability,
+            value.ready ? l.cacheProbeReady : l.cacheProbeUnavailable,
+          ),
+        ]),
+        Text(l.cacheManagedScope),
+        for (final binding in value.bindings)
+          ListTile(
+            title: Text(native.cacheBindingKind(binding: binding)),
+            trailing: Text(
+              native.cacheBindingBound(binding: binding)
+                  ? l.cacheManagedPresent
+                  : l.cacheManagedAbsent,
+            ),
+          ),
+      ],
+    ),
     sysinfo.SystemSnapshot value => _rows([
       (l.cpuUsage, _number(value.cpu.usage, '%')),
       (l.cpuTemperature, _number(value.cpu.temp, ' °C')),
@@ -486,18 +690,23 @@ class _ModulesScreenState extends State<ModulesScreen> {
     final current = _modules
         .where((module) => module.id == _selected)
         .firstOrNull;
-    Widget action(String label, Future<Object> Function() run, {Key? key}) =>
-        FilledButton(
-          key: key,
-          onPressed:
-              _busy ||
-                  _agent == null ||
-                  current?.localToolSupported != true ||
-                  current?.localToolInstalled != true
-              ? null
-              : () => _load(run),
-          child: Text(label),
-        );
+    Widget action(
+      String label,
+      Future<Object> Function() run, {
+      Key? key,
+      bool cacheMutation = false,
+    }) => FilledButton(
+      key: key,
+      onPressed:
+          _busy ||
+              (cacheMutation && _cacheReadbackRequired) ||
+              _agent == null ||
+              current?.localToolSupported != true ||
+              current?.localToolInstalled != true
+          ? null
+          : () => _load(run, cacheMutation: cacheMutation),
+      child: Text(label),
+    );
     return Scaffold(
       appBar: AppBar(
         title: const OpenNetworkBrand(),
@@ -669,7 +878,45 @@ class _ModulesScreenState extends State<ModulesScreen> {
                           l.moduleRefresh,
                           () => _agent!.remoteSessions(client: widget.client!),
                         ),
-                      if (_busy && !_publishing && _agent != null)
+                      if (_selected == 'browser-use') ...[
+                        action(l.browserAllowWork, () async {
+                          await _agent!.resumeBrowser(client: widget.client!);
+                          return _agent!.browserStatus(client: widget.client!);
+                        }, key: const Key('browser-allow-work')),
+                        action(
+                          l.moduleRefresh,
+                          () => _agent!.browserStatus(client: widget.client!),
+                          key: const Key('browser-status'),
+                        ),
+                        action(
+                          l.browserSessionCount,
+                          () => _agent!.browserSessions(client: widget.client!),
+                          key: const Key('browser-sessions'),
+                        ),
+                      ],
+                      if (_selected == 'cache') ...[
+                        action(
+                          l.moduleRefresh,
+                          () => _agent!.cacheStatus(client: widget.client!),
+                          key: const Key('cache-status'),
+                        ),
+                        action(
+                          l.cacheBindTools,
+                          () => _agent!.cacheBind(client: widget.client!),
+                          key: const Key('cache-bind'),
+                          cacheMutation: true,
+                        ),
+                        action(
+                          l.cacheUnbindTools,
+                          () => _agent!.cacheUnbind(client: widget.client!),
+                          key: const Key('cache-unbind'),
+                          cacheMutation: true,
+                        ),
+                      ],
+                      if (_busy &&
+                          !_publishing &&
+                          !_cacheMutation &&
+                          _agent != null)
                         TextButton(
                           onPressed: _cancelled ? null : _cancel,
                           child: Text(l.moduleCancel),
@@ -684,7 +931,18 @@ class _ModulesScreenState extends State<ModulesScreen> {
                         ),
                     ],
                   ),
-                  if (_busy) const LinearProgressIndicator(),
+                  if (_busy && _cacheMutation && !_cleanupHeld)
+                    Text(l.cacheMutationWorking),
+                  if (_selected == 'cache' &&
+                      _cacheReadbackRequired &&
+                      !_cleanupHeld &&
+                      _error == null)
+                    Text(
+                      _cacheCompletionUnconfirmed
+                          ? l.cacheCompletionUnconfirmed
+                          : l.cacheStateUncertain,
+                    ),
+                  if (_busy && !_cleanupHeld) const LinearProgressIndicator(),
                   if (_error != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -693,7 +951,9 @@ class _ModulesScreenState extends State<ModulesScreen> {
                       child: Semantics(
                         liveRegion: true,
                         child: Text(
-                          _errorMessage(l, _error!),
+                          _cleanupHeld
+                              ? l.moduleShutdownUnconfirmed
+                              : _errorMessage(l, _error!),
                           key: const Key('module-error'),
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.error,

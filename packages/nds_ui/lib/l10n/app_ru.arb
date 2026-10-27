@@ -643,6 +643,11 @@
   "cacheManagedPresent": "Управляемые настройки найдены",
   "cacheManagedAbsent": "Управляемые настройки не найдены",
   "cacheAssemblyInvalid": "Настройка кеша для этого приложения недействительна.",
+  "cacheBindTools": "Загружать через кеш",
+  "cacheUnbindTools": "Загружать напрямую",
+  "cacheMutationWorking": "Применяются настройки загрузки…",
+  "cacheStateUncertain": "Настройки загрузки могли измениться. Обновите статус перед следующим действием.",
+  "cacheCompletionUnconfirmed": "Не удалось подтвердить изменения. Новые изменения заблокированы.",
   "browserSwitchEnabled": "Включён",
   "browserSwitchDisabled": "Выключен"
 }

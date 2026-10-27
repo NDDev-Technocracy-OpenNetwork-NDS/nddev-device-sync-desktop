@@ -16,7 +16,7 @@ import 'diagnostics.dart';
 import 'module_settings.dart';
 
 /// Presentation over canonical native responses. Local tools retain their state
-/// and safety policies; this screen exposes bounded read/preview operations.
+/// and safety policies; cache binding is an explicit user action.
 class ModulesScreen extends StatefulWidget {
   const ModulesScreen({
     super.key,
@@ -41,6 +41,9 @@ class _ModulesScreenState extends State<ModulesScreen> {
   Object? _result;
   String? _error;
   bool _busy = true;
+  bool _cacheMutation = false;
+  bool _cacheReadbackRequired = false;
+  bool _cacheCompletionUnconfirmed = false;
   bool _publishing = false;
   bool _cancelled = false;
   int _epoch = 0;
@@ -296,26 +299,42 @@ class _ModulesScreenState extends State<ModulesScreen> {
     }
   }
 
-  Future<void> _load(Future<Object> Function() operation) {
+  Future<void> _load(
+    Future<Object> Function() operation, {
+    bool cacheMutation = false,
+  }) {
     if (_busy ||
+        (cacheMutation && _cacheReadbackRequired) ||
         _agent == null ||
         _retiringAgent != null ||
         _transition != null) {
       return Future.value();
     }
-    return _operation = _loadInner(operation);
+    return _operation = _loadInner(operation, cacheMutation: cacheMutation);
   }
 
-  Future<void> _loadInner(Future<Object> Function() operation) async {
+  Future<void> _loadInner(
+    Future<Object> Function() operation, {
+    required bool cacheMutation,
+  }) async {
     final epoch = _epoch;
     setState(() {
       _busy = true;
+      _cacheMutation = cacheMutation;
       _error = null;
       _result = null;
     });
     try {
       final result = await operation();
-      if (mounted && epoch == _epoch) setState(() => _result = result);
+      if (mounted && epoch == _epoch) {
+        setState(() {
+          _result = result;
+          if (result is native.CacheStatus) {
+            _cacheReadbackRequired = false;
+            _cacheCompletionUnconfirmed = false;
+          }
+        });
+      }
     } catch (error) {
       var code = 'unknown';
       if (error is native.ClientError) {
@@ -324,11 +343,29 @@ class _ModulesScreenState extends State<ModulesScreen> {
       } else {
         widget.diagnostics?.reportFailure(native.FailureKind.nativeBridge);
       }
-      if (mounted && epoch == _epoch) setState(() => _error = code);
+      if (mounted && epoch == _epoch) {
+        setState(() {
+          _error = code;
+          // Public cancellation/revalidation or a bridge error does not reveal
+          // whether an admitted write completed behind its publication fence.
+          // Only these owner-specific pre-write refusals prove no new effect.
+          if (cacheMutation &&
+              !const {
+                'cache_conflict',
+                'cache_invalid',
+                'cache_not_ready',
+                'module_unsupported',
+              }.contains(code)) {
+            _cacheReadbackRequired = true;
+            _cacheCompletionUnconfirmed = code != 'cache_uncertain';
+          }
+        });
+      }
     } finally {
       if (mounted && epoch == _epoch) {
         setState(() {
           _busy = false;
+          _cacheMutation = false;
           // Metadata refresh is separate from the completed operation result.
         });
         await _refreshModules();
@@ -338,6 +375,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
 
   void _cancel() {
     if (!_busy ||
+        _cacheMutation ||
         _publishing ||
         _agent == null ||
         _cancelled ||
@@ -379,6 +417,10 @@ class _ModulesScreenState extends State<ModulesScreen> {
   };
 
   String _errorMessage(AppLocalizations l, String error) => switch (error) {
+    _ when _selected == 'cache' && _cacheReadbackRequired =>
+      _cacheCompletionUnconfirmed
+          ? l.cacheCompletionUnconfirmed
+          : l.cacheStateUncertain,
     'unavailable' || 'unsupportedPlatform' => l.providerUnavailable,
     'busy' => l.rateError,
     'timeout' => l.moduleNetworkError,
@@ -388,6 +430,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
     'sync_capacity_exhausted' => l.serverCapacityExhausted,
     'publish' => l.statePublishError,
     'module_device_required' => l.moduleDeviceRequired,
+    'cache_uncertain' => l.cacheStateUncertain,
     _ => moduleFailureLabel(l, error),
   };
 
@@ -647,18 +690,23 @@ class _ModulesScreenState extends State<ModulesScreen> {
     final current = _modules
         .where((module) => module.id == _selected)
         .firstOrNull;
-    Widget action(String label, Future<Object> Function() run, {Key? key}) =>
-        FilledButton(
-          key: key,
-          onPressed:
-              _busy ||
-                  _agent == null ||
-                  current?.localToolSupported != true ||
-                  current?.localToolInstalled != true
-              ? null
-              : () => _load(run),
-          child: Text(label),
-        );
+    Widget action(
+      String label,
+      Future<Object> Function() run, {
+      Key? key,
+      bool cacheMutation = false,
+    }) => FilledButton(
+      key: key,
+      onPressed:
+          _busy ||
+              (cacheMutation && _cacheReadbackRequired) ||
+              _agent == null ||
+              current?.localToolSupported != true ||
+              current?.localToolInstalled != true
+          ? null
+          : () => _load(run, cacheMutation: cacheMutation),
+      child: Text(label),
+    );
     return Scaffold(
       appBar: AppBar(
         title: const OpenNetworkBrand(),
@@ -846,13 +894,29 @@ class _ModulesScreenState extends State<ModulesScreen> {
                           key: const Key('browser-sessions'),
                         ),
                       ],
-                      if (_selected == 'cache')
+                      if (_selected == 'cache') ...[
                         action(
                           l.moduleRefresh,
                           () => _agent!.cacheStatus(client: widget.client!),
                           key: const Key('cache-status'),
                         ),
-                      if (_busy && !_publishing && _agent != null)
+                        action(
+                          l.cacheBindTools,
+                          () => _agent!.cacheBind(client: widget.client!),
+                          key: const Key('cache-bind'),
+                          cacheMutation: true,
+                        ),
+                        action(
+                          l.cacheUnbindTools,
+                          () => _agent!.cacheUnbind(client: widget.client!),
+                          key: const Key('cache-unbind'),
+                          cacheMutation: true,
+                        ),
+                      ],
+                      if (_busy &&
+                          !_publishing &&
+                          !_cacheMutation &&
+                          _agent != null)
                         TextButton(
                           onPressed: _cancelled ? null : _cancel,
                           child: Text(l.moduleCancel),
@@ -867,6 +931,17 @@ class _ModulesScreenState extends State<ModulesScreen> {
                         ),
                     ],
                   ),
+                  if (_busy && _cacheMutation && !_cleanupHeld)
+                    Text(l.cacheMutationWorking),
+                  if (_selected == 'cache' &&
+                      _cacheReadbackRequired &&
+                      !_cleanupHeld &&
+                      _error == null)
+                    Text(
+                      _cacheCompletionUnconfirmed
+                          ? l.cacheCompletionUnconfirmed
+                          : l.cacheStateUncertain,
+                    ),
                   if (_busy && !_cleanupHeld) const LinearProgressIndicator(),
                   if (_error != null)
                     Padding(

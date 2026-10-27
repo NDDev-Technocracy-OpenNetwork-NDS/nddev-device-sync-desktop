@@ -634,7 +634,7 @@ class _Agent implements native.LocalAgent {
   }
 
   native.CacheStatus _cacheView(bool ready) =>
-      native.CacheStatus(port: 8740, ready: ready, bindings: const []);
+      native.CacheStatus(port: 43210, ready: ready, bindings: const []);
 
   _CodeError _failure(String code) {
     final error = _CodeError(code);

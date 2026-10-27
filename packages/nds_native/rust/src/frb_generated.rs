@@ -6449,7 +6449,7 @@ fn wire__crate__api__modules__cache_binding_bound_impl(
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_binding = <RustOpaqueMoi<
-                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CacheBinding>,
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Binding>,
             >>::sse_decode(&mut deserializer);
             deserializer.end();
             transform_result_sse::<_, ()>((move || {
@@ -6499,7 +6499,7 @@ fn wire__crate__api__modules__cache_binding_kind_impl(
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_binding = <RustOpaqueMoi<
-                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CacheBinding>,
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Binding>,
             >>::sse_decode(&mut deserializer);
             deserializer.end();
             transform_result_sse::<_, ()>((move || {
@@ -7268,7 +7268,7 @@ const _: fn() = || {
         let CacheStatus = None::<crate::api::module_types::CacheStatus>.unwrap();
         let _: u16 = CacheStatus.port;
         let _: bool = CacheStatus.ready;
-        let _: Vec<CacheBinding> = CacheStatus.bindings;
+        let _: Vec<Binding> = CacheStatus.bindings;
     }
     {
         let Changes = None::<nddev_device_sync_gds::view::Changes>.unwrap();
@@ -7752,7 +7752,7 @@ flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
     flutter_rust_bridge::for_generated::RustAutoOpaqueInner<AppUpdates>
 );
 flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
-    flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CacheBinding>
+    flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Binding>
 );
 flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
     flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ClientError>
@@ -7791,11 +7791,11 @@ impl SseDecode for AppUpdates {
     }
 }
 
-impl SseDecode for CacheBinding {
+impl SseDecode for Binding {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <RustOpaqueMoi<
-            flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CacheBinding>,
+            flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Binding>,
         >>::sse_decode(deserializer);
         return flutter_rust_bridge::for_generated::rust_auto_opaque_decode_owned(inner);
     }
@@ -7891,9 +7891,7 @@ impl SseDecode
     }
 }
 
-impl SseDecode
-    for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CacheBinding>>
-{
+impl SseDecode for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Binding>> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <usize>::sse_decode(deserializer);
@@ -8195,7 +8193,7 @@ impl SseDecode for crate::api::module_types::CacheStatus {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_port = <u16>::sse_decode(deserializer);
         let mut var_ready = <bool>::sse_decode(deserializer);
-        let mut var_bindings = <Vec<CacheBinding>>::sse_decode(deserializer);
+        let mut var_bindings = <Vec<Binding>>::sse_decode(deserializer);
         return crate::api::module_types::CacheStatus {
             port: var_port,
             ready: var_ready,
@@ -8974,13 +8972,13 @@ impl SseDecode for crate::api::identity::IncidentView {
     }
 }
 
-impl SseDecode for Vec<CacheBinding> {
+impl SseDecode for Vec<Binding> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(<CacheBinding>::sse_decode(deserializer));
+            ans_.push(<Binding>::sse_decode(deserializer));
         }
         return ans_;
     }
@@ -10858,16 +10856,16 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<AppUpdates>> for AppUpdates {
 }
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for FrbWrapper<CacheBinding> {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<Binding> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self.0)
             .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<CacheBinding> {}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<Binding> {}
 
-impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<CacheBinding>> for CacheBinding {
-    fn into_into_dart(self) -> FrbWrapper<CacheBinding> {
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<Binding>> for Binding {
+    fn into_into_dart(self) -> FrbWrapper<Binding> {
         self.into()
     }
 }
@@ -13335,10 +13333,10 @@ impl SseEncode for AppUpdates {
     }
 }
 
-impl SseEncode for CacheBinding {
+impl SseEncode for Binding {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CacheBinding>>>::sse_encode(flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self), serializer);
+        <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner< Binding>>>::sse_encode(flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self), serializer);
     }
 }
 
@@ -13409,9 +13407,7 @@ impl SseEncode
     }
 }
 
-impl SseEncode
-    for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CacheBinding>>
-{
+impl SseEncode for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Binding>> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         let (ptr, size) = self.sse_encode_raw();
@@ -13681,7 +13677,7 @@ impl SseEncode for crate::api::module_types::CacheStatus {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <u16>::sse_encode(self.port, serializer);
         <bool>::sse_encode(self.ready, serializer);
-        <Vec<CacheBinding>>::sse_encode(self.bindings, serializer);
+        <Vec<Binding>>::sse_encode(self.bindings, serializer);
     }
 }
 
@@ -14254,12 +14250,12 @@ impl SseEncode for crate::api::identity::IncidentView {
     }
 }
 
-impl SseEncode for Vec<CacheBinding> {
+impl SseEncode for Vec<Binding> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <CacheBinding>::sse_encode(item, serializer);
+            <Binding>::sse_encode(item, serializer);
         }
     }
 }
@@ -15297,17 +15293,17 @@ mod io {
     }
 
     #[unsafe(no_mangle)]
-    pub extern "C" fn frbgen_nds_native_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+    pub extern "C" fn frbgen_nds_native_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
         ptr: *const std::ffi::c_void,
     ) {
-        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CacheBinding>>::increment_strong_count(ptr as _);
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner< Binding>>::increment_strong_count(ptr as _);
     }
 
     #[unsafe(no_mangle)]
-    pub extern "C" fn frbgen_nds_native_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+    pub extern "C" fn frbgen_nds_native_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
         ptr: *const std::ffi::c_void,
     ) {
-        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CacheBinding>>::decrement_strong_count(ptr as _);
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner< Binding>>::decrement_strong_count(ptr as _);
     }
 
     #[unsafe(no_mangle)]
@@ -15468,17 +15464,17 @@ mod web {
     }
 
     #[wasm_bindgen]
-    pub fn rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+    pub fn rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
         ptr: *const std::ffi::c_void,
     ) {
-        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CacheBinding>>::increment_strong_count(ptr as _);
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner< Binding>>::increment_strong_count(ptr as _);
     }
 
     #[wasm_bindgen]
-    pub fn rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+    pub fn rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
         ptr: *const std::ffi::c_void,
     ) {
-        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CacheBinding>>::decrement_strong_count(ptr as _);
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner< Binding>>::decrement_strong_count(ptr as _);
     }
 
     #[wasm_bindgen]

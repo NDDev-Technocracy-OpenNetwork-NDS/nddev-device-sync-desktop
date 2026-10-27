@@ -142,7 +142,7 @@ class BrowserTab {
 class CacheStatus {
   final int port;
   final bool ready;
-  final List<CacheBinding> bindings;
+  final List<Binding> bindings;
 
   const CacheStatus({
     required this.port,

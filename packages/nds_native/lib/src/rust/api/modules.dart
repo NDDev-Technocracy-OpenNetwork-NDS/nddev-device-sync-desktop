@@ -24,10 +24,10 @@ bool supportsLocalAgent() =>
 
 /// Read-only presentation of the canonical cache binding type. These accessors
 /// read metadata and never change a tool's settings.
-String cacheBindingKind({required CacheBinding binding}) =>
+String cacheBindingKind({required Binding binding}) =>
     RustLib.instance.api.crateApiModulesCacheBindingKind(binding: binding);
 
-bool cacheBindingBound({required CacheBinding binding}) =>
+bool cacheBindingBound({required Binding binding}) =>
     RustLib.instance.api.crateApiModulesCacheBindingBound(binding: binding);
 
 /// Presentation access to the provider's opaque data-carrying enum. The
@@ -38,8 +38,8 @@ String updateActionKind({required SystemUpdateAction action}) =>
 String? updateActionPlatform({required SystemUpdateAction action}) =>
     RustLib.instance.api.crateApiModulesUpdateActionPlatform(action: action);
 
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CacheBinding>>
-abstract class CacheBinding implements RustOpaqueInterface {}
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner< Binding>>
+abstract class Binding implements RustOpaqueInterface {}
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalAgent>>
 abstract class LocalAgent implements RustOpaqueInterface {

@@ -572,9 +572,9 @@ abstract class RustLibApi extends BaseApi {
 
   Future<ScreenFrame> crateApiScreenScreenViewFrame({required ScreenView that});
 
-  bool crateApiModulesCacheBindingBound({required CacheBinding binding});
+  bool crateApiModulesCacheBindingBound({required Binding binding});
 
-  String crateApiModulesCacheBindingKind({required CacheBinding binding});
+  String crateApiModulesCacheBindingKind({required Binding binding});
 
   void crateApiOrganizationsCaptureInvitationLink({required String route});
 
@@ -631,13 +631,11 @@ abstract class RustLibApi extends BaseApi {
 
   CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_AppUpdatesPtr;
 
-  RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_CacheBinding;
+  RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_Binding;
 
-  RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_CacheBinding;
+  RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_Binding;
 
-  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_CacheBindingPtr;
+  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_BindingPtr;
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_ClientError;
@@ -4700,12 +4698,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "ScreenView_frame", argNames: ["that"]);
 
   @override
-  bool crateApiModulesCacheBindingBound({required CacheBinding binding}) {
+  bool crateApiModulesCacheBindingBound({required Binding binding}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
             binding,
             serializer,
           );
@@ -4733,12 +4731,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  String crateApiModulesCacheBindingKind({required CacheBinding binding}) {
+  String crateApiModulesCacheBindingKind({required Binding binding}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
             binding,
             serializer,
           );
@@ -5368,12 +5366,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAppUpdates;
 
   RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_CacheBinding => wire
-      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding;
+  get rust_arc_increment_strong_count_Binding => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding;
 
   RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_CacheBinding => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding;
+  get rust_arc_decrement_strong_count_Binding => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding;
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_ClientError => wire
@@ -5449,12 +5447,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  CacheBinding
-  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+  Binding
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
-    return CacheBindingImpl.frbInternalDcoDecode(raw as List<dynamic>);
+    return BindingImpl.frbInternalDcoDecode(raw as List<dynamic>);
   }
 
   @protected
@@ -5539,12 +5537,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  CacheBinding
-  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+  Binding
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
-    return CacheBindingImpl.frbInternalDcoDecode(raw as List<dynamic>);
+    return BindingImpl.frbInternalDcoDecode(raw as List<dynamic>);
   }
 
   @protected
@@ -5629,12 +5627,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  CacheBinding
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+  Binding
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
-    return CacheBindingImpl.frbInternalDcoDecode(raw as List<dynamic>);
+    return BindingImpl.frbInternalDcoDecode(raw as List<dynamic>);
   }
 
   @protected
@@ -5984,7 +5982,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       port: dco_decode_u_16(arr[0]),
       ready: dco_decode_bool(arr[1]),
       bindings:
-          dco_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+          dco_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
             arr[2],
           ),
     );
@@ -6559,14 +6557,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  List<CacheBinding>
-  dco_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+  List<Binding>
+  dco_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>)
         .map(
-          dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding,
+          dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding,
         )
         .toList();
   }
@@ -7410,12 +7408,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  CacheBinding
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+  Binding
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return CacheBindingImpl.frbInternalSseDecode(
+    return BindingImpl.frbInternalSseDecode(
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
@@ -7530,12 +7528,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  CacheBinding
-  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+  Binding
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return CacheBindingImpl.frbInternalSseDecode(
+    return BindingImpl.frbInternalSseDecode(
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
@@ -7650,12 +7648,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  CacheBinding
-  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+  Binding
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return CacheBindingImpl.frbInternalSseDecode(
+    return BindingImpl.frbInternalSseDecode(
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
@@ -8056,7 +8054,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_port = sse_decode_u_16(deserializer);
     var var_ready = sse_decode_bool(deserializer);
     var var_bindings =
-        sse_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+        sse_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
           deserializer,
         );
     return CacheStatus(
@@ -8719,17 +8717,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  List<CacheBinding>
-  sse_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+  List<Binding>
+  sse_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     var len_ = sse_decode_i_32(deserializer);
-    var ans_ = <CacheBinding>[];
+    var ans_ = <Binding>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(
-        sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+        sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
           deserializer,
         ),
       );
@@ -9907,13 +9905,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
-    CacheBinding self,
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    Binding self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
-      (self as CacheBindingImpl).frbInternalSseEncode(move: true),
+      (self as BindingImpl).frbInternalSseEncode(move: true),
       serializer,
     );
   }
@@ -10037,13 +10035,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
-  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
-    CacheBinding self,
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    Binding self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
-      (self as CacheBindingImpl).frbInternalSseEncode(move: false),
+      (self as BindingImpl).frbInternalSseEncode(move: false),
       serializer,
     );
   }
@@ -10167,13 +10165,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
-    CacheBinding self,
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    Binding self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
-      (self as CacheBindingImpl).frbInternalSseEncode(move: null),
+      (self as BindingImpl).frbInternalSseEncode(move: null),
       serializer,
     );
   }
@@ -10559,7 +10557,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_u_16(self.port, serializer);
     sse_encode_bool(self.ready, serializer);
-    sse_encode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+    sse_encode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
       self.bindings,
       serializer,
     );
@@ -11033,14 +11031,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
-  sse_encode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
-    List<CacheBinding> self,
+  sse_encode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    List<Binding> self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
-      sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCacheBinding(
+      sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
         item,
         serializer,
       );
@@ -12017,22 +12015,22 @@ class AppUpdatesImpl extends RustOpaque implements AppUpdates {
 }
 
 @sealed
-class CacheBindingImpl extends RustOpaque implements CacheBinding {
+class BindingImpl extends RustOpaque implements Binding {
   // Not to be used by end users
-  CacheBindingImpl.frbInternalDcoDecode(List<dynamic> wire)
+  BindingImpl.frbInternalDcoDecode(List<dynamic> wire)
     : super.frbInternalDcoDecode(wire, _kStaticData);
 
   // Not to be used by end users
-  CacheBindingImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
+  BindingImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
     : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
 
   static final _kStaticData = RustArcStaticData(
     rustArcIncrementStrongCount:
-        RustLib.instance.api.rust_arc_increment_strong_count_CacheBinding,
+        RustLib.instance.api.rust_arc_increment_strong_count_Binding,
     rustArcDecrementStrongCount:
-        RustLib.instance.api.rust_arc_decrement_strong_count_CacheBinding,
+        RustLib.instance.api.rust_arc_decrement_strong_count_Binding,
     rustArcDecrementStrongCountPtr:
-        RustLib.instance.api.rust_arc_decrement_strong_count_CacheBindingPtr,
+        RustLib.instance.api.rust_arc_decrement_strong_count_BindingPtr,
   );
 }
 

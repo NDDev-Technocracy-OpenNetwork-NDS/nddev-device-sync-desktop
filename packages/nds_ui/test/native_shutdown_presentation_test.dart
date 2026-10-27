@@ -186,6 +186,154 @@ void main() {
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );
+
+  testWidgets(
+    'client replacement joins a held cache mutation before shutdown and discovery',
+    (tester) async {
+      final fixture = _Fixture();
+      try {
+        final first = fixture.client('first');
+        final old = fixture.agent(first, 'old');
+        final next = fixture.client('next');
+        fixture.agent(next, 'replacement');
+        first.releaseDiscovery(0);
+        await fixture.mount(tester, first);
+        await _selectCache(tester);
+        await tester.tap(find.byKey(const Key('cache-bind')));
+        await _until(tester, () => old.bindCalls == 1);
+        expect(find.widgetWithText(TextButton, 'Cancel request'), findsNothing);
+        expect(old.closeCalls, 0);
+
+        fixture.select(next);
+        await _frames(tester, 4);
+        expect(old.shutdownCalls, 0);
+        expect(old.disposeCalls, 0);
+        expect(next.discoverCalls, 0);
+        old.releaseBind();
+        await _until(tester, () => old.shutdownCalls == 1);
+        expect(next.discoverCalls, 0);
+        expect(old.disposeCalls, 0);
+        expect(
+          fixture.events.indexOf('old.bind.release'),
+          lessThan(fixture.events.indexOf('old.shutdown')),
+        );
+        old.releaseShutdown();
+        await _until(tester, () => next.discoverCalls == 1);
+        expect(old.disposeCalls, 1);
+      } finally {
+        await fixture.close(tester);
+      }
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'joined cache uncertainty needs explicit readback before another mutation',
+    (tester) async {
+      final fixture = _Fixture();
+      try {
+        final client = fixture.client('client');
+        final agent = fixture.agent(client, 'agent');
+        client.releaseDiscovery(0);
+        await fixture.mount(tester, client);
+        await _selectCache(tester);
+        await tester.tap(find.byKey(const Key('cache-bind')));
+        await _until(tester, () => agent.bindCalls == 1);
+        agent.releaseBind(success: false);
+        await _until(tester, () => agent.cacheErrors.isNotEmpty);
+        await _frames(tester, 4);
+        expect(
+          find.text(
+            'Download settings may have changed. Refresh status before another action.',
+          ),
+          findsOneWidget,
+        );
+        expect(_action(tester, 'cache-bind').onPressed, isNull);
+        expect(_action(tester, 'cache-unbind').onPressed, isNull);
+        expect(agent.bindCalls, 1);
+        expect(agent.unbindCalls, 0);
+        expect(agent.closeCalls, 0);
+
+        await tester.tap(find.byKey(const Key('cache-status')));
+        await _until(tester, () => agent.cacheStatusCalls == 1);
+        expect(_action(tester, 'cache-unbind').onPressed, isNull);
+        agent.releaseCacheStatus();
+        await _until(
+          tester,
+          () => _action(tester, 'cache-unbind').onPressed != null,
+        );
+        expect(find.text('Not responding'), findsOneWidget);
+        expect(agent.bindCalls, 1);
+        expect(agent.unbindCalls, 0);
+        await tester.tap(find.byKey(const Key('cache-unbind')));
+        await _until(tester, () => agent.unbindCalls == 1);
+        expect(find.widgetWithText(TextButton, 'Cancel request'), findsNothing);
+        agent.releaseUnbind();
+        await _frames(tester, 4);
+        expect(agent.closeCalls, 0);
+        expect(agent.cacheErrors.every((error) => error.isDisposed), isTrue);
+      } finally {
+        await fixture.close(tester);
+      }
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'unconfirmed cache completion stays blocked when readback is refused',
+    (tester) async {
+      final fixture = _Fixture();
+      try {
+        final client = fixture.client('client');
+        final agent = fixture.agent(client, 'agent');
+        agent.bindFailureCode = 'cache_io_transport';
+        agent.cacheStatusFailureCode = 'busy';
+        client.releaseDiscovery(0);
+        await fixture.mount(tester, client);
+        await _selectCache(tester);
+        await tester.tap(find.byKey(const Key('cache-bind')));
+        await _until(tester, () => agent.bindCalls == 1);
+        agent.releaseBind(success: false);
+        await _until(tester, () => agent.cacheErrors.isNotEmpty);
+        await _frames(tester, 4);
+        const unconfirmed =
+            'Could not confirm the changes. Further changes are blocked.';
+        expect(find.text(unconfirmed), findsOneWidget);
+        expect(_action(tester, 'cache-bind').onPressed, isNull);
+        expect(_action(tester, 'cache-unbind').onPressed, isNull);
+        await tester.tap(find.byKey(const Key('cache-status')));
+        await _until(tester, () => agent.cacheStatusCalls == 1);
+        agent.releaseCacheStatus();
+        await _until(tester, () => agent.cacheErrors.length == 2);
+        await _frames(tester, 4);
+        expect(find.text(unconfirmed), findsOneWidget);
+        expect(_action(tester, 'cache-bind').onPressed, isNull);
+        expect(_action(tester, 'cache-unbind').onPressed, isNull);
+        expect(agent.bindCalls, 1);
+        expect(agent.unbindCalls, 0);
+        expect(agent.closeCalls, 0);
+        expect(client.discoverCalls, 1);
+      } finally {
+        await fixture.close(tester);
+      }
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+}
+
+FilledButton _action(WidgetTester tester, String key) =>
+    tester.widget<FilledButton>(find.byKey(Key(key)));
+
+Future<void> _selectCache(WidgetTester tester) async {
+  await _until(
+    tester,
+    () => find.byKey(const Key('module-selector')).evaluate().isNotEmpty,
+  );
+  await tester.tap(find.byKey(const Key('module-selector')));
+  await tester.pump(const Duration(milliseconds: 300));
+  await tester.tap(find.text('Network cache').last);
+  await tester.pump(const Duration(milliseconds: 300));
+  await tester.ensureVisible(find.byKey(const Key('cache-bind')));
 }
 
 Future<void> _frames(WidgetTester tester, int count) async {
@@ -273,6 +421,9 @@ class _Fixture {
     for (final agent in agents) {
       agent.releaseStatus();
       agent.releaseShutdown();
+      agent.releaseBind();
+      agent.releaseUnbind();
+      agent.releaseCacheStatus();
     }
     try {
       await _frames(tester, 16);
@@ -294,6 +445,13 @@ class _Fixture {
     }
     for (final agent in agents) {
       expect(agent._status.isCompleted && agent._shutdown.isCompleted, isTrue);
+      expect(
+        agent._bind.isCompleted &&
+            agent._unbind.isCompleted &&
+            agent._cacheStatus.isCompleted,
+        isTrue,
+      );
+      expect(agent.cacheErrors.every((error) => error.isDisposed), isTrue);
     }
     expect(unexpected, isEmpty);
     expect(tester.takeException(), isNull);
@@ -366,7 +524,7 @@ class _Client implements native.NdsClient {
     // Presentation data only, not a permission/admission grant. Rust/Core are
     // absent from these tests and their authorization cannot be inferred here.
     return [
-      for (final id in ['sysinfo', 'browser-use'])
+      for (final id in ['sysinfo', 'browser-use', 'cache'])
         native.DeviceModuleView(
           id: id,
           version: 'fixture',
@@ -401,6 +559,13 @@ class _Agent implements native.LocalAgent {
   final List<String> unexpected;
   final _shutdown = Completer<bool>();
   final _status = Completer<native.BrowserStatus>();
+  final _bind = Completer<bool>();
+  final _unbind = Completer<bool>();
+  final _cacheStatus = Completer<bool>();
+  final cacheErrors = <_CodeError>[];
+  String bindFailureCode = 'cache_uncertain';
+  String? cacheStatusFailureCode;
+  int bindCalls = 0, unbindCalls = 0, cacheStatusCalls = 0;
   int closeCalls = 0, shutdownCalls = 0, disposeCalls = 0, statusCalls = 0;
 
   void releaseShutdown() {
@@ -438,6 +603,65 @@ class _Agent implements native.LocalAgent {
     return _status.future;
   }
 
+  void releaseBind({bool success = true}) {
+    if (!_bind.isCompleted) {
+      events.add('$label.bind.release');
+      _bind.complete(success);
+    }
+  }
+
+  void releaseUnbind() {
+    if (!_unbind.isCompleted) _unbind.complete(true);
+  }
+
+  void releaseCacheStatus() {
+    if (!_cacheStatus.isCompleted) _cacheStatus.complete(false);
+  }
+
+  native.CacheStatus _cacheView(bool ready) =>
+      native.CacheStatus(port: 8740, ready: ready, bindings: const []);
+
+  _CodeError _failure(String code) {
+    final error = _CodeError(code);
+    cacheErrors.add(error);
+    return error;
+  }
+
+  @override
+  Future<native.CacheStatus> cacheBind({
+    required native.NdsClient client,
+  }) async {
+    expect(identical(client, owner), isTrue);
+    bindCalls++;
+    events.add('$label.bind');
+    if (!await _bind.future) throw _failure(bindFailureCode);
+    return _cacheView(true);
+  }
+
+  @override
+  Future<native.CacheStatus> cacheUnbind({
+    required native.NdsClient client,
+  }) async {
+    expect(identical(client, owner), isTrue);
+    unbindCalls++;
+    events.add('$label.unbind');
+    await _unbind.future;
+    return _cacheView(false);
+  }
+
+  @override
+  Future<native.CacheStatus> cacheStatus({
+    required native.NdsClient client,
+  }) async {
+    expect(identical(client, owner), isTrue);
+    cacheStatusCalls++;
+    events.add('$label.cache-status');
+    final ready = await _cacheStatus.future;
+    final failure = cacheStatusFailureCode;
+    if (failure != null) throw _failure(failure);
+    return _cacheView(ready);
+  }
+
   @override
   void close() {
     closeCalls++;
@@ -468,4 +692,24 @@ class _Agent implements native.LocalAgent {
     unexpected.add('$label.$member');
     throw TestFailure('Unexpected agent fixture call: $member');
   }
+}
+
+class _CodeError implements native.ClientError {
+  _CodeError(this.value);
+  final String value;
+  bool _disposed = false;
+
+  @override
+  String code() => value;
+
+  @override
+  void dispose() => _disposed = true;
+
+  @override
+  bool get isDisposed => _disposed;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw TestFailure(
+    'Unexpected error fixture call: ${invocation.memberName}',
+  );
 }

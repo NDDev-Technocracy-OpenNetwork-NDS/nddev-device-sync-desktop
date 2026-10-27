@@ -650,6 +650,11 @@
   "cacheManagedPresent": "Managed settings present",
   "cacheManagedAbsent": "Managed settings not detected",
   "cacheAssemblyInvalid": "Cache configuration is invalid for this app.",
+  "cacheBindTools": "Use cache for downloads",
+  "cacheUnbindTools": "Use direct downloads",
+  "cacheMutationWorking": "Applying download settings…",
+  "cacheStateUncertain": "Download settings may have changed. Refresh status before another action.",
+  "cacheCompletionUnconfirmed": "Could not confirm the changes. Further changes are blocked.",
   "browserSwitchEnabled": "Enabled",
   "browserSwitchDisabled": "Disabled"
 }

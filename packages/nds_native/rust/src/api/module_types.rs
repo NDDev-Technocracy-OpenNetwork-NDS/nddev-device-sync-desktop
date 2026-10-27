@@ -2,6 +2,7 @@
 //! no domain methods or query/observation policy are exported to Dart here.
 #[cfg(feature = "flutter")]
 use flutter_rust_bridge::frb;
+pub use nddev_device_sync_agent::view::cache::{Binding as CacheBinding, Status as CacheStatus};
 pub use nddev_device_sync_agent::view::{
     BrowserDocument,
     browser::{
@@ -89,4 +90,17 @@ pub enum _BrowserScriptFailure {
 pub struct _BrowserDocument {
     pub target: String,
     pub document: String,
+}
+
+#[cfg_attr(feature = "flutter", frb(mirror(CacheBinding)))]
+pub struct _CacheBinding {
+    pub kind: &'static str,
+    pub bound: bool,
+}
+
+#[cfg_attr(feature = "flutter", frb(mirror(CacheStatus)))]
+pub struct _CacheStatus {
+    pub port: u16,
+    pub ready: bool,
+    pub bindings: Vec<CacheBinding>,
 }

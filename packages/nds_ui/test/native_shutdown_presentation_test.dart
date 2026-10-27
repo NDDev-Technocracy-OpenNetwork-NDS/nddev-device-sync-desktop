@@ -279,46 +279,61 @@ void main() {
     timeout: const Timeout(Duration(seconds: 30)),
   );
 
-  testWidgets(
-    'unconfirmed cache completion stays blocked when readback is refused',
-    (tester) async {
-      final fixture = _Fixture();
-      try {
-        final client = fixture.client('client');
-        final agent = fixture.agent(client, 'agent');
-        agent.bindFailureCode = 'cache_io_transport';
-        agent.cacheStatusFailureCode = 'busy';
-        client.releaseDiscovery(0);
-        await fixture.mount(tester, client);
-        await _selectCache(tester);
-        await tester.tap(find.byKey(const Key('cache-bind')));
-        await _until(tester, () => agent.bindCalls == 1);
-        agent.releaseBind(success: false);
-        await _until(tester, () => agent.cacheErrors.isNotEmpty);
-        await _frames(tester, 4);
-        const unconfirmed =
-            'Could not confirm the changes. Further changes are blocked.';
-        expect(find.text(unconfirmed), findsOneWidget);
-        expect(_action(tester, 'cache-bind').onPressed, isNull);
-        expect(_action(tester, 'cache-unbind').onPressed, isNull);
-        await tester.tap(find.byKey(const Key('cache-status')));
-        await _until(tester, () => agent.cacheStatusCalls == 1);
-        agent.releaseCacheStatus();
-        await _until(tester, () => agent.cacheErrors.length == 2);
-        await _frames(tester, 4);
-        expect(find.text(unconfirmed), findsOneWidget);
-        expect(_action(tester, 'cache-bind').onPressed, isNull);
-        expect(_action(tester, 'cache-unbind').onPressed, isNull);
-        expect(agent.bindCalls, 1);
-        expect(agent.unbindCalls, 0);
-        expect(agent.closeCalls, 0);
-        expect(client.discoverCalls, 1);
-      } finally {
-        await fixture.close(tester);
-      }
-    },
-    timeout: const Timeout(Duration(seconds: 30)),
-  );
+  for (final failureCode in <String?>[
+    'cache_io_transport',
+    'cache_cleanup_unresolved',
+    'cancelled',
+    'credential_revalidation_required',
+    null, // An opaque bridge error has no typed no-write evidence.
+  ]) {
+    testWidgets(
+      'unconfirmed cache completion ${failureCode ?? 'opaque bridge'} stays blocked',
+      (tester) async {
+        final fixture = _Fixture();
+        try {
+          final client = fixture.client('client');
+          final agent = fixture.agent(client, 'agent');
+          agent.bindFailureCode = failureCode;
+          agent.cacheStatusFailureCode = 'busy';
+          client.releaseDiscovery(0);
+          await fixture.mount(tester, client);
+          await _selectCache(tester);
+          await tester.tap(find.byKey(const Key('cache-bind')));
+          await _until(tester, () => agent.bindCalls == 1);
+          agent.releaseBind(success: false);
+          await _until(
+            tester,
+            () => find.byKey(const Key('module-error')).evaluate().isNotEmpty,
+          );
+          await _frames(tester, 4);
+          const unconfirmed =
+              'Could not confirm the changes. Further changes are blocked.';
+          expect(find.text(unconfirmed), findsOneWidget);
+          expect(_action(tester, 'cache-bind').onPressed, isNull);
+          expect(_action(tester, 'cache-unbind').onPressed, isNull);
+          final errorsBeforeReadback = agent.cacheErrors.length;
+          await tester.tap(find.byKey(const Key('cache-status')));
+          await _until(tester, () => agent.cacheStatusCalls == 1);
+          agent.releaseCacheStatus();
+          await _until(
+            tester,
+            () => agent.cacheErrors.length == errorsBeforeReadback + 1,
+          );
+          await _frames(tester, 4);
+          expect(find.text(unconfirmed), findsOneWidget);
+          expect(_action(tester, 'cache-bind').onPressed, isNull);
+          expect(_action(tester, 'cache-unbind').onPressed, isNull);
+          expect(agent.bindCalls, 1);
+          expect(agent.unbindCalls, 0);
+          expect(agent.closeCalls, 0);
+          expect(client.discoverCalls, 1);
+        } finally {
+          await fixture.close(tester);
+        }
+      },
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
+  }
 }
 
 FilledButton _action(WidgetTester tester, String key) =>
@@ -563,7 +578,7 @@ class _Agent implements native.LocalAgent {
   final _unbind = Completer<bool>();
   final _cacheStatus = Completer<bool>();
   final cacheErrors = <_CodeError>[];
-  String bindFailureCode = 'cache_uncertain';
+  String? bindFailureCode = 'cache_uncertain';
   String? cacheStatusFailureCode;
   int bindCalls = 0, unbindCalls = 0, cacheStatusCalls = 0;
   int closeCalls = 0, shutdownCalls = 0, disposeCalls = 0, statusCalls = 0;
@@ -634,7 +649,11 @@ class _Agent implements native.LocalAgent {
     expect(identical(client, owner), isTrue);
     bindCalls++;
     events.add('$label.bind');
-    if (!await _bind.future) throw _failure(bindFailureCode);
+    if (!await _bind.future) {
+      final code = bindFailureCode;
+      if (code == null) throw StateError('fixture opaque bridge completion');
+      throw _failure(code);
+    }
     return _cacheView(true);
   }
 

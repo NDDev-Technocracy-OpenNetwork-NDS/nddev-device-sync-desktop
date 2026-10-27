@@ -346,10 +346,18 @@ class _ModulesScreenState extends State<ModulesScreen> {
       if (mounted && epoch == _epoch) {
         setState(() {
           _error = code;
+          // Public cancellation/revalidation or a bridge error does not reveal
+          // whether an admitted write completed behind its publication fence.
+          // Only these owner-specific pre-write refusals prove no new effect.
           if (cacheMutation &&
-              (code == 'cache_uncertain' || code == 'cache_io_transport')) {
+              !const {
+                'cache_conflict',
+                'cache_invalid',
+                'cache_not_ready',
+                'module_unsupported',
+              }.contains(code)) {
             _cacheReadbackRequired = true;
-            _cacheCompletionUnconfirmed = code == 'cache_io_transport';
+            _cacheCompletionUnconfirmed = code != 'cache_uncertain';
           }
         });
       }
@@ -409,6 +417,10 @@ class _ModulesScreenState extends State<ModulesScreen> {
   };
 
   String _errorMessage(AppLocalizations l, String error) => switch (error) {
+    _ when _selected == 'cache' && _cacheReadbackRequired =>
+      _cacheCompletionUnconfirmed
+          ? l.cacheCompletionUnconfirmed
+          : l.cacheStateUncertain,
     'unavailable' || 'unsupportedPlatform' => l.providerUnavailable,
     'busy' => l.rateError,
     'timeout' => l.moduleNetworkError,
@@ -419,8 +431,6 @@ class _ModulesScreenState extends State<ModulesScreen> {
     'publish' => l.statePublishError,
     'module_device_required' => l.moduleDeviceRequired,
     'cache_uncertain' => l.cacheStateUncertain,
-    'cache_io_transport' when _cacheCompletionUnconfirmed =>
-      l.cacheCompletionUnconfirmed,
     _ => moduleFailureLabel(l, error),
   };
 
@@ -926,9 +936,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
                   if (_selected == 'cache' &&
                       _cacheReadbackRequired &&
                       !_cleanupHeld &&
-                      _error != 'cache_uncertain' &&
-                      !(_error == 'cache_io_transport' &&
-                          _cacheCompletionUnconfirmed))
+                      _error == null)
                     Text(
                       _cacheCompletionUnconfirmed
                           ? l.cacheCompletionUnconfirmed

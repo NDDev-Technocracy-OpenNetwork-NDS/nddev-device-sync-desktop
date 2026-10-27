@@ -1249,6 +1249,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Create checkouts and synchronize existing Git commits';
 
   @override
+  String get permissionBrowserControl => 'Control agent browser tabs';
+
+  @override
+  String get browserControlScope =>
+      'Allows agents to automate tabs in NDS groups. Other browser tabs remain outside this permission.';
+
+  @override
   String get repositoryConnect => 'Connect checkout';
 
   @override

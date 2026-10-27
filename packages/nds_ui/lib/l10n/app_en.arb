@@ -552,6 +552,8 @@
   "catalogClearSource": "Clear GitHub choice",
   "moduleStateQueued": "Local states queued for synchronization.",
   "permissionGitWrite": "Create checkouts and synchronize existing Git commits",
+  "permissionBrowserControl": "Control agent browser tabs",
+  "browserControlScope": "Allows agents to automate tabs in NDS groups. Other browser tabs remain outside this permission.",
   "repositoryConnect": "Connect checkout",
   "repositoryConnected": "Checkout connected: {path}",
   "@repositoryConnected": {

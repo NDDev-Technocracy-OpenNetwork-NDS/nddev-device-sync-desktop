@@ -2274,6 +2274,18 @@ abstract class AppLocalizations {
   /// **'Create checkouts and synchronize existing Git commits'**
   String get permissionGitWrite;
 
+  /// No description provided for @permissionBrowserControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Control agent browser tabs'**
+  String get permissionBrowserControl;
+
+  /// No description provided for @browserControlScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Allows agents to automate tabs in NDS groups. Other browser tabs remain outside this permission.'**
+  String get browserControlScope;
+
   /// No description provided for @repositoryConnect.
   ///
   /// In en, this message translates to:

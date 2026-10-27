@@ -545,6 +545,8 @@
   "catalogClearSource": "Сбросить выбор GitHub",
   "moduleStateQueued": "Локальные состояния поставлены в очередь синхронизации.",
   "permissionGitWrite": "Подключать репозитории и синхронизировать Git-коммиты",
+  "permissionBrowserControl": "Управление вкладками браузера агента",
+  "browserControlScope": "Разрешает агентам автоматизацию вкладок в группах NDS. На остальные вкладки браузера это разрешение не распространяется.",
   "repositoryConnect": "Подключить репозиторий",
   "repositoryConnected": "Репозиторий подключён: {path}",
   "@repositoryConnected": {

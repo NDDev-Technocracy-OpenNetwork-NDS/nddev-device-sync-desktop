@@ -13,6 +13,7 @@ String modulePermissionLabel(AppLocalizations l, String value) =>
       'user_service' => l.permissionUserService,
       'clipboard' => l.permissionClipboard,
       'git_write' => l.permissionGitWrite,
+      'browser_control' => l.permissionBrowserControl,
       _ => value,
     };
 
@@ -208,6 +209,7 @@ class _ModuleSettingsState extends State<ModuleSettings> {
         if (module.requiredPermissions.isNotEmpty ||
             module.optionalPermissions.isNotEmpty)
           Text(l.modulePermissions),
+        if (module.id == 'browser-use') Text(l.browserControlScope),
         for (final permission in {
           ...module.requiredPermissions,
           ...module.optionalPermissions,

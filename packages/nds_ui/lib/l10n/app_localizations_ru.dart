@@ -1260,6 +1260,13 @@ class AppLocalizationsRu extends AppLocalizations {
       'Подключать репозитории и синхронизировать Git-коммиты';
 
   @override
+  String get permissionBrowserControl => 'Управление вкладками браузера агента';
+
+  @override
+  String get browserControlScope =>
+      'Разрешает агентам автоматизацию вкладок в группах NDS. На остальные вкладки браузера это разрешение не распространяется.';
+
+  @override
   String get repositoryConnect => 'Подключить репозиторий';
 
   @override

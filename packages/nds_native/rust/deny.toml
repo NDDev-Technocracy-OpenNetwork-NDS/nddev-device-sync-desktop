@@ -19,6 +19,8 @@ allow = [
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-git = [
+    "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-browser-use",
+    "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-cache",
     "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations","https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-vault", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-protocol.git", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-sysinfo", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-clipboard", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-cleaner", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-updater", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-rds", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-core.git", "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent", "https://github.com/NDDev-Technocracy-OpenNetwork/remote-device-sync"]
 
 # Exact native/relay inputs already reviewed by the owning RDS package.

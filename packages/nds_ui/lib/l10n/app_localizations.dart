@@ -2634,6 +2634,36 @@ abstract class AppLocalizations {
   /// **'Cache configuration is invalid for this app.'**
   String get cacheAssemblyInvalid;
 
+  /// No description provided for @cacheBindTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Use cache for downloads'**
+  String get cacheBindTools;
+
+  /// No description provided for @cacheUnbindTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Use direct downloads'**
+  String get cacheUnbindTools;
+
+  /// No description provided for @cacheMutationWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying download settings…'**
+  String get cacheMutationWorking;
+
+  /// No description provided for @cacheStateUncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'Download settings may have changed. Refresh status before another action.'**
+  String get cacheStateUncertain;
+
+  /// No description provided for @cacheCompletionUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not confirm the changes. Further changes are blocked.'**
+  String get cacheCompletionUnconfirmed;
+
   /// No description provided for @browserSwitchEnabled.
   ///
   /// In en, this message translates to:

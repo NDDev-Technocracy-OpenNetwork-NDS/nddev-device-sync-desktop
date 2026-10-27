@@ -1465,6 +1465,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Cache configuration is invalid for this app.';
 
   @override
+  String get cacheBindTools => 'Use cache for downloads';
+
+  @override
+  String get cacheUnbindTools => 'Use direct downloads';
+
+  @override
+  String get cacheMutationWorking => 'Applying download settings…';
+
+  @override
+  String get cacheStateUncertain =>
+      'Download settings may have changed. Refresh status before another action.';
+
+  @override
+  String get cacheCompletionUnconfirmed =>
+      'Could not confirm the changes. Further changes are blocked.';
+
+  @override
   String get browserSwitchEnabled => 'Enabled';
 
   @override

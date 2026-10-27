@@ -1476,6 +1476,23 @@ class AppLocalizationsRu extends AppLocalizations {
       'Настройка кеша для этого приложения недействительна.';
 
   @override
+  String get cacheBindTools => 'Загружать через кеш';
+
+  @override
+  String get cacheUnbindTools => 'Загружать напрямую';
+
+  @override
+  String get cacheMutationWorking => 'Применяются настройки загрузки…';
+
+  @override
+  String get cacheStateUncertain =>
+      'Настройки загрузки могли измениться. Обновите статус перед следующим действием.';
+
+  @override
+  String get cacheCompletionUnconfirmed =>
+      'Не удалось подтвердить изменения. Новые изменения заблокированы.';
+
+  @override
   String get browserSwitchEnabled => 'Включён';
 
   @override

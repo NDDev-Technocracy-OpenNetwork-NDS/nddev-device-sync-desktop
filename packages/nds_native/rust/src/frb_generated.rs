@@ -46,7 +46,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1498609282;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1965234207;
 
 // Section: executor
 
@@ -928,6 +928,81 @@ fn wire__crate__api__modules__LocalAgent_browser_status_impl(
         },
     )
 }
+fn wire__crate__api__modules__LocalAgent_cache_bind_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "LocalAgent_cache_bind",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalAgent>,
+            >>::sse_decode(&mut deserializer);
+            let api_client = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NdsClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ClientError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let mut api_client_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![
+                                    flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                        &api_that, 0, false,
+                                    ),
+                                    flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                        &api_client,
+                                        1,
+                                        false,
+                                    ),
+                                ],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                1 => {
+                                    api_client_guard =
+                                        Some(api_client.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let api_client_guard = api_client_guard.unwrap();
+                        let output_ok = crate::api::modules::LocalAgent::cache_bind(
+                            &*api_that_guard,
+                            &*api_client_guard,
+                        )
+                        .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__modules__LocalAgent_cache_status_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -991,6 +1066,81 @@ fn wire__crate__api__modules__LocalAgent_cache_status_impl(
                         let api_that_guard = api_that_guard.unwrap();
                         let api_client_guard = api_client_guard.unwrap();
                         let output_ok = crate::api::modules::LocalAgent::cache_status(
+                            &*api_that_guard,
+                            &*api_client_guard,
+                        )
+                        .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__modules__LocalAgent_cache_unbind_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "LocalAgent_cache_unbind",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalAgent>,
+            >>::sse_decode(&mut deserializer);
+            let api_client = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NdsClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ClientError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let mut api_client_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![
+                                    flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                        &api_that, 0, false,
+                                    ),
+                                    flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                        &api_client,
+                                        1,
+                                        false,
+                                    ),
+                                ],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                1 => {
+                                    api_client_guard =
+                                        Some(api_client.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let api_client_guard = api_client_guard.unwrap();
+                        let output_ok = crate::api::modules::LocalAgent::cache_unbind(
                             &*api_that_guard,
                             &*api_client_guard,
                         )
@@ -10329,402 +10479,411 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        16 => wire__crate__api__modules__LocalAgent_cache_status_impl(
+        16 => {
+            wire__crate__api__modules__LocalAgent_cache_bind_impl(port, ptr, rust_vec_len, data_len)
+        }
+        17 => wire__crate__api__modules__LocalAgent_cache_status_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        17 => wire__crate__api__modules__LocalAgent_cleaner_diagnostics_impl(
+        18 => wire__crate__api__modules__LocalAgent_cache_unbind_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        18 => wire__crate__api__modules__LocalAgent_cleaner_last_run_impl(
+        19 => wire__crate__api__modules__LocalAgent_cleaner_diagnostics_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        19 => wire__crate__api__modules__LocalAgent_cleaner_preview_impl(
+        20 => wire__crate__api__modules__LocalAgent_cleaner_last_run_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        20 => wire__crate__api__modules__LocalAgent_clipboard_content_impl(
+        21 => wire__crate__api__modules__LocalAgent_cleaner_preview_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        21 => wire__crate__api__modules__LocalAgent_clipboard_entries_impl(
+        22 => wire__crate__api__modules__LocalAgent_clipboard_content_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        24 => wire__crate__api__modules__LocalAgent_remote_sessions_impl(
+        23 => wire__crate__api__modules__LocalAgent_clipboard_entries_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        25 => wire__crate__api__modules__LocalAgent_repository_status_impl(
+        26 => wire__crate__api__modules__LocalAgent_remote_sessions_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        26 => wire__crate__api__modules__LocalAgent_resume_browser_impl(
+        27 => wire__crate__api__modules__LocalAgent_repository_status_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        27 => {
+        28 => wire__crate__api__modules__LocalAgent_resume_browser_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        29 => {
             wire__crate__api__modules__LocalAgent_shutdown_impl(port, ptr, rust_vec_len, data_len)
         }
-        28 => wire__crate__api__modules__LocalAgent_system_info_impl(
+        30 => wire__crate__api__modules__LocalAgent_system_info_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        29 => wire__crate__api__modules__LocalAgent_update_last_run_impl(
+        31 => wire__crate__api__modules__LocalAgent_update_last_run_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        30 => wire__crate__api__modules__LocalAgent_update_plan_impl(
+        32 => wire__crate__api__modules__LocalAgent_update_plan_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        33 => wire__crate__api__identity__NdsClient_clear_github_catalog_source_impl(
+        35 => wire__crate__api__identity__NdsClient_clear_github_catalog_source_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        34 => wire__crate__api__identity__NdsClient_clipboard_copy_impl(
+        36 => wire__crate__api__identity__NdsClient_clipboard_copy_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        35 => wire__crate__api__identity__NdsClient_clipboard_publish_archive_impl(
+        37 => wire__crate__api__identity__NdsClient_clipboard_publish_archive_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        36 => wire__crate__api__identity__NdsClient_clipboard_publish_native_impl(
+        38 => wire__crate__api__identity__NdsClient_clipboard_publish_native_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        37 => wire__crate__api__identity__NdsClient_clipboard_publish_text_impl(
+        39 => wire__crate__api__identity__NdsClient_clipboard_publish_text_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        38 => wire__crate__api__identity__NdsClient_clipboard_snapshot_impl(
+        40 => wire__crate__api__identity__NdsClient_clipboard_snapshot_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        39 => wire__crate__api__identity__NdsClient_company_impl(port, ptr, rust_vec_len, data_len),
-        40 => wire__crate__api__identity__NdsClient_company_change_member_impl(
+        41 => wire__crate__api__identity__NdsClient_company_impl(port, ptr, rust_vec_len, data_len),
+        42 => wire__crate__api__identity__NdsClient_company_change_member_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        41 => wire__crate__api__identity__NdsClient_company_invitations_impl(
+        43 => wire__crate__api__identity__NdsClient_company_invitations_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        42 => wire__crate__api__identity__NdsClient_company_invite_impl(
+        44 => wire__crate__api__identity__NdsClient_company_invite_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        43 => wire__crate__api__identity__NdsClient_company_members_impl(
+        45 => wire__crate__api__identity__NdsClient_company_members_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        44 => wire__crate__api__identity__NdsClient_company_revoke_impl(
+        46 => wire__crate__api__identity__NdsClient_company_revoke_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        45 => wire__crate__api__identity__NdsClient_configure_module_impl(
+        47 => wire__crate__api__identity__NdsClient_configure_module_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        46 => wire__crate__api__identity__NdsClient_connect_github_repository_impl(
+        48 => wire__crate__api__identity__NdsClient_connect_github_repository_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        48 => wire__crate__api__identity__NdsClient_device_modules_impl(
+        50 => wire__crate__api__identity__NdsClient_device_modules_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        49 => wire__crate__api__identity__NdsClient_discover_local_agent_impl(
+        51 => wire__crate__api__identity__NdsClient_discover_local_agent_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        50 => wire__crate__api__identity__NdsClient_github_catalog_credentials_impl(
+        52 => wire__crate__api__identity__NdsClient_github_catalog_credentials_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        51 => wire__crate__api__identity__NdsClient_github_catalog_source_impl(
+        53 => wire__crate__api__identity__NdsClient_github_catalog_source_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        52 => wire__crate__api__identity__NdsClient_github_repository_page_impl(
+        54 => wire__crate__api__identity__NdsClient_github_repository_page_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        53 => wire__crate__api__identity__NdsClient_import_browser_invitation_impl(
+        55 => wire__crate__api__identity__NdsClient_import_browser_invitation_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        54 => wire__crate__api__identity__NdsClient_import_invitation_impl(
+        56 => wire__crate__api__identity__NdsClient_import_invitation_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        55 => wire__crate__api__identity__NdsClient_incident_action_impl(
+        57 => wire__crate__api__identity__NdsClient_incident_action_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        56 => {
+        58 => {
             wire__crate__api__identity__NdsClient_incidents_impl(port, ptr, rust_vec_len, data_len)
         }
-        57 => wire__crate__api__identity__NdsClient_logout_impl(port, ptr, rust_vec_len, data_len),
-        60 => {
+        59 => wire__crate__api__identity__NdsClient_logout_impl(port, ptr, rust_vec_len, data_len),
+        62 => {
             wire__crate__api__identity__NdsClient_passkeys_impl(port, ptr, rust_vec_len, data_len)
         }
-        61 => wire__crate__api__identity__NdsClient_poll_github_impl(
+        63 => wire__crate__api__identity__NdsClient_poll_github_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        62 => wire__crate__api__identity__NdsClient_poll_passkey_impl(
+        64 => wire__crate__api__identity__NdsClient_poll_passkey_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        63 => wire__crate__api__identity__NdsClient_prepare_device_impl(
+        65 => wire__crate__api__identity__NdsClient_prepare_device_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        64 => wire__crate__api__identity__NdsClient_publish_device_state_impl(
+        66 => wire__crate__api__identity__NdsClient_publish_device_state_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        65 => wire__crate__api__identity__NdsClient_publish_local_state_impl(
+        67 => wire__crate__api__identity__NdsClient_publish_local_state_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        66 => {
+        68 => {
             wire__crate__api__identity__NdsClient_reconcile_impl(port, ptr, rust_vec_len, data_len)
         }
-        67 => wire__crate__api__identity__NdsClient_refresh_impl(port, ptr, rust_vec_len, data_len),
-        68 => wire__crate__api__identity__NdsClient_refresh_devices_impl(
+        69 => wire__crate__api__identity__NdsClient_refresh_impl(port, ptr, rust_vec_len, data_len),
+        70 => wire__crate__api__identity__NdsClient_refresh_devices_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        69 => wire__crate__api__identity__NdsClient_request_email_impl(
+        71 => wire__crate__api__identity__NdsClient_request_email_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        71 => wire__crate__api__identity__NdsClient_revoke_device_impl(
+        73 => wire__crate__api__identity__NdsClient_revoke_device_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        72 => wire__crate__api__identity__NdsClient_revoke_passkey_impl(
+        74 => wire__crate__api__identity__NdsClient_revoke_passkey_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        73 => wire__crate__api__identity__NdsClient_saved_github_repository_page_impl(
+        75 => wire__crate__api__identity__NdsClient_saved_github_repository_page_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        74 => wire__crate__api__identity__NdsClient_screen_accept_impl(
+        76 => wire__crate__api__identity__NdsClient_screen_accept_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        76 => wire__crate__api__identity__NdsClient_screen_close_impl(
+        78 => wire__crate__api__identity__NdsClient_screen_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        77 => wire__crate__api__identity__NdsClient_screen_incoming_impl(
+        79 => wire__crate__api__identity__NdsClient_screen_incoming_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        78 => wire__crate__api__identity__NdsClient_screen_open_impl(
+        80 => wire__crate__api__identity__NdsClient_screen_open_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        79 => wire__crate__api__identity__NdsClient_screen_prepare_impl(
+        81 => wire__crate__api__identity__NdsClient_screen_prepare_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        80 => wire__crate__api__identity__NdsClient_screen_stop_impl(
+        82 => wire__crate__api__identity__NdsClient_screen_stop_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        81 => wire__crate__api__identity__NdsClient_screen_targets_impl(
+        83 => wire__crate__api__identity__NdsClient_screen_targets_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        82 => wire__crate__api__identity__NdsClient_select_github_credential_impl(
+        84 => wire__crate__api__identity__NdsClient_select_github_credential_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        84 => {
+        86 => {
             wire__crate__api__identity__NdsClient_shutdown_impl(port, ptr, rust_vec_len, data_len)
         }
-        86 => wire__crate__api__identity__NdsClient_start_github_impl(
+        88 => wire__crate__api__identity__NdsClient_start_github_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        87 => wire__crate__api__identity__NdsClient_start_passkey_impl(
+        89 => wire__crate__api__identity__NdsClient_start_passkey_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        88 => wire__crate__api__identity__NdsClient_sync_states_impl(
+        90 => wire__crate__api__identity__NdsClient_sync_states_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        89 => wire__crate__api__identity__NdsClient_vault_copy_secret_impl(
+        91 => wire__crate__api__identity__NdsClient_vault_copy_secret_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        90 => wire__crate__api__identity__NdsClient_vault_delete_impl(
+        92 => wire__crate__api__identity__NdsClient_vault_delete_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        91 => wire__crate__api__identity__NdsClient_vault_records_impl(
+        93 => wire__crate__api__identity__NdsClient_vault_records_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        92 => wire__crate__api__identity__NdsClient_vault_refresh_impl(
+        94 => wire__crate__api__identity__NdsClient_vault_refresh_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        93 => wire__crate__api__identity__NdsClient_vault_resolve_impl(
-            port,
-            ptr,
-            rust_vec_len,
-            data_len,
-        ),
-        94 => {
-            wire__crate__api__identity__NdsClient_vault_save_impl(port, ptr, rust_vec_len, data_len)
-        }
-        95 => wire__crate__api__identity__NdsClient_vault_snapshot_impl(
+        95 => wire__crate__api__identity__NdsClient_vault_resolve_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
         96 => {
-            wire__crate__api__identity__NdsClient_vault_sync_impl(port, ptr, rust_vec_len, data_len)
+            wire__crate__api__identity__NdsClient_vault_save_impl(port, ptr, rust_vec_len, data_len)
         }
-        97 => wire__crate__api__identity__NdsClient_verify_email_impl(
+        97 => wire__crate__api__identity__NdsClient_vault_snapshot_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        102 => wire__crate__api__screen__ScreenHost_close_impl(port, ptr, rust_vec_len, data_len),
-        103 => wire__crate__api__screen__ScreenHost_closed_impl(port, ptr, rust_vec_len, data_len),
-        105 => wire__crate__api__screen__ScreenView_close_impl(port, ptr, rust_vec_len, data_len),
-        106 => wire__crate__api__screen__ScreenView_closed_impl(port, ptr, rust_vec_len, data_len),
-        107 => wire__crate__api__screen__ScreenView_frame_impl(port, ptr, rust_vec_len, data_len),
-        122 => {
+        98 => {
+            wire__crate__api__identity__NdsClient_vault_sync_impl(port, ptr, rust_vec_len, data_len)
+        }
+        99 => wire__crate__api__identity__NdsClient_verify_email_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        104 => wire__crate__api__screen__ScreenHost_close_impl(port, ptr, rust_vec_len, data_len),
+        105 => wire__crate__api__screen__ScreenHost_closed_impl(port, ptr, rust_vec_len, data_len),
+        107 => wire__crate__api__screen__ScreenView_close_impl(port, ptr, rust_vec_len, data_len),
+        108 => wire__crate__api__screen__ScreenView_closed_impl(port, ptr, rust_vec_len, data_len),
+        109 => wire__crate__api__screen__ScreenView_frame_impl(port, ptr, rust_vec_len, data_len),
+        124 => {
             wire__crate__api__telemetry__shutdown_telemetry_impl(port, ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),
@@ -10748,90 +10907,90 @@ fn pde_ffi_dispatcher_sync_impl(
             rust_vec_len,
             data_len,
         ),
-        22 => wire__crate__api__modules__LocalAgent_close_impl(ptr, rust_vec_len, data_len),
-        23 => wire__crate__api__modules__LocalAgent_modules_impl(ptr, rust_vec_len, data_len),
-        31 => wire__crate__api__identity__NdsClient_cancel_impl(ptr, rust_vec_len, data_len),
-        32 => wire__crate__api__identity__NdsClient_cancel_github_catalog_impl(
+        24 => wire__crate__api__modules__LocalAgent_close_impl(ptr, rust_vec_len, data_len),
+        25 => wire__crate__api__modules__LocalAgent_modules_impl(ptr, rust_vec_len, data_len),
+        33 => wire__crate__api__identity__NdsClient_cancel_impl(ptr, rust_vec_len, data_len),
+        34 => wire__crate__api__identity__NdsClient_cancel_github_catalog_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        47 => wire__crate__api__identity__NdsClient_delivery_snapshot_impl(
+        49 => wire__crate__api__identity__NdsClient_delivery_snapshot_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        58 => wire__crate__api__identity__NdsClient_new_impl(ptr, rust_vec_len, data_len),
-        59 => wire__crate__api__identity__NdsClient_new_with_cache_base_impl(
+        60 => wire__crate__api__identity__NdsClient_new_impl(ptr, rust_vec_len, data_len),
+        61 => wire__crate__api__identity__NdsClient_new_with_cache_base_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        70 => wire__crate__api__identity__NdsClient_reserve_clipboard_copy_impl(
+        72 => wire__crate__api__identity__NdsClient_reserve_clipboard_copy_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        75 => wire__crate__api__identity__NdsClient_screen_cancel_impl(ptr, rust_vec_len, data_len),
-        83 => wire__crate__api__identity__NdsClient_set_lifecycle_impl(ptr, rust_vec_len, data_len),
-        85 => wire__crate__api__identity__NdsClient_snapshot_impl(ptr, rust_vec_len, data_len),
-        98 => wire__crate__api__screen__ScreenFrame_check_live_impl(ptr, rust_vec_len, data_len),
-        99 => wire__crate__api__screen__ScreenFrame_layout_impl(ptr, rust_vec_len, data_len),
-        100 => wire__crate__api__screen__ScreenFrame_read_once_impl(ptr, rust_vec_len, data_len),
-        101 => wire__crate__api__screen__ScreenHost_cancel_impl(ptr, rust_vec_len, data_len),
-        104 => wire__crate__api__screen__ScreenView_cancel_impl(ptr, rust_vec_len, data_len),
-        108 => wire__crate__api__modules__cache_binding_bound_impl(ptr, rust_vec_len, data_len),
-        109 => wire__crate__api__modules__cache_binding_kind_impl(ptr, rust_vec_len, data_len),
-        110 => wire__crate__api__organizations__capture_invitation_link_impl(
+        77 => wire__crate__api__identity__NdsClient_screen_cancel_impl(ptr, rust_vec_len, data_len),
+        85 => wire__crate__api__identity__NdsClient_set_lifecycle_impl(ptr, rust_vec_len, data_len),
+        87 => wire__crate__api__identity__NdsClient_snapshot_impl(ptr, rust_vec_len, data_len),
+        100 => wire__crate__api__screen__ScreenFrame_check_live_impl(ptr, rust_vec_len, data_len),
+        101 => wire__crate__api__screen__ScreenFrame_layout_impl(ptr, rust_vec_len, data_len),
+        102 => wire__crate__api__screen__ScreenFrame_read_once_impl(ptr, rust_vec_len, data_len),
+        103 => wire__crate__api__screen__ScreenHost_cancel_impl(ptr, rust_vec_len, data_len),
+        106 => wire__crate__api__screen__ScreenView_cancel_impl(ptr, rust_vec_len, data_len),
+        110 => wire__crate__api__modules__cache_binding_bound_impl(ptr, rust_vec_len, data_len),
+        111 => wire__crate__api__modules__cache_binding_kind_impl(ptr, rust_vec_len, data_len),
+        112 => wire__crate__api__organizations__capture_invitation_link_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        111 => wire__crate__api__telemetry__client_diagnostics_impl(ptr, rust_vec_len, data_len),
-        112 => wire__crate__api__identity__client_work_permitted_impl(ptr, rust_vec_len, data_len),
-        113 => wire__nddev_device_sync_vault__view__clipboard_view_default_impl(
+        113 => wire__crate__api__telemetry__client_diagnostics_impl(ptr, rust_vec_len, data_len),
+        114 => wire__crate__api__identity__client_work_permitted_impl(ptr, rust_vec_len, data_len),
+        115 => wire__nddev_device_sync_vault__view__clipboard_view_default_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        114 => wire__crate__api__telemetry__configure_debug_impl(ptr, rust_vec_len, data_len),
-        115 => wire__nddev_device_sync_accounts__view__delivery_view_default_impl(
+        116 => wire__crate__api__telemetry__configure_debug_impl(ptr, rust_vec_len, data_len),
+        117 => wire__nddev_device_sync_accounts__view__delivery_view_default_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        116 => wire__nddev_device_sync_accounts__view__export_policy_default_impl(
+        118 => wire__nddev_device_sync_accounts__view__export_policy_default_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        117 => wire__crate__api__telemetry__init_app_impl(ptr, rust_vec_len, data_len),
-        118 => wire__crate__api__identity__new_vault_record_id_impl(ptr, rust_vec_len, data_len),
-        119 => wire__crate__api__telemetry__record_client_failure_impl(ptr, rust_vec_len, data_len),
-        120 => {
+        119 => wire__crate__api__telemetry__init_app_impl(ptr, rust_vec_len, data_len),
+        120 => wire__crate__api__identity__new_vault_record_id_impl(ptr, rust_vec_len, data_len),
+        121 => wire__crate__api__telemetry__record_client_failure_impl(ptr, rust_vec_len, data_len),
+        122 => {
             wire__crate__api__telemetry__record_client_lifecycle_impl(ptr, rust_vec_len, data_len)
         }
-        121 => wire__crate__api__screen__screen_supported_impl(ptr, rust_vec_len, data_len),
-        123 => wire__crate__api__modules__supports_local_agent_impl(ptr, rust_vec_len, data_len),
-        124 => {
+        123 => wire__crate__api__screen__screen_supported_impl(ptr, rust_vec_len, data_len),
+        125 => wire__crate__api__modules__supports_local_agent_impl(ptr, rust_vec_len, data_len),
+        126 => {
             wire__crate__api__identity__supports_native_clipboard_impl(ptr, rust_vec_len, data_len)
         }
-        125 => wire__crate__api__identity__supports_native_clipboard_read_impl(
+        127 => wire__crate__api__identity__supports_native_clipboard_read_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        126 => wire__crate__api__modules__update_action_kind_impl(ptr, rust_vec_len, data_len),
-        127 => wire__crate__api__modules__update_action_platform_impl(ptr, rust_vec_len, data_len),
-        128 => {
+        128 => wire__crate__api__modules__update_action_kind_impl(ptr, rust_vec_len, data_len),
+        129 => wire__crate__api__modules__update_action_platform_impl(ptr, rust_vec_len, data_len),
+        130 => {
             wire__nddev_device_sync_vault__view__vault_error_code_impl(ptr, rust_vec_len, data_len)
         }
-        129 => wire__nddev_device_sync_vault__view__vault_view_default_impl(
+        131 => wire__nddev_device_sync_vault__view__vault_view_default_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        130 => {
+        132 => {
             wire__nddev_device_sync_accounts__view__view_default_impl(ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),

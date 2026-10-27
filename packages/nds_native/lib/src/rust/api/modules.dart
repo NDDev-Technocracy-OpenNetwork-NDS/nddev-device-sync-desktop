@@ -16,7 +16,7 @@ import 'module_types.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `browser_request`, `cache_error`, `check_client`, `discover`
+// These functions are ignored because they are not marked as `pub`: `browser_request`, `cache_error`, `cache_request`, `check_client`, `discover`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `drop`
 
 bool supportsLocalAgent() =>
@@ -71,9 +71,17 @@ abstract class LocalAgent implements RustOpaqueInterface {
 
   Future<BrowserStatus> browserStatus({required NdsClient client});
 
+  /// Explicit device-local mutation. A dropped caller abandons publication,
+  /// never the retained write task and never this owner's browser lifetime.
+  Future<CacheStatus> cacheBind({required NdsClient client});
+
   /// Reads the supplied base and managed markers. This neither binds/unbinds
   /// nor authenticates the RDS route; ready=false remains an honest status.
   Future<CacheStatus> cacheStatus({required NdsClient client});
+
+  /// Only this explicit action removes managed bindings. Revoke/logout and
+  /// owner shutdown join outstanding work without unbinding or retrying it.
+  Future<CacheStatus> cacheUnbind({required NdsClient client});
 
   Future<Diagnostics> cleanerDiagnostics({required NdsClient client});
 
@@ -104,8 +112,9 @@ abstract class LocalAgent implements RustOpaqueInterface {
   /// enabled setting. A failed/unknown drain cannot be retried into consent.
   Future<void> resumeBrowser({required NdsClient client});
 
-  /// Await the actual owned work and exact browser drain. Sync close/Drop
-  /// merely cancel; neither is a shutdown receipt.
+  /// Await owned cache work and the exact browser drain. Joining a known
+  /// cache effect does not roll it back or unbind. Sync close/Drop merely
+  /// cancel admission; neither is a shutdown receipt.
   Future<void> shutdown();
 
   Future<SystemSnapshot> systemInfo({required NdsClient client});

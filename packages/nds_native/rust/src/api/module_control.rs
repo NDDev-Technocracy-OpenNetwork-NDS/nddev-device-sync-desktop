@@ -355,6 +355,7 @@ pub(crate) struct ModuleUseGuard {
     operation_id: Option<String>,
     pub(crate) lifetime: Arc<CancellationToken>,
     fence: Arc<LocalUseFence>,
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     publication: Arc<Mutex<()>>,
 }
 impl ModuleUseGuard {
@@ -483,6 +484,7 @@ impl NdsClient {
             operation_id: setting.operation_id,
             lifetime,
             fence,
+            #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
             publication: self.publication.clone(),
         };
         guard.validate().await?;

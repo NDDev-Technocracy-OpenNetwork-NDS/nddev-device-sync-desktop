@@ -811,7 +811,7 @@ pub(crate) fn observe<T>(
 // Concrete native lifetime ownership stays in Shared composition. Accounts owns
 // scheduling, Agent owns opaque browser handles and the actual drain authority.
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
-/// frb:ignore
+/// flutter_rust_bridge:ignore
 pub(crate) mod native_ownership {
     use super::*;
     use nddev_device_sync_accounts::runtime::{self, Task};

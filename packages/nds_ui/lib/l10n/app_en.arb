@@ -125,6 +125,7 @@
   "moduleNetworkError": "The local tool did not respond in time.",
   "moduleResponseError": "The local tool returned an unsupported response.",
   "moduleCancelled": "Request cancelled.",
+  "moduleShutdownUnconfirmed": "Shutdown could not be confirmed. Access remains closed.",
   "missingReading": "No reading",
   "textPreviewLimit": "Text preview, up to 16 KiB.",
   "gdsInstall": "GDS installation",
@@ -552,6 +553,8 @@
   "catalogClearSource": "Clear GitHub choice",
   "moduleStateQueued": "Local states queued for synchronization.",
   "permissionGitWrite": "Create checkouts and synchronize existing Git commits",
+  "permissionBrowserControl": "Control agent browser tabs",
+  "browserControlScope": "Allows agents to automate tabs in NDS groups. Other browser tabs remain outside this permission.",
   "repositoryConnect": "Connect checkout",
   "repositoryConnected": "Checkout connected: {path}",
   "@repositoryConnected": {
@@ -622,5 +625,36 @@
         "type": "String"
       }
     }
-  }
+  },
+  "browserAutomation": "Browser automation",
+  "networkCache": "Network cache",
+  "browserOwnerSwitch": "Browser owner switch",
+  "browserHostStatus": "Browser",
+  "browserExtensionStatus": "Extension",
+  "browserSessionCount": "Browser sessions",
+  "browserSessionScope": "This list includes the browser host’s sessions. It does not grant control over sessions owned by another agent.",
+  "browserTabCount": "Tabs: {count}",
+  "@browserTabCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "browserAllowWork": "Allow this agent’s browser work",
+  "cacheConfiguredPort": "Configured loopback port",
+  "cacheReachability": "Cache reachability",
+  "cacheProbeReady": "Responding",
+  "cacheProbeUnavailable": "Not responding",
+  "cacheManagedScope": "Managed settings are shown separately from reachability. This does not confirm that existing tools use the configured port.",
+  "cacheManagedPresent": "Managed settings present",
+  "cacheManagedAbsent": "Managed settings not detected",
+  "cacheAssemblyInvalid": "Cache configuration is invalid for this app.",
+  "cacheBindTools": "Use cache for downloads",
+  "cacheUnbindTools": "Use direct downloads",
+  "cacheMutationWorking": "Applying download settings…",
+  "cacheStateUncertain": "Download settings may have changed. Refresh status before another action.",
+  "cacheCompletionUnconfirmed": "Could not confirm the changes. Further changes are blocked.",
+  "browserSwitchEnabled": "Enabled",
+  "browserSwitchDisabled": "Disabled"
 }

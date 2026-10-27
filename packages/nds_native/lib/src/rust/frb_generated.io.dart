@@ -45,6 +45,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAppUpdatesPtr;
 
   CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_BindingPtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBindingPtr;
+
+  CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_ClientErrorPtr => wire
       ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientErrorPtr;
 
@@ -79,6 +83,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   AppUpdates
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAppUpdates(
+    dynamic raw,
+  );
+
+  @protected
+  Binding
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
     dynamic raw,
   );
 
@@ -137,6 +147,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  Binding
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    dynamic raw,
+  );
+
+  @protected
   ClientError
   dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
     dynamic raw,
@@ -187,6 +203,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   AppUpdates
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAppUpdates(
+    dynamic raw,
+  );
+
+  @protected
+  Binding
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
     dynamic raw,
   );
 
@@ -263,6 +285,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool dco_decode_box_autoadd_bool(dynamic raw);
 
   @protected
+  BrowserDocument dco_decode_box_autoadd_browser_document(dynamic raw);
+
+  @protected
+  BrowserScriptFailure dco_decode_box_autoadd_browser_script_failure(
+    dynamic raw,
+  );
+
+  @protected
   ConflictView dco_decode_box_autoadd_conflict_view(dynamic raw);
 
   @protected
@@ -304,6 +334,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ScreenRequest dco_decode_box_autoadd_screen_request(dynamic raw);
 
   @protected
+  int dco_decode_box_autoadd_u_16(dynamic raw);
+
+  @protected
   int dco_decode_box_autoadd_u_32(dynamic raw);
 
   @protected
@@ -311,6 +344,27 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Branch dco_decode_branch(dynamic raw);
+
+  @protected
+  BrowserDocument dco_decode_browser_document(dynamic raw);
+
+  @protected
+  BrowserOutcome dco_decode_browser_outcome(dynamic raw);
+
+  @protected
+  BrowserScriptFailure dco_decode_browser_script_failure(dynamic raw);
+
+  @protected
+  BrowserSession dco_decode_browser_session(dynamic raw);
+
+  @protected
+  BrowserStatus dco_decode_browser_status(dynamic raw);
+
+  @protected
+  BrowserTab dco_decode_browser_tab(dynamic raw);
+
+  @protected
+  CacheStatus dco_decode_cache_status(dynamic raw);
 
   @protected
   Changes dco_decode_changes(dynamic raw);
@@ -461,6 +515,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   IncidentView dco_decode_incident_view(dynamic raw);
 
   @protected
+  List<Binding>
+  dco_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    dynamic raw,
+  );
+
+  @protected
   List<SystemUpdateAction>
   dco_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
     dynamic raw,
@@ -471,6 +531,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<ActionResult> dco_decode_list_action_result(dynamic raw);
+
+  @protected
+  List<BrowserSession> dco_decode_list_browser_session(dynamic raw);
+
+  @protected
+  List<BrowserTab> dco_decode_list_browser_tab(dynamic raw);
 
   @protected
   List<Check> dco_decode_list_check(dynamic raw);
@@ -569,6 +635,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
 
   @protected
+  BrowserDocument? dco_decode_opt_box_autoadd_browser_document(dynamic raw);
+
+  @protected
+  BrowserScriptFailure? dco_decode_opt_box_autoadd_browser_script_failure(
+    dynamic raw,
+  );
+
+  @protected
   ConflictView? dco_decode_opt_box_autoadd_conflict_view(dynamic raw);
 
   @protected
@@ -607,6 +681,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ScreenRequest? dco_decode_opt_box_autoadd_screen_request(dynamic raw);
+
+  @protected
+  int? dco_decode_opt_box_autoadd_u_16(dynamic raw);
 
   @protected
   int? dco_decode_opt_box_autoadd_u_32(dynamic raw);
@@ -733,6 +810,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  Binding
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   ClientError
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
     SseDeserializer deserializer,
@@ -787,6 +870,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  Binding
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   ClientError
   sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
     SseDeserializer deserializer,
@@ -837,6 +926,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   AppUpdates
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAppUpdates(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  Binding
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
     SseDeserializer deserializer,
   );
 
@@ -915,6 +1010,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool sse_decode_box_autoadd_bool(SseDeserializer deserializer);
 
   @protected
+  BrowserDocument sse_decode_box_autoadd_browser_document(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  BrowserScriptFailure sse_decode_box_autoadd_browser_script_failure(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   ConflictView sse_decode_box_autoadd_conflict_view(
     SseDeserializer deserializer,
   );
@@ -960,6 +1065,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  int sse_decode_box_autoadd_u_16(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_box_autoadd_u_32(SseDeserializer deserializer);
 
   @protected
@@ -967,6 +1075,29 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Branch sse_decode_branch(SseDeserializer deserializer);
+
+  @protected
+  BrowserDocument sse_decode_browser_document(SseDeserializer deserializer);
+
+  @protected
+  BrowserOutcome sse_decode_browser_outcome(SseDeserializer deserializer);
+
+  @protected
+  BrowserScriptFailure sse_decode_browser_script_failure(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  BrowserSession sse_decode_browser_session(SseDeserializer deserializer);
+
+  @protected
+  BrowserStatus sse_decode_browser_status(SseDeserializer deserializer);
+
+  @protected
+  BrowserTab sse_decode_browser_tab(SseDeserializer deserializer);
+
+  @protected
+  CacheStatus sse_decode_cache_status(SseDeserializer deserializer);
 
   @protected
   Changes sse_decode_changes(SseDeserializer deserializer);
@@ -1135,6 +1266,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   IncidentView sse_decode_incident_view(SseDeserializer deserializer);
 
   @protected
+  List<Binding>
+  sse_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<SystemUpdateAction>
   sse_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
     SseDeserializer deserializer,
@@ -1147,6 +1284,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<ActionResult> sse_decode_list_action_result(
     SseDeserializer deserializer,
   );
+
+  @protected
+  List<BrowserSession> sse_decode_list_browser_session(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<BrowserTab> sse_decode_list_browser_tab(SseDeserializer deserializer);
 
   @protected
   List<Check> sse_decode_list_check(SseDeserializer deserializer);
@@ -1259,6 +1404,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer);
 
   @protected
+  BrowserDocument? sse_decode_opt_box_autoadd_browser_document(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  BrowserScriptFailure? sse_decode_opt_box_autoadd_browser_script_failure(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   ConflictView? sse_decode_opt_box_autoadd_conflict_view(
     SseDeserializer deserializer,
   );
@@ -1309,6 +1464,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ScreenRequest? sse_decode_opt_box_autoadd_screen_request(
     SseDeserializer deserializer,
   );
+
+  @protected
+  int? sse_decode_opt_box_autoadd_u_16(SseDeserializer deserializer);
 
   @protected
   int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer);
@@ -1445,6 +1603,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    Binding self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
     ClientError self,
     SseSerializer serializer,
@@ -1508,6 +1673,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    Binding self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerClientError(
     ClientError self,
     SseSerializer serializer,
@@ -1566,6 +1738,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAppUpdates(
     AppUpdates self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    Binding self,
     SseSerializer serializer,
   );
 
@@ -1659,6 +1838,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_browser_document(
+    BrowserDocument self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_browser_script_failure(
+    BrowserScriptFailure self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_conflict_view(
     ConflictView self,
     SseSerializer serializer,
@@ -1719,6 +1910,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_u_16(int self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer);
 
   @protected
@@ -1726,6 +1920,39 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_branch(Branch self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_browser_document(
+    BrowserDocument self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_browser_outcome(
+    BrowserOutcome self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_browser_script_failure(
+    BrowserScriptFailure self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_browser_session(
+    BrowserSession self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_browser_status(BrowserStatus self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_browser_tab(BrowserTab self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_cache_status(CacheStatus self, SseSerializer serializer);
 
   @protected
   void sse_encode_changes(Changes self, SseSerializer serializer);
@@ -1927,6 +2154,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
+  sse_encode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    List<Binding> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSystemUpdateAction(
     List<SystemUpdateAction> self,
     SseSerializer serializer,
@@ -1938,6 +2172,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_action_result(
     List<ActionResult> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_browser_session(
+    List<BrowserSession> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_browser_tab(
+    List<BrowserTab> self,
     SseSerializer serializer,
   );
 
@@ -2086,6 +2332,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);
 
   @protected
+  void sse_encode_opt_box_autoadd_browser_document(
+    BrowserDocument? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_browser_script_failure(
+    BrowserScriptFailure? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_conflict_view(
     ConflictView? self,
     SseSerializer serializer,
@@ -2144,6 +2402,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     ScreenRequest? self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_opt_box_autoadd_u_16(int? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer);
@@ -2339,6 +2600,40 @@ class RustLibWire implements BaseWire {
       );
   late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAppUpdates =
       _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAppUpdatesPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBindingPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_nds_native_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBindingPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBindingPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_nds_native_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBinding =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBindingPtr
           .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
 
   void

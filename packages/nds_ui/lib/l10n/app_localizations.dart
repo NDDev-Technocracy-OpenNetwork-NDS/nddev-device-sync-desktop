@@ -764,6 +764,12 @@ abstract class AppLocalizations {
   /// **'Request cancelled.'**
   String get moduleCancelled;
 
+  /// No description provided for @moduleShutdownUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Shutdown could not be confirmed. Access remains closed.'**
+  String get moduleShutdownUnconfirmed;
+
   /// No description provided for @missingReading.
   ///
   /// In en, this message translates to:
@@ -2274,6 +2280,18 @@ abstract class AppLocalizations {
   /// **'Create checkouts and synchronize existing Git commits'**
   String get permissionGitWrite;
 
+  /// No description provided for @permissionBrowserControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Control agent browser tabs'**
+  String get permissionBrowserControl;
+
+  /// No description provided for @browserControlScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Allows agents to automate tabs in NDS groups. Other browser tabs remain outside this permission.'**
+  String get browserControlScope;
+
   /// No description provided for @repositoryConnect.
   ///
   /// In en, this message translates to:
@@ -2513,6 +2531,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{downloaded} / {total} bytes'**
   String appUpdateProgress(String downloaded, String total);
+
+  /// No description provided for @browserAutomation.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser automation'**
+  String get browserAutomation;
+
+  /// No description provided for @networkCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Network cache'**
+  String get networkCache;
+
+  /// No description provided for @browserOwnerSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser owner switch'**
+  String get browserOwnerSwitch;
+
+  /// No description provided for @browserHostStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser'**
+  String get browserHostStatus;
+
+  /// No description provided for @browserExtensionStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Extension'**
+  String get browserExtensionStatus;
+
+  /// No description provided for @browserSessionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser sessions'**
+  String get browserSessionCount;
+
+  /// No description provided for @browserSessionScope.
+  ///
+  /// In en, this message translates to:
+  /// **'This list includes the browser host’s sessions. It does not grant control over sessions owned by another agent.'**
+  String get browserSessionScope;
+
+  /// No description provided for @browserTabCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Tabs: {count}'**
+  String browserTabCount(String count);
+
+  /// No description provided for @browserAllowWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow this agent’s browser work'**
+  String get browserAllowWork;
+
+  /// No description provided for @cacheConfiguredPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Configured loopback port'**
+  String get cacheConfiguredPort;
+
+  /// No description provided for @cacheReachability.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache reachability'**
+  String get cacheReachability;
+
+  /// No description provided for @cacheProbeReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Responding'**
+  String get cacheProbeReady;
+
+  /// No description provided for @cacheProbeUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not responding'**
+  String get cacheProbeUnavailable;
+
+  /// No description provided for @cacheManagedScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Managed settings are shown separately from reachability. This does not confirm that existing tools use the configured port.'**
+  String get cacheManagedScope;
+
+  /// No description provided for @cacheManagedPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Managed settings present'**
+  String get cacheManagedPresent;
+
+  /// No description provided for @cacheManagedAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Managed settings not detected'**
+  String get cacheManagedAbsent;
+
+  /// No description provided for @cacheAssemblyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache configuration is invalid for this app.'**
+  String get cacheAssemblyInvalid;
+
+  /// No description provided for @cacheBindTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Use cache for downloads'**
+  String get cacheBindTools;
+
+  /// No description provided for @cacheUnbindTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Use direct downloads'**
+  String get cacheUnbindTools;
+
+  /// No description provided for @cacheMutationWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying download settings…'**
+  String get cacheMutationWorking;
+
+  /// No description provided for @cacheStateUncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'Download settings may have changed. Refresh status before another action.'**
+  String get cacheStateUncertain;
+
+  /// No description provided for @cacheCompletionUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not confirm the changes. Further changes are blocked.'**
+  String get cacheCompletionUnconfirmed;
+
+  /// No description provided for @browserSwitchEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get browserSwitchEnabled;
+
+  /// No description provided for @browserSwitchDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get browserSwitchDisabled;
 }
 
 class _AppLocalizationsDelegate

@@ -22,6 +22,15 @@ class _UtilitiesState extends State<UtilitiesScreen> {
   Timer? _clock;
   native.ClipboardView? _clipboard;
   native.LocalAgent? _agent;
+  native.LocalAgent? _retiringAgent;
+  Future<bool>? _agentShutdown;
+  bool _shutdownFailed = false;
+  bool get _cleanupHeld => _retiringAgent != null && _shutdownFailed;
+  Future<void>? _transition;
+  Future<void>? _operation;
+  int _epoch = 0;
+  String? _scope;
+  bool _leaving = false, _allowPop = false;
   archive.Page? _archive;
   native.IncidentPage? _incidents;
   String? _error;
@@ -33,6 +42,7 @@ class _UtilitiesState extends State<UtilitiesScreen> {
   @override
   void initState() {
     super.initState();
+    _scope = _currentScope();
     _clock = Timer.periodic(const Duration(seconds: 2), (_) {
       if (mounted &&
           !_busy &&
@@ -46,16 +56,143 @@ class _UtilitiesState extends State<UtilitiesScreen> {
 
   @override
   void dispose() {
+    _epoch++;
     _clock?.cancel();
     _text.clear();
     _text.dispose();
     _agent?.close();
-    _agent?.dispose();
+    _retiringAgent?.close();
+    // Cancellation-only fallback. Retained transitions keep already-started
+    // discovery/shutdown and its exact opaque alive until positive completion.
     super.dispose();
   }
 
-  Future<void> _action(Future<void> Function() work) async {
-    if (_busy) return;
+  String? _currentScope() {
+    try {
+      final view = widget.client.snapshot();
+      return '${view.authenticated}:${view.tenantId}:${view.userId}:${view.currentDeviceId}';
+    } catch (error) {
+      if (error is native.ClientError) error.dispose();
+      return null;
+    }
+  }
+
+  bool _current(native.NdsClient client, int epoch) =>
+      mounted &&
+      epoch == _epoch &&
+      identical(client, widget.client) &&
+      _scope != null &&
+      _scope == _currentScope();
+
+  @override
+  void didUpdateWidget(covariant UtilitiesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.client, widget.client) ||
+        _scope != _currentScope()) {
+      _ownerChanged();
+    }
+  }
+
+  void _ownerChanged() {
+    _epoch++;
+    _scope = _currentScope();
+    _agent?.close();
+    _archive = null;
+    _incidents = null;
+    _clipboard = null;
+    _text.clear();
+    _busy = true;
+    _transitionOwner();
+  }
+
+  Future<bool> _retireAgent(native.LocalAgent? agent) {
+    if (_retiringAgent != null) return _agentShutdown!;
+    if (agent == null) return Future.value(true);
+    _retiringAgent = agent;
+    agent.close();
+    _agentShutdown = _shutdownAgent(agent);
+    return _agentShutdown!;
+  }
+
+  Future<bool> _shutdownAgent(native.LocalAgent agent) async {
+    try {
+      await agent.shutdown();
+      if (identical(_agent, agent)) _agent = null;
+      agent.dispose();
+      _retiringAgent = null;
+      return true;
+    } catch (error) {
+      var code = 'unexpected';
+      if (error is native.ClientError) {
+        code = error.code();
+        error.dispose();
+      }
+      _shutdownFailed = true;
+      if (mounted) {
+        setState(() {
+          _error = code;
+          _busy = true;
+        });
+      }
+      return false;
+    }
+  }
+
+  Future<void> _transitionOwner() {
+    if (_transition case final transition?) return transition;
+    late final Future<void> owned;
+    owned = _finishTransition().whenComplete(() {
+      if (identical(_transition, owned)) {
+        _transition = null;
+        if (mounted && _retiringAgent == null && !_leaving) {
+          setState(() => _busy = false);
+        }
+      }
+    });
+    _transition = owned;
+    return owned;
+  }
+
+  Future<void> _finishTransition() async {
+    _agent?.close();
+    // A discovery finishing in this action retires its own stale result before
+    // the action completes. Do not dispose an opaque its continuation can use.
+    await _operation;
+    await _pollCompletion?.future;
+    if (!await _retireAgent(_agent)) return;
+    if (!mounted) return;
+    if (_leaving) {
+      setState(() => _allowPop = true);
+      Navigator.of(context).pop();
+    } else {
+      setState(() => _busy = false);
+    }
+  }
+
+  void _leave() {
+    if (_leaving || _retiringAgent != null) return;
+    _leaving = true;
+    _epoch++;
+    _agent?.close();
+    setState(() => _busy = true);
+    _transitionOwner();
+  }
+
+  Future<void> _action(Future<void> Function() work) {
+    if (_busy || _retiringAgent != null || _transition != null || _leaving) {
+      return Future.value();
+    }
+    late final Future<void> owned;
+    owned = _actionInner(work).whenComplete(() {
+      if (identical(_operation, owned)) _operation = null;
+    });
+    _operation = owned;
+    return owned;
+  }
+
+  Future<void> _actionInner(Future<void> Function() work) async {
+    final client = widget.client;
+    final epoch = _epoch;
     setState(() {
       _busy = true;
       _copied = false;
@@ -65,7 +202,7 @@ class _UtilitiesState extends State<UtilitiesScreen> {
       // A user action owns the next local read/use. Finish the current bounded
       // background read instead of racing the same vault admission gate.
       await _pollCompletion?.future;
-      if (!mounted) return;
+      if (!_current(client, epoch)) return;
       await work();
     } catch (error) {
       var code = 'unexpected';
@@ -77,31 +214,52 @@ class _UtilitiesState extends State<UtilitiesScreen> {
       } else if (error is native.ModuleError) {
         code = error.name;
       }
-      if (mounted) setState(() => _error = code);
+      if (_current(client, epoch)) setState(() => _error = code);
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(
+          () =>
+              _busy = _transition != null || _retiringAgent != null || _leaving,
+        );
+      }
     }
   }
 
   Future<void> _poll() async {
-    if (_polling) return;
+    if (!mounted) return;
+    if (_currentScope() == null) {
+      setState(() {
+        _busy = true;
+        _error = 'unexpected';
+      });
+      return;
+    }
+    if (_scope != _currentScope()) {
+      _ownerChanged();
+      return;
+    }
+    if (_polling || _transition != null || _retiringAgent != null || _leaving) {
+      return;
+    }
+    final client = widget.client;
+    final epoch = _epoch;
     _polling = true;
     final completion = Completer<void>();
     _pollCompletion = completion;
     try {
-      final value = await widget.client.clipboardSnapshot();
-      if (mounted) {
+      final value = await client.clipboardSnapshot();
+      if (_current(client, epoch)) {
         setState(() {
           _clipboard = value;
           _clipboardUnavailable = false;
         });
       }
     } catch (_) {
-      if (mounted) {
+      if (_current(client, epoch)) {
         setState(() {
           _clipboardUnavailable = true;
           _clipboard = null;
-          if (!widget.client.snapshot().authenticated) {
+          if (!client.snapshot().authenticated) {
             _archive = null;
             _incidents = null;
             _text.clear();
@@ -116,9 +274,11 @@ class _UtilitiesState extends State<UtilitiesScreen> {
   }
 
   Future<void> _alerts({String after = ''}) async {
+    final client = widget.client;
+    final epoch = _epoch;
     try {
-      final page = await widget.client.incidents(after: after);
-      if (mounted) {
+      final page = await client.incidents(after: after);
+      if (_current(client, epoch)) {
         setState(() {
           _incidents = page;
           _incidentsUnavailable = false;
@@ -126,7 +286,7 @@ class _UtilitiesState extends State<UtilitiesScreen> {
       }
     } catch (error) {
       if (error is native.ClientError) error.dispose();
-      if (mounted) setState(() => _incidentsUnavailable = true);
+      if (_current(client, epoch)) setState(() => _incidentsUnavailable = true);
     }
   }
 
@@ -134,12 +294,14 @@ class _UtilitiesState extends State<UtilitiesScreen> {
     native.IncidentView incident,
     int seconds,
   ) async {
-    final updated = await widget.client.incidentAction(
+    final client = widget.client;
+    final epoch = _epoch;
+    final updated = await client.incidentAction(
       id: incident.id,
       revision: incident.revision,
       silenceSeconds: seconds,
     );
-    if (mounted) {
+    if (_current(client, epoch)) {
       setState(() {
         final items = _incidents?.incidents;
         if (items != null) {
@@ -181,16 +343,31 @@ class _UtilitiesState extends State<UtilitiesScreen> {
   };
 
   Future<void> _archiveEntries() async {
-    _agent ??= await widget.client.discoverLocalAgent();
-    final page = await _agent!.clipboardEntries(client: widget.client);
-    if (mounted) setState(() => _archive = page);
+    if (!native.supportsLocalAgent()) return;
+    final client = widget.client;
+    final epoch = _epoch;
+    var agent = _agent;
+    if (agent == null) {
+      agent = await client.discoverLocalAgent();
+      if (!_current(client, epoch)) {
+        await _retireAgent(agent);
+        return;
+      }
+      _agent = agent;
+    }
+    final page = await agent.clipboardEntries(client: client);
+    if (_current(client, epoch) && identical(agent, _agent)) {
+      setState(() => _archive = page);
+    } else {
+      await _retireAgent(agent);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final delivery = widget.client.deliverySnapshot();
-    return DefaultTabController(
+    final screen = DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
@@ -312,9 +489,12 @@ class _UtilitiesState extends State<UtilitiesScreen> {
                         },
                   child: Text(l.copySharedClipboard),
                 ),
-                if (_busy) const LinearProgressIndicator(),
+                if (_busy && !_cleanupHeld) const LinearProgressIndicator(),
                 if (_error != null)
-                  Text(_message(l), key: const Key('utility-error')),
+                  Text(
+                    _cleanupHeld ? l.moduleShutdownUnconfirmed : _message(l),
+                    key: const Key('utility-error'),
+                  ),
               ],
             ),
             ListView(
@@ -433,14 +613,29 @@ class _UtilitiesState extends State<UtilitiesScreen> {
                           }),
                     child: Text(l.moreIncidents),
                   ),
-                if (_busy) const LinearProgressIndicator(),
+                if (_busy && !_cleanupHeld) const LinearProgressIndicator(),
                 if (_error != null)
-                  Text(_message(l), key: const Key('utility-error')),
+                  Text(
+                    _cleanupHeld ? l.moduleShutdownUnconfirmed : _message(l),
+                    key: const Key('utility-error'),
+                  ),
               ],
             ),
           ],
         ),
       ),
+    );
+    return PopScope<void>(
+      canPop:
+          _allowPop ||
+          (_agent == null &&
+              _retiringAgent == null &&
+              _operation == null &&
+              _transition == null),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _leave();
+      },
+      child: screen,
     );
   }
 }

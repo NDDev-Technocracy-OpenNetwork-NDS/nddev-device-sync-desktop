@@ -373,6 +373,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moduleCancelled => 'Request cancelled.';
 
   @override
+  String get moduleShutdownUnconfirmed =>
+      'Shutdown could not be confirmed. Access remains closed.';
+
+  @override
   String get missingReading => 'No reading';
 
   @override
@@ -1249,6 +1253,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Create checkouts and synchronize existing Git commits';
 
   @override
+  String get permissionBrowserControl => 'Control agent browser tabs';
+
+  @override
+  String get browserControlScope =>
+      'Allows agents to automate tabs in NDS groups. Other browser tabs remain outside this permission.';
+
+  @override
   String get repositoryConnect => 'Connect checkout';
 
   @override
@@ -1396,4 +1407,83 @@ class AppLocalizationsEn extends AppLocalizations {
   String appUpdateProgress(String downloaded, String total) {
     return '$downloaded / $total bytes';
   }
+
+  @override
+  String get browserAutomation => 'Browser automation';
+
+  @override
+  String get networkCache => 'Network cache';
+
+  @override
+  String get browserOwnerSwitch => 'Browser owner switch';
+
+  @override
+  String get browserHostStatus => 'Browser';
+
+  @override
+  String get browserExtensionStatus => 'Extension';
+
+  @override
+  String get browserSessionCount => 'Browser sessions';
+
+  @override
+  String get browserSessionScope =>
+      'This list includes the browser host’s sessions. It does not grant control over sessions owned by another agent.';
+
+  @override
+  String browserTabCount(String count) {
+    return 'Tabs: $count';
+  }
+
+  @override
+  String get browserAllowWork => 'Allow this agent’s browser work';
+
+  @override
+  String get cacheConfiguredPort => 'Configured loopback port';
+
+  @override
+  String get cacheReachability => 'Cache reachability';
+
+  @override
+  String get cacheProbeReady => 'Responding';
+
+  @override
+  String get cacheProbeUnavailable => 'Not responding';
+
+  @override
+  String get cacheManagedScope =>
+      'Managed settings are shown separately from reachability. This does not confirm that existing tools use the configured port.';
+
+  @override
+  String get cacheManagedPresent => 'Managed settings present';
+
+  @override
+  String get cacheManagedAbsent => 'Managed settings not detected';
+
+  @override
+  String get cacheAssemblyInvalid =>
+      'Cache configuration is invalid for this app.';
+
+  @override
+  String get cacheBindTools => 'Use cache for downloads';
+
+  @override
+  String get cacheUnbindTools => 'Use direct downloads';
+
+  @override
+  String get cacheMutationWorking => 'Applying download settings…';
+
+  @override
+  String get cacheStateUncertain =>
+      'Download settings may have changed. Refresh status before another action.';
+
+  @override
+  String get cacheCompletionUnconfirmed =>
+      'Could not confirm the changes. Further changes are blocked.';
+
+  @override
+  String get browserSwitchEnabled => 'Enabled';
+
+  @override
+  String get browserSwitchDisabled => 'Disabled';
 }

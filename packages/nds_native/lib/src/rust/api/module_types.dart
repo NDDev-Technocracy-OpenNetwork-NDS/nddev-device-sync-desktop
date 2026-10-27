@@ -4,8 +4,164 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import 'modules.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+
+class BrowserDocument {
+  final String target;
+  final String document;
+
+  const BrowserDocument({required this.target, required this.document});
+
+  @override
+  int get hashCode => target.hashCode ^ document.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BrowserDocument &&
+          runtimeType == other.runtimeType &&
+          target == other.target &&
+          document == other.document;
+}
+
+class BrowserOutcome {
+  final BrowserScriptFailure? failure;
+  final String output;
+  final bool truncated;
+  final List<BrowserTab> tabs;
+
+  const BrowserOutcome({
+    this.failure,
+    required this.output,
+    required this.truncated,
+    required this.tabs,
+  });
+
+  @override
+  int get hashCode =>
+      failure.hashCode ^ output.hashCode ^ truncated.hashCode ^ tabs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BrowserOutcome &&
+          runtimeType == other.runtimeType &&
+          failure == other.failure &&
+          output == other.output &&
+          truncated == other.truncated &&
+          tabs == other.tabs;
+}
+
+enum BrowserScriptFailure { scriptError, targetClosed, browserDisconnected }
+
+class BrowserSession {
+  final String project;
+  final BigInt tabs;
+  final bool executor;
+
+  const BrowserSession({
+    required this.project,
+    required this.tabs,
+    required this.executor,
+  });
+
+  @override
+  int get hashCode => project.hashCode ^ tabs.hashCode ^ executor.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BrowserSession &&
+          runtimeType == other.runtimeType &&
+          project == other.project &&
+          tabs == other.tabs &&
+          executor == other.executor;
+}
+
+class BrowserStatus {
+  final bool enabled;
+  final String browser;
+  final String extension_;
+  final BigInt sessions;
+
+  const BrowserStatus({
+    required this.enabled,
+    required this.browser,
+    required this.extension_,
+    required this.sessions,
+  });
+
+  @override
+  int get hashCode =>
+      enabled.hashCode ^
+      browser.hashCode ^
+      extension_.hashCode ^
+      sessions.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BrowserStatus &&
+          runtimeType == other.runtimeType &&
+          enabled == other.enabled &&
+          browser == other.browser &&
+          extension_ == other.extension_ &&
+          sessions == other.sessions;
+}
+
+class BrowserTab {
+  final String target;
+  final String? document;
+  final String url;
+  final String title;
+
+  const BrowserTab({
+    required this.target,
+    this.document,
+    required this.url,
+    required this.title,
+  });
+
+  @override
+  int get hashCode =>
+      target.hashCode ^ document.hashCode ^ url.hashCode ^ title.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BrowserTab &&
+          runtimeType == other.runtimeType &&
+          target == other.target &&
+          document == other.document &&
+          url == other.url &&
+          title == other.title;
+}
+
+class CacheStatus {
+  final int port;
+  final bool ready;
+  final List<Binding> bindings;
+
+  const CacheStatus({
+    required this.port,
+    required this.ready,
+    required this.bindings,
+  });
+
+  @override
+  int get hashCode => port.hashCode ^ ready.hashCode ^ bindings.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CacheStatus &&
+          runtimeType == other.runtimeType &&
+          port == other.port &&
+          ready == other.ready &&
+          bindings == other.bindings;
+}
 
 enum ModuleError {
   unsupportedPlatform,

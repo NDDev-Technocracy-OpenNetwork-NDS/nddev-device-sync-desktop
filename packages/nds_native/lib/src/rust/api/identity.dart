@@ -17,9 +17,9 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 import 'screen.dart';
 
-// These functions are ignored because they are not marked as `pub`: `cancel_work`, `catalog_active`, `clear_replica_fenced`, `client_activity`, `client_replication_permitted`, `clipboard_error`, `data_directory`, `ensure_delivery`, `incident_view`, `native_runtime`, `observe_cleanup`, `observe_in_span`, `observe_incident`, `observe_operation`, `observe`, `publish_state_inner`, `replica_start_error`, `reset_replica_schedule`, `reset_replica_session`, `schedule`, `shared_identity`, `start_replica_fenced`, `start_replica_for_schedule`, `stop_native_owner`, `stop_native_runtime`, `stop_replica`, `vault`, `wake_replica`, `write_clipboard`
+// These functions are ignored because they are not marked as `pub`: `cancel_work`, `catalog_active`, `clear_replica_fenced`, `client_activity`, `client_replication_permitted`, `clipboard_error`, `data_directory`, `ensure_delivery`, `incident_view`, `native_cache_base`, `native_runtime`, `observe_cleanup`, `observe_in_span`, `observe_incident`, `observe_operation`, `observe`, `publish_state_inner`, `replica_start_error`, `reset_replica_schedule`, `reset_replica_session`, `retire_local_resources`, `schedule`, `shared_identity`, `start_replica_fenced`, `start_replica_for_schedule`, `stop_native_owner`, `stop_replica`, `vault`, `wake_replica`, `write_clipboard`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `ClipboardReservation`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `drop`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `drop`, `drop`
 
 /// Presentation reports raw lifecycle once; Core retains interactive admission.
 bool clientWorkPermitted({required ClientLifecycle state}) =>
@@ -128,6 +128,16 @@ abstract class NdsClient implements RustOpaqueInterface {
   factory NdsClient({required String endpoint}) =>
       RustLib.instance.api.crateApiIdentityNdsClientNew(endpoint: endpoint);
 
+  /// The host assembly may supply its existing RDS-owned cache forward base.
+  /// This neither discovers a port nor binds a scope or starts a forward.
+  static NdsClient newWithCacheBase({
+    required String endpoint,
+    int? cacheBase,
+  }) => RustLib.instance.api.crateApiIdentityNdsClientNewWithCacheBase(
+    endpoint: endpoint,
+    cacheBase: cacheBase,
+  );
+
   Future<List<PasskeyView>> passkeys();
 
   Future<View> pollGithub();
@@ -188,6 +198,10 @@ abstract class NdsClient implements RustOpaqueInterface {
   });
 
   void setLifecycle({required ClientLifecycle state});
+
+  /// Application teardown, preserving the Accounts/native-store identity.
+  /// A browser HOLD prevents releasing/replacing the old local resources.
+  Future<void> shutdown();
 
   View snapshot();
 

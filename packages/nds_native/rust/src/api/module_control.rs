@@ -915,7 +915,7 @@ pub(crate) mod native_ownership {
     pub(crate) type BrowserResult = Result<BrowserValue, BrowserFailure>;
     type SharedResult = Arc<BrowserResult>;
     type Completion = watch::Sender<Option<SharedResult>>;
-    pub(crate) async fn checked<F>(guard: ModuleUseGuard, work: F) -> BrowserResult
+    pub(crate) async fn checked<F>(guard: Arc<ModuleUseGuard>, work: F) -> BrowserResult
     where
         F: Future<Output = Result<BrowserValue, BrowserError>>,
     {
@@ -990,7 +990,14 @@ pub(crate) mod native_ownership {
             match self {
                 Self::Agent(agent) => agent.modules(),
                 #[cfg(test)]
-                Self::Inert(_) => Vec::new(),
+                Self::Inert(_) => vec![ModuleObservation {
+                    id: "browser-use".into(),
+                    version: "fixture".into(),
+                    configured: true,
+                    reachability: Reachability::NotChecked,
+                    observed_at_ms: Some(1),
+                    error: None,
+                }],
             }
         }
         async fn drain_browser(&self) -> Result<(), ClientError> {
@@ -1479,7 +1486,62 @@ pub(crate) mod native_ownership {
         delivered: bool,
     }
     impl RequestWaiter {
-        pub(crate) async fn wait(mut self) -> Result<BrowserValue, ClientError> {
+        pub(crate) async fn wait(
+            self,
+            guard: Arc<ModuleUseGuard>,
+        ) -> Result<BrowserValue, ClientError> {
+            let captured = guard.clone();
+            self.wait_validated(guard.validate(), move |waiter| {
+                // Reuse the ORIGINAL fence. This is validation/publication,
+                // never a new module_access/auth attempt, retry or resume.
+                let _publication = captured
+                    .publication
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
+                let slots = captured
+                    .control
+                    .slots
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
+                captured
+                    .identity
+                    .check_local_use_lifetime(&captured.fence)?;
+                let current = slots.get("browser-use").is_some_and(|slot| {
+                    Arc::ptr_eq(&slot.lifetime, &captured.lifetime)
+                        && !slot.lifetime.is_cancelled()
+                        && !slot.conflicted
+                        && slot.configuration == captured.configuration
+                        && slot.operation_id == captured.operation_id
+                });
+                if !current {
+                    return Err(ClientError::Cancelled);
+                }
+                waiter.check_owner_publication()
+            })
+            .await
+        }
+        fn check_owner_publication(&self) -> Result<(), ClientError> {
+            let state = self.owner.browser.lock().unwrap_or_else(|e| e.into_inner());
+            if self.owner.epoch.is_stopped()
+                || state.closing
+                || state.phase != Phase::Active
+                || !Arc::ptr_eq(&state.life, &self.row.life)
+                || self.row.life.stop.is_cancelled()
+                || !state.rows.iter().any(|row| Arc::ptr_eq(row, &self.row))
+            {
+                return Err(ClientError::Cancelled);
+            }
+            Ok(())
+        }
+        async fn wait_validated<V, P>(
+            mut self,
+            validate: V,
+            publication: P,
+        ) -> Result<BrowserValue, ClientError>
+        where
+            V: Future<Output = Result<(), ClientError>>,
+            P: FnOnce(&Self) -> Result<(), ClientError>,
+        {
             let mut completion = self.row.joined.subscribe();
             let result = loop {
                 if let Some(result) = completion.borrow_and_update().clone() {
@@ -1490,14 +1552,24 @@ pub(crate) mod native_ownership {
                     .await
                     .map_err(|_| ClientError::InvalidResponse)?;
             };
-            // No await after delivery: late disappearance before this poll is
-            // still observed by the retained completion task.
+            // Keep Self/interest/Drop alive through this caller-side await.
+            // Joined provider evidence stays private and unchanged on denial.
+            validate.await?;
+            publication(&self)?;
+            // No await after this exact-life final publication boundary.
             self.delivered = true;
             self.row.interest.send_replace(Interest::Delivered);
             match result.as_ref() {
                 Ok(value) => Ok(value.clone()),
                 Err(error) => Err(error.client_error()),
             }
+        }
+        #[cfg(test)]
+        async fn wait_inert(self) -> Result<BrowserValue, ClientError> {
+            // Only the Shared ownership fence is exercised here; real captured
+            // identity/Vault validation belongs to the owning integration gate.
+            self.wait_validated(async { Ok(()) }, Self::check_owner_publication)
+                .await
         }
     }
     impl Drop for RequestWaiter {
@@ -1652,7 +1724,7 @@ pub(crate) mod native_ownership {
                     .unwrap();
                 let row = waiter.row.clone();
                 receiving.await.unwrap();
-                let caller = tokio::spawn(async move { waiter.wait().await });
+                let caller = tokio::spawn(async move { waiter.wait_inert().await });
                 caller.abort();
                 let _ = caller.await;
                 assert!(row.life.stop.is_cancelled());
@@ -1686,6 +1758,177 @@ pub(crate) mod native_ownership {
                 owner.begin_drain().wait().await.unwrap();
                 assert!(row.bookkeeping.load(Ordering::Acquire));
                 assert_eq!(port.drains.load(Ordering::Acquire), 1);
+            });
+        }
+        #[test]
+        fn held_delivery_rechecks_lifetime_and_retains_private_provider_outcome() {
+            run(async {
+                let (owner, _) = owner(Arc::default(), false, Ok(()));
+                let waiter = owner
+                    .start_request(true, false, async {
+                        Ok(BrowserValue::Outcome(browser::Outcome {
+                            failure: Some(browser::ScriptFailure::ScriptError),
+                            output: "PRIVATE-OLD-OUTPUT".into(),
+                            truncated: false,
+                            tabs: Vec::new(),
+                        }))
+                    })
+                    .unwrap();
+                let row = waiter.row.clone();
+                published(&row).await;
+                let (entered, checking) = oneshot::channel();
+                let (release, held) = oneshot::channel();
+                let caller = tokio::spawn(async move {
+                    waiter
+                        .wait_validated(
+                            async move {
+                                entered.send(()).unwrap();
+                                held.await.unwrap();
+                                Ok(())
+                            },
+                            RequestWaiter::check_owner_publication,
+                        )
+                        .await
+                });
+                checking.await.unwrap();
+                owner.cancel_browser();
+                release.send(()).unwrap();
+                assert!(matches!(caller.await.unwrap(), Err(ClientError::Cancelled)));
+                owner.begin_drain().wait().await.unwrap();
+                assert!(matches!(row.joined.borrow().as_deref(),
+                    Some(Ok(BrowserValue::Outcome(value)))
+                        if value.output == "PRIVATE-OLD-OUTPUT"
+                        && value.failure == Some(browser::ScriptFailure::ScriptError)));
+            });
+        }
+        #[test]
+        fn held_delivery_cannot_publish_or_cancel_a_replacement_lifetime() {
+            run(async {
+                let (owner, port) = owner(Arc::default(), false, Ok(()));
+                let waiter = owner
+                    .start_request(true, false, async { Ok(BrowserValue::Closed) })
+                    .unwrap();
+                let row = waiter.row.clone();
+                published(&row).await;
+                let (entered, checking) = oneshot::channel();
+                let (release, held) = oneshot::channel();
+                let caller = tokio::spawn(async move {
+                    waiter
+                        .wait_validated(
+                            async move {
+                                entered.send(()).unwrap();
+                                held.await.unwrap();
+                                Ok(())
+                            },
+                            RequestWaiter::check_owner_publication,
+                        )
+                        .await
+                });
+                checking.await.unwrap();
+                owner.begin_drain().wait().await.unwrap();
+                // Isolate only the same-Arc publication/drop fence, not the
+                // real identity/Vault authorization needed for explicit resume.
+                let replacement = Arc::new(BrowserLife::default());
+                {
+                    let mut state = owner.browser.lock().unwrap();
+                    state.life = replacement.clone();
+                    state.phase = Phase::Active;
+                    state.cancel_sent = false;
+                    state.drain = None;
+                }
+                let before = port.cancelled.load(Ordering::Acquire);
+                release.send(()).unwrap();
+                assert!(matches!(caller.await.unwrap(), Err(ClientError::Cancelled)));
+                assert!(!replacement.stop.is_cancelled());
+                assert_eq!(port.cancelled.load(Ordering::Acquire), before);
+                assert!(matches!(
+                    row.joined.borrow().as_deref(),
+                    Some(Ok(BrowserValue::Closed))
+                ));
+            });
+        }
+        #[test]
+        fn dropping_mutation_during_final_validation_keeps_result_and_owned_drain() {
+            run(async {
+                let (owner, port) = owner(Arc::default(), false, Ok(()));
+                let waiter = owner
+                    .start_request(true, true, async { Ok(BrowserValue::Closed) })
+                    .unwrap();
+                let row = waiter.row.clone();
+                published(&row).await;
+                let (entered, checking) = oneshot::channel();
+                let (_release, held) = oneshot::channel::<()>();
+                let caller = tokio::spawn(async move {
+                    waiter
+                        .wait_validated(
+                            async move {
+                                entered.send(()).unwrap();
+                                held.await.unwrap();
+                                Ok(())
+                            },
+                            RequestWaiter::check_owner_publication,
+                        )
+                        .await
+                });
+                checking.await.unwrap();
+                caller.abort();
+                let _ = caller.await;
+                port.drain_started.cancelled().await;
+                owner.begin_drain().wait().await.unwrap();
+                assert!(row.bookkeeping.load(Ordering::Acquire));
+                assert!(matches!(
+                    row.joined.borrow().as_deref(),
+                    Some(Ok(BrowserValue::Closed))
+                ));
+                assert_eq!(port.drains.load(Ordering::Acquire), 1);
+            });
+        }
+        #[test]
+        fn dropping_metadata_during_final_validation_does_not_cancel_owner() {
+            run(async {
+                let (owner, port) = owner(Arc::default(), false, Ok(()));
+                let waiter = owner
+                    .start_request(false, false, async { Ok(BrowserValue::Closed) })
+                    .unwrap();
+                let row = waiter.row.clone();
+                let (entered, checking) = oneshot::channel();
+                let (_release, held) = oneshot::channel::<()>();
+                let caller = tokio::spawn(async move {
+                    waiter
+                        .wait_validated(
+                            async move {
+                                entered.send(()).unwrap();
+                                held.await.unwrap();
+                                Ok(())
+                            },
+                            RequestWaiter::check_owner_publication,
+                        )
+                        .await
+                });
+                checking.await.unwrap();
+                caller.abort();
+                let _ = caller.await;
+                let completion = row.completion_task.lock().unwrap().take().unwrap();
+                completion.join().await;
+                assert!(!row.life.stop.is_cancelled());
+                assert_eq!(port.cancelled.load(Ordering::Acquire), 0);
+                assert_eq!(port.drains.load(Ordering::Acquire), 0);
+            });
+        }
+        #[test]
+        fn owner_observations_expose_draining_and_hold_without_new_dto() {
+            run(async {
+                let (owner, port) = owner(Arc::default(), true, Err(ClientError::Timeout));
+                assert!(owner.observations()[0].error.is_none());
+                let drain = owner.begin_drain();
+                assert_eq!(owner.observations()[0].error, Some(ModuleError::Busy));
+                assert!(owner.observations()[0].observed_at_ms.is_none());
+                port.release.cancel();
+                assert_eq!(drain.wait().await, Err(ClientError::Timeout));
+                assert_eq!(
+                    owner.observations()[0].error,
+                    Some(ModuleError::Unavailable)
+                );
             });
         }
         #[test]
@@ -1751,7 +1994,7 @@ pub(crate) mod native_ownership {
                 let waiter = owner
                     .start_request(true, false, async { panic!("inert work failure") })
                     .unwrap();
-                assert!(waiter.wait().await.is_err());
+                assert!(waiter.wait_inert().await.is_err());
                 let drain = owner.begin_drain();
                 assert!(drain.wait().await.is_err());
                 assert_eq!(port.drains.load(Ordering::Acquire), 1);

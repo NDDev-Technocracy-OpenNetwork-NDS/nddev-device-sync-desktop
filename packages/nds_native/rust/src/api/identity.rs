@@ -218,7 +218,11 @@ impl NdsClient {
         email: Option<String>,
         locale: String,
     ) -> Result<View, ClientError> {
-        self.module_control.shutdown().await?;
+        // Registration adds a credential to the retained session; it does not
+        // replace identity and poll does not create a new module generation.
+        if !registration {
+            self.module_control.shutdown().await?;
+        }
         self.invalidate_catalog();
         self.inner.start_passkey(registration, email, &locale).await
     }

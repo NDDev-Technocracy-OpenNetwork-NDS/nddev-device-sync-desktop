@@ -96,7 +96,7 @@ impl LocalAgent {
     pub fn modules(&self) -> Result<Vec<ModuleObservation>, ModuleError> {
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         {
-            Ok(self.inner.modules())
+            Ok(self.native_owner.observations())
         }
         #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
         {
@@ -120,14 +120,14 @@ impl LocalAgent {
             + 'static,
     {
         self.check_client(client)?;
-        let guard = client.module_access("browser-use", Adapter::Native).await?;
+        let guard = Arc::new(client.module_access("browser-use", Adapter::Native).await?);
         self.native_owner
             .start_request(
                 mutation,
                 close,
-                native_ownership::checked(guard, work(self.inner.clone())),
+                native_ownership::checked(guard.clone(), work(self.inner.clone())),
             )?
-            .wait()
+            .wait(guard)
             .await
     }
     /// Explicit composition boundary, never implied by readiness or a saved

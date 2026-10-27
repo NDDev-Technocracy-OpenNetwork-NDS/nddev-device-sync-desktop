@@ -4,9 +4,9 @@ use super::{identity::NdsClient, module_control::Adapter};
 #[cfg(feature = "flutter")]
 use flutter_rust_bridge::frb;
 use nddev_device_sync_accounts::ClientError;
-pub use nddev_device_sync_agent::view::cache::Binding;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 use nddev_device_sync_agent::NativeAgent;
+pub use nddev_device_sync_agent::view::cache::Binding;
 use nddev_device_sync_domain::modules::{ModuleError, ModuleObservation};
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 use std::sync::Arc;

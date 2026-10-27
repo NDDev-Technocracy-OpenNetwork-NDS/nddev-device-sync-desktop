@@ -47,6 +47,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
   native.LocalAgent? _retiringAgent;
   Future<bool>? _agentShutdown;
   String? _shutdownError;
+  bool get _cleanupHeld => _retiringAgent != null && _shutdownError != null;
   Future<void>? _transition;
   Future<void>? _operation;
   bool _rediscover = false;
@@ -866,7 +867,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
                         ),
                     ],
                   ),
-                  if (_busy) const LinearProgressIndicator(),
+                  if (_busy && !_cleanupHeld) const LinearProgressIndicator(),
                   if (_error != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -875,7 +876,9 @@ class _ModulesScreenState extends State<ModulesScreen> {
                       child: Semantics(
                         liveRegion: true,
                         child: Text(
-                          _errorMessage(l, _error!),
+                          _cleanupHeld
+                              ? l.moduleShutdownUnconfirmed
+                              : _errorMessage(l, _error!),
                           key: const Key('module-error'),
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.error,

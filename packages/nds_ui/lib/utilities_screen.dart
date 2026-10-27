@@ -24,6 +24,8 @@ class _UtilitiesState extends State<UtilitiesScreen> {
   native.LocalAgent? _agent;
   native.LocalAgent? _retiringAgent;
   Future<bool>? _agentShutdown;
+  bool _shutdownFailed = false;
+  bool get _cleanupHeld => _retiringAgent != null && _shutdownFailed;
   Future<void>? _transition;
   Future<void>? _operation;
   int _epoch = 0;
@@ -125,6 +127,7 @@ class _UtilitiesState extends State<UtilitiesScreen> {
         code = error.code();
         error.dispose();
       }
+      _shutdownFailed = true;
       if (mounted) {
         setState(() {
           _error = code;
@@ -486,9 +489,12 @@ class _UtilitiesState extends State<UtilitiesScreen> {
                         },
                   child: Text(l.copySharedClipboard),
                 ),
-                if (_busy) const LinearProgressIndicator(),
+                if (_busy && !_cleanupHeld) const LinearProgressIndicator(),
                 if (_error != null)
-                  Text(_message(l), key: const Key('utility-error')),
+                  Text(
+                    _cleanupHeld ? l.moduleShutdownUnconfirmed : _message(l),
+                    key: const Key('utility-error'),
+                  ),
               ],
             ),
             ListView(
@@ -607,9 +613,12 @@ class _UtilitiesState extends State<UtilitiesScreen> {
                           }),
                     child: Text(l.moreIncidents),
                   ),
-                if (_busy) const LinearProgressIndicator(),
+                if (_busy && !_cleanupHeld) const LinearProgressIndicator(),
                 if (_error != null)
-                  Text(_message(l), key: const Key('utility-error')),
+                  Text(
+                    _cleanupHeld ? l.moduleShutdownUnconfirmed : _message(l),
+                    key: const Key('utility-error'),
+                  ),
               ],
             ),
           ],

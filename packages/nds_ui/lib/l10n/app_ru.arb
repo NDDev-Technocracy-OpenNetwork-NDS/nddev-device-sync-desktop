@@ -125,6 +125,7 @@
   "moduleNetworkError": "Локальный инструмент не ответил вовремя.",
   "moduleResponseError": "Локальный инструмент вернул неподдерживаемый ответ.",
   "moduleCancelled": "Запрос отменён.",
+  "moduleShutdownUnconfirmed": "Не удалось подтвердить завершение работы. Доступ остаётся закрытым.",
   "missingReading": "Нет показания",
   "textPreviewLimit": "Предпросмотр текста, до 16 КиБ.",
   "gdsInstall": "Установка GDS",

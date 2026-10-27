@@ -144,6 +144,8 @@ void main() {
         fixture.select(next);
         await _until(tester, () => old.shutdownCalls == 1);
         old.failShutdown();
+        const unconfirmed =
+            'Shutdown could not be confirmed. Access remains closed.';
         await _until(
           tester,
           () => find.byKey(const Key('module-error')).evaluate().isNotEmpty,
@@ -157,6 +159,8 @@ void main() {
         expect(next.discoverCalls, 0);
         expect(last.discoverCalls, 0);
         expect(find.byKey(const Key('module-error')), findsOneWidget);
+        expect(find.text(unconfirmed), findsOneWidget);
+        expect(find.byType(LinearProgressIndicator), findsNothing);
 
         final before = next.metadataCalls;
         final refresh = find.byKey(const Key('module-settings-refresh'));
@@ -168,6 +172,8 @@ void main() {
         expect(next.discoverCalls, 0);
         expect(last.discoverCalls, 0);
         expect(find.byKey(const Key('module-error')), findsOneWidget);
+        expect(find.text(unconfirmed), findsOneWidget);
+        expect(find.byType(LinearProgressIndicator), findsNothing);
         final read = tester.widget<FilledButton>(
           find.byKey(const Key('read-system-info')),
         );

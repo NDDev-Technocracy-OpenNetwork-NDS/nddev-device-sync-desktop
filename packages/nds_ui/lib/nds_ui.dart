@@ -225,6 +225,7 @@ class _IdentityScreenState extends State<_IdentityScreen> {
   native.NdsClient? _retiringClient;
   Future<bool>? _clientShutdown;
   String? _shutdownError;
+  bool get _cleanupHeld => _retiringClient != null && _shutdownError != null;
   bool _busy = false;
   int _actionEpoch = 0;
   bool get _paused => !ApplicationActivityScope.read(context).value;
@@ -1111,7 +1112,7 @@ class _IdentityScreenState extends State<_IdentityScreen> {
                     if (v.flow.isNotEmpty || v.invitationPending)
                       TextButton(onPressed: _cancel, child: Text(l.cancel)),
                   ],
-                  if (_busy) ...[
+                  if (_busy && !_cleanupHeld) ...[
                     const SizedBox(height: OpenNetworkSpacing.four),
                     Semantics(
                       label: l.working,
@@ -1123,7 +1124,9 @@ class _IdentityScreenState extends State<_IdentityScreen> {
                     Semantics(
                       liveRegion: true,
                       child: Text(
-                        _message(l, _error!),
+                        _cleanupHeld
+                            ? l.moduleShutdownUnconfirmed
+                            : _message(l, _error!),
                         key: const Key('auth-error'),
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.error,

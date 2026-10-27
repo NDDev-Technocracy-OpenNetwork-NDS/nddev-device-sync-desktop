@@ -44,10 +44,23 @@ class _ModulesScreenState extends State<ModulesScreen> {
   bool _publishing = false;
   bool _cancelled = false;
   int _epoch = 0;
+  native.LocalAgent? _retiringAgent;
+  Future<bool>? _agentShutdown;
+  String? _shutdownError;
+  Future<void>? _transition;
+  Future<void>? _operation;
+  bool _rediscover = false;
   final _repository = TextEditingController();
   bool _published = false;
 
-  Future<void> _publish() async {
+  Future<void> _publish() {
+    if (_busy || _retiringAgent != null || _transition != null) {
+      return Future.value();
+    }
+    return _operation = _publishInner();
+  }
+
+  Future<void> _publishInner() async {
     final client = widget.client;
     final agent = _agent;
     final epoch = _epoch;
@@ -88,10 +101,15 @@ class _ModulesScreenState extends State<ModulesScreen> {
   }
 
   String? _currentScope() {
-    final view = widget.client?.snapshot();
-    return view == null
-        ? null
-        : '${view.authenticated}:${view.tenantId}:${view.userId}:${view.currentDeviceId}';
+    try {
+      final view = widget.client?.snapshot();
+      return view == null
+          ? null
+          : '${view.authenticated}:${view.tenantId}:${view.userId}:${view.currentDeviceId}';
+    } catch (error) {
+      if (error is native.ClientError) error.dispose();
+      return null;
+    }
   }
 
   @override
@@ -100,15 +118,14 @@ class _ModulesScreenState extends State<ModulesScreen> {
     if (!identical(oldWidget.client, widget.client) ||
         _scope != _currentScope()) {
       _epoch++;
+      _scope = _currentScope();
       _agent?.close();
-      _agent?.dispose();
-      _agent = null;
       _modules = [];
       _result = null;
-      _error = null;
+      _error = _shutdownError;
       _published = false;
       _publishing = false;
-      _metadataRead = null;
+      _busy = true;
       _discover();
     } else if (!_busy && _metadataError) {
       _refreshModules();
@@ -143,11 +160,95 @@ class _ModulesScreenState extends State<ModulesScreen> {
     }
   }
 
-  Future<void> _discover() async {
+  Future<bool> _retireAgent(native.LocalAgent? agent) {
+    if (_retiringAgent != null) return _agentShutdown!;
+    if (agent == null) return Future.value(true);
+    _retiringAgent = agent;
+    _cancelled = true;
+    agent.close();
+    _agentShutdown = _shutdownAgent(agent);
+    return _agentShutdown!;
+  }
+
+  Future<bool> _shutdownAgent(native.LocalAgent agent) async {
+    try {
+      await agent.shutdown();
+      if (identical(_agent, agent)) _agent = null;
+      agent.dispose();
+      _retiringAgent = null;
+      return true;
+    } catch (error) {
+      var code = 'unavailable';
+      if (error is native.ClientError) {
+        code = error.code();
+        error.dispose();
+      } else if (mounted) {
+        widget.diagnostics?.reportFailure(native.FailureKind.nativeBridge);
+      }
+      // The exact closed owner and this completed failure stay retained. A new
+      // desired client cannot replace an unresolved drain or retry it as ready.
+      _shutdownError = code;
+      if (mounted) {
+        setState(() {
+          _error = code;
+          _busy = true;
+        });
+      }
+      return false;
+    }
+  }
+
+  Future<void> _discover() {
+    _rediscover = true;
+    if (_transition case final transition?) return transition;
+    late final Future<void> owned;
+    owned = _discoverCurrent().whenComplete(() {
+      if (identical(_transition, owned)) _transition = null;
+    });
+    _transition = owned;
+    return owned;
+  }
+
+  Future<void> _discoverCurrent() async {
+    while (_rediscover) {
+      _rediscover = false;
+      // Cancel first, then let the captured Dart operation finish without
+      // replacing/disposal of the opaque it may still reference after an await.
+      _agent?.close();
+      await _operation;
+      await _metadataRead;
+      if (!await _retireAgent(_agent)) return;
+      if (!mounted) return;
+      _cancelled = false;
+      _publishing = false;
+      // Coalesce changes received while the previous owner was draining. The
+      // discovery below captures the latest client, not a queued intermediate.
+      _rediscover = false;
+      await _discoverOne();
+      if (!mounted) {
+        await _retireAgent(_agent);
+        return;
+      }
+    }
+  }
+
+  Future<void> _discoverOne() async {
     final client = widget.client;
     final epoch = _epoch;
     _scope = _currentScope();
-    final view = client?.snapshot();
+    native.View? view;
+    try {
+      view = client?.snapshot();
+    } catch (error) {
+      if (error is native.ClientError) error.dispose();
+      if (mounted && epoch == _epoch) {
+        setState(() {
+          _busy = false;
+          _error = 'unavailable';
+        });
+      }
+      return;
+    }
     if (client == null ||
         view == null ||
         !view.authenticated ||
@@ -172,8 +273,8 @@ class _ModulesScreenState extends State<ModulesScreen> {
         agent = await client.discoverLocalAgent();
       }
       if (!mounted || epoch != _epoch || !identical(client, widget.client)) {
-        agent?.close();
-        agent?.dispose();
+        if (!await _retireAgent(agent)) return;
+        _rediscover = mounted;
         return;
       }
       _agent = agent;
@@ -188,12 +289,23 @@ class _ModulesScreenState extends State<ModulesScreen> {
       }
       if (mounted && epoch == _epoch) setState(() => _error = code);
     } finally {
-      if (mounted && epoch == _epoch) setState(() => _busy = false);
+      if (mounted && epoch == _epoch) {
+        setState(() => _busy = _retiringAgent != null);
+      }
     }
   }
 
-  Future<void> _load(Future<Object> Function() operation) async {
-    if (_busy || _agent == null) return;
+  Future<void> _load(Future<Object> Function() operation) {
+    if (_busy ||
+        _agent == null ||
+        _retiringAgent != null ||
+        _transition != null) {
+      return Future.value();
+    }
+    return _operation = _loadInner(operation);
+  }
+
+  Future<void> _loadInner(Future<Object> Function() operation) async {
     final epoch = _epoch;
     setState(() {
       _busy = true;
@@ -219,19 +331,18 @@ class _ModulesScreenState extends State<ModulesScreen> {
           // Metadata refresh is separate from the completed operation result.
         });
         await _refreshModules();
-      } else if (mounted && _cancelled) {
-        // Close is terminal. Wait for the owned operation to finish before
-        // creating another engine, so repeated cancellation cannot queue work.
-        _agent?.dispose();
-        _agent = null;
-        _cancelled = false;
-        _discover();
       }
     }
   }
 
   void _cancel() {
-    if (!_busy || _publishing || _agent == null || _cancelled) return;
+    if (!_busy ||
+        _publishing ||
+        _agent == null ||
+        _cancelled ||
+        _retiringAgent != null) {
+      return;
+    }
     _epoch++;
     _agent!.close();
     setState(() {
@@ -239,13 +350,17 @@ class _ModulesScreenState extends State<ModulesScreen> {
       _error = 'cancelled';
       _cancelled = true;
     });
+    _discover();
   }
 
   @override
   void dispose() {
     _epoch++;
+    _rediscover = false;
     _agent?.close();
-    _agent?.dispose();
+    _retiringAgent?.close();
+    // Sync cancellation only. A retained transition handles any already-started
+    // discovery/shutdown; dispose never invents a positive drain receipt.
     _repository.dispose();
     super.dispose();
   }

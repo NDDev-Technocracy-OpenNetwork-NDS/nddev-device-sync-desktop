@@ -222,6 +222,9 @@ class _IdentityScreenState extends State<_IdentityScreen> {
   final _code = TextEditingController();
   native.NdsClient? _client;
   native.View? _view;
+  native.NdsClient? _retiringClient;
+  Future<bool>? _clientShutdown;
+  String? _shutdownError;
   bool _busy = false;
   int _actionEpoch = 0;
   bool get _paused => !ApplicationActivityScope.read(context).value;
@@ -264,7 +267,13 @@ class _IdentityScreenState extends State<_IdentityScreen> {
   }
 
   void _reconcile() {
-    if (_paused || _busy || _reconciliation != null || _client == null) return;
+    if (_paused ||
+        _busy ||
+        _retiringClient != null ||
+        _reconciliation != null ||
+        _client == null) {
+      return;
+    }
     _reconciliation = _reconcileInner(_client!).whenComplete(() {
       _reconciliation = null;
     });
@@ -285,7 +294,7 @@ class _IdentityScreenState extends State<_IdentityScreen> {
         widget.diagnostics?.reportFailure(native.FailureKind.nativeBridge);
       }
     } finally {
-      if (mounted && identical(client, _client)) {
+      if (mounted && _retiringClient == null && identical(client, _client)) {
         setState(() => _view = client.snapshot());
       }
     }
@@ -297,7 +306,9 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     _clock?.cancel();
     _poll?.cancel();
     _client?.cancel();
-    _client?.dispose();
+    _retiringClient?.cancel();
+    // Sync fallback is cancellation only. An already-started shutdown retains
+    // its exact opaque owner until its awaited positive completion.
     _endpoint.dispose();
     _email.dispose();
     _code.clear();
@@ -307,11 +318,50 @@ class _IdentityScreenState extends State<_IdentityScreen> {
 
   String get _locale => Localizations.localeOf(context).languageCode;
 
+  Future<bool> _retireClient(native.NdsClient? client) {
+    if (_retiringClient != null) return _clientShutdown!;
+    if (client == null) return Future.value(true);
+    _retiringClient = client;
+    client.cancel();
+    _clientShutdown = _shutdownClient(client);
+    return _clientShutdown!;
+  }
+
+  Future<bool> _shutdownClient(native.NdsClient client) async {
+    try {
+      await client.shutdown();
+      if (identical(client, _client)) {
+        if (mounted) {
+          widget.onClient?.call(null);
+          ApplicationActivityScope.read(context).attach(null);
+        }
+        _client = null;
+        _view = null;
+      }
+      client.dispose();
+      _retiringClient = null;
+      return true;
+    } catch (error) {
+      var code = 'unexpected';
+      if (error is native.ClientError) {
+        code = error.code();
+        error.dispose();
+      } else if (mounted) {
+        widget.diagnostics?.reportFailure(native.FailureKind.nativeBridge);
+      }
+      // Keep this exact closed owner and completed failure. No automatic retry
+      // or replacement may turn an unknown shutdown into a successful drain.
+      _shutdownError = code;
+      if (mounted) setState(() => _error = code);
+      return false;
+    }
+  }
+
   Future<void> _run(
     Future<native.View> Function() action, {
     bool prepare = false,
   }) async {
-    if (_busy) return;
+    if (_busy || _retiringClient != null) return;
     final epoch = _actionEpoch;
     setState(() {
       _busy = true;
@@ -319,23 +369,28 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     });
     try {
       await _reconciliation;
+      if (!mounted || epoch != _actionEpoch) return;
       var view = await action();
+      final client = _client;
+      if (!mounted || epoch != _actionEpoch || client == null) return;
       if (view.authenticated &&
           (view.sessionVerified || view.offlineAuthorized) &&
           (prepare || view.currentDeviceId.isEmpty) &&
           view.flow != 'passkey_registration') {
-        view = await _client!.prepareDevice(
+        view = await client.prepareDevice(
           name: const String.fromEnvironment('NDS_DEVICE_NAME'),
         );
       }
-      if (!mounted || epoch != _actionEpoch) return;
+      if (!mounted || epoch != _actionEpoch || !identical(client, _client)) {
+        return;
+      }
       setState(() => _view = view);
       widget.onClient?.call(_client);
       if (view.authenticated) _code.clear();
     } catch (error) {
       var code = 'unexpected';
       if (error is _CancelledClientTransition) {
-        code = 'cancelled';
+        code = _shutdownError ?? 'cancelled';
       } else if (error is native.ClientError) {
         code = error.code();
         error.dispose();
@@ -354,7 +409,7 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     } finally {
       if (mounted) {
         setState(() {
-          _busy = false;
+          _busy = _retiringClient != null;
           _view = _client?.snapshot();
         });
         _schedulePoll();
@@ -368,27 +423,29 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     final previous = _client;
     // Replacement waits for the exact native owner's shutdown. A failed drain
     // leaves that client attached and prevents a new identity from being used.
-    await previous?.shutdown();
-    if (!mounted || epoch != _actionEpoch || !identical(previous, _client)) {
+    if (!await _retireClient(previous)) throw _CancelledClientTransition();
+    if (!mounted || epoch != _actionEpoch || _client != null) {
       throw _CancelledClientTransition();
     }
-    widget.onClient?.call(null);
-    previous?.dispose();
-    _client = null;
-    _view = null;
     final client = native.NdsClient.newWithCacheBase(
       endpoint: _endpoint.text.trim(),
       cacheBase: cachePort,
     );
     if (!mounted || epoch != _actionEpoch) {
       client.cancel();
-      client.dispose();
-      throw StateError('cancelled');
+      if (!await _retireClient(client)) throw _CancelledClientTransition();
+      throw _CancelledClientTransition();
     }
     ApplicationActivityScope.read(context).attach(client);
     _client = client;
     await client.refresh();
+    if (!mounted || epoch != _actionEpoch || !identical(client, _client)) {
+      throw _CancelledClientTransition();
+    }
     final view = await client.importBrowserInvitation();
+    if (!mounted || epoch != _actionEpoch || !identical(client, _client)) {
+      throw _CancelledClientTransition();
+    }
     if (widget.invitationReceived &&
         !_invitationNoticeHandled &&
         view.authenticated) {
@@ -400,7 +457,7 @@ class _IdentityScreenState extends State<_IdentityScreen> {
 
   Future<void> _changeServer() async {
     final client = _client;
-    if (_busy || client == null) return;
+    if (_busy || _retiringClient != null || client == null) return;
     final epoch = _actionEpoch;
     _poll?.cancel();
     setState(() {
@@ -409,14 +466,11 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     });
     try {
       await _reconciliation;
-      await client.shutdown();
       if (!mounted || epoch != _actionEpoch || !identical(client, _client)) {
         return;
       }
-      widget.onClient?.call(null);
-      ApplicationActivityScope.read(context).attach(null);
-      client.dispose();
-      _client = null;
+      if (!await _retireClient(client)) return;
+      if (!mounted || epoch != _actionEpoch || _client != null) return;
       _browserOpened = false;
       _code.clear();
       setState(() => _view = null);
@@ -435,8 +489,8 @@ class _IdentityScreenState extends State<_IdentityScreen> {
         });
       }
     } finally {
-      if (mounted && epoch == _actionEpoch) {
-        setState(() => _busy = false);
+      if (mounted) {
+        setState(() => _busy = _retiringClient != null);
       }
     }
   }
@@ -583,7 +637,7 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     _code.clear();
     setState(() {
       _view = _client?.snapshot();
-      _error = 'cancelled';
+      _error = _shutdownError ?? 'cancelled';
     });
   }
 

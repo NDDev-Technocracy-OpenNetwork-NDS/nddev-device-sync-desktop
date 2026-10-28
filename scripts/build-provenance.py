@@ -10,6 +10,10 @@ import subprocess
 import sys
 import tomllib
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'packages/nds_native/tool'))
+from cache_assembly import linux_cache_assembly
+
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('artifact', type=Path)
 parser.add_argument('--app-root', type=Path, default=Path.cwd())
@@ -157,6 +161,10 @@ if args.product_version is not None:
     record['product_version'] = args.product_version
 if linux is not None:
     record['platform'], record['worker'] = linux[1], linux[2]
+    try:
+        record['assembly'] = linux_cache_assembly(args.app_root)
+    except ValueError as error:
+        raise SystemExit(str(error)) from None
 if artifact.suffix == '.apk':
     gradle = (args.app_root/'android/app/build.gradle.kts').read_text()
     minima = re.findall(r'^\s*minSdk = (\d+)\s*$', gradle, re.MULTILINE)

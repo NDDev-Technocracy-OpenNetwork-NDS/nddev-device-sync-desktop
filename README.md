@@ -199,6 +199,15 @@ does not inherit an ambient policy. The wrapper restores the app configuration
 after success, failure or cancellation. Ordinary `flutter build` retains
 development provenance.
 
+Linux cache assembly takes only an explicitly approved local port:
+`python scripts/build.py linux --release --dart-define=NDS_CACHE_PORT=PORT`.
+There is no default or port discovery. The main workflow's optional
+`linux_cache_port` dispatch input supplies the same define to Linux only;
+ordinary pushes and other targets leave it unset. Build provenance records the
+port (or `null`) and the digest of Flutter's generated Linux configuration,
+without exporting other Dart defines. This records assembly intent, not cache
+readiness, profile binding or RDS identity. Android builds must leave it unset.
+
 Linux application updates provide verified discovery, bounded staging,
 cancellation and authenticated local restore in a separate owned namespace.
 The existing system Updater tool retains its independent plan/report scope.

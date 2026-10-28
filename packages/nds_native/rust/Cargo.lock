@@ -4039,7 +4039,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-agent"
 version = "0.0.1-alpha.9"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent?rev=a0e995e223add2d95b59bac9b6b6f7f985ef0036#a0e995e223add2d95b59bac9b6b6f7f985ef0036"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent?rev=e976059bce91035a91b12b445052fa90e284b039#e976059bce91035a91b12b445052fa90e284b039"
 dependencies = [
  "base16ct",
  "nddev-device-sync-adapter-io",
@@ -4069,7 +4069,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-browser-use"
 version = "0.0.1-alpha.1"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-browser-use?rev=1abc773f3bd41411fb94b5decca78e92bdfaf993#1abc773f3bd41411fb94b5decca78e92bdfaf993"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-browser-use?rev=b7b861dbbb2e2d05e12211f3784c7ebc77dd02a3#b7b861dbbb2e2d05e12211f3784c7ebc77dd02a3"
 dependencies = [
  "async-io",
  "futures-io",

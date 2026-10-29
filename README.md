@@ -128,6 +128,8 @@ acceptance driver with an explicitly selected native device. Add
 `--isolated-android` for a unique test application ID that preserves installed
 applications. The two launches preserve test-app storage between phases, then
 revoke the session and uninstall only the test-owned app.
+ADB reverse admission refuses existing device-port bindings; teardown removes
+only the mappings successfully admitted by this run.
 
 The desktop Local modules tab reads native system metrics, clipboard history,
 cleaner diagnostics/previews, update plans and repository/remote-session state.

@@ -121,6 +121,7 @@ if args.app_update_handoff is not None:
 if args.sync_role:
     log = log.with_stem(log.stem + "-sync-" + args.sync_role)
 runner = ExitStack()
+owned_reverse_ports = []
 
 def fixture_mode(mode):
     control = args.fixture.resolve().with_suffix(".control.json")
@@ -151,7 +152,8 @@ try:
         shutil.copyfile(source.with_name("driver.dart"), driver)
     if android:
         for port in ports:
-            subprocess.run(["adb", "-s", args.device, "reverse", "tcp:" + port, "tcp:" + port], check=True, timeout=10)
+            subprocess.run(["adb", "-s", args.device, "reverse", "--no-rebind", "tcp:" + port, "tcp:" + port], check=True, timeout=10)
+            owned_reverse_ports.append(port)
     command = (["flutter", "drive", "--target=" + str(target), "--driver=" + str(driver)]
         if driver is not None else ["flutter", "test", str(target),
         "--timeout=5m" if args.sync_role else "--timeout=3m"])
@@ -252,7 +254,7 @@ finally:
             subprocess.run(["adb", "-s", args.device, "uninstall", app_id],
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
         if android:
-            for port in ports:
+            for port in owned_reverse_ports:
                 subprocess.run(["adb", "-s", args.device, "reverse", "--remove", "tcp:" + port],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
         if args.modules and json.loads(args.fixture.read_text())["status"] == "offline":

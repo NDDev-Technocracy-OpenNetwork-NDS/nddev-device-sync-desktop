@@ -652,6 +652,7 @@ class _IdentityScreenState extends State<_IdentityScreen> {
     'vault_storage_unavailable' => l.vaultStorageUnavailable,
     'vault_storage_full' => l.storageFull,
     'credential_revalidation_required' => l.revalidationRequired,
+    'personal_context_unavailable' => l.personalContextServerRequired,
     'transport_unavailable' ||
     'request_timeout' ||
     'dependency_unavailable' => l.networkError,

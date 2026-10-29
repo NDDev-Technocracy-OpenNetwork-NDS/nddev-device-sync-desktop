@@ -40,6 +40,7 @@
   "rateError": "Please wait before trying again.",
   "cancelledError": "Sign-in cancelled.",
   "responseError": "The server response does not match the NDS contract.",
+  "personalContextServerRequired": "Update the NDS server before using this version of the client.",
   "genericError": "The operation failed. Try again.",
   "launchError": "The authorization browser could not be opened.",
   "working": "Working…",

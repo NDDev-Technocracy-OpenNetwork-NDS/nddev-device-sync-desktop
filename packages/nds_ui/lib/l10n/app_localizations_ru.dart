@@ -137,6 +137,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get responseError => 'Ответ сервера не соответствует протоколу NDS.';
 
   @override
+  String get personalContextServerRequired =>
+      'Обновите сервер NDS для работы с этой версией клиента.';
+
+  @override
   String get genericError =>
       'Не удалось выполнить действие. Повторите попытку.';
 

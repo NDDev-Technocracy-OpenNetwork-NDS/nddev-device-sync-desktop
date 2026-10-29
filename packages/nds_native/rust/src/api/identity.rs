@@ -813,10 +813,9 @@ impl NdsClient {
             let view = vault.snapshot();
             if self.native_runtime().is_some() && (view.catching_up || view.last_sync_at == 0) {
                 // The retained desktop owner reconciles a separate VaultClient.
-                // Refresh this facade through the existing authenticated inbox
-                // path; an owner's DTO cannot establish this reader's freshness.
-                // This never sends pending operations or clears an upload block.
-                vault.synchronize_inbox().await?;
+                // Observe its progress under this reader's own protected fence;
+                // the existing follower path never takes the writer lease.
+                vault.observe_replica_once().await?;
             }
         }
         Ok(vault)

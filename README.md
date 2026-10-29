@@ -124,9 +124,10 @@ the runner configuration afterward. Production builds require HTTPS. Runtime
 logs and fixture receipts stay outside the repository.
 
 For encrypted persistence across Android processes, pass `--cold-restart` to the
-acceptance driver with an explicitly owned emulator and no existing NDS app.
-The two launches preserve app storage between phases, then revoke the session
-and uninstall only the test-owned app.
+acceptance driver with an explicitly selected native device. Add
+`--isolated-android` for a unique test application ID that preserves installed
+applications. The two launches preserve test-app storage between phases, then
+revoke the session and uninstall only the test-owned app.
 
 The desktop Local modules tab reads native system metrics, clipboard history,
 cleaner diagnostics/previews, update plans and repository/remote-session state.
@@ -245,9 +246,11 @@ Removal requires a recent sign-in and consumes the server's atomic revocation
 receipt; revoking the current passkey session returns to sign-in. Creating or
 using a passkey opens the server's browser ceremony with comparison-code approval.
 
-`--vault` in identity acceptance also exercises shared text delivery/copy and,
-on Android, refusal to re-share a marked private clipboard value. Use an owned
-X11 session for Linux clipboard acceptance, for example
+`--vault` in identity acceptance also exercises encrypted NDS text sharing. The
+Android identity/Vault scenario preserves the device user's system clipboard;
+explicit Android native copy/capture and private-value refusal remain in
+`--modules`, which requires an owned disposable clipboard context. Desktop copy
+acceptance uses the actual OS clipboard. Use an owned X11 session on Linux, for example
 `xvfb-run -a env -u WAYLAND_DISPLAY GDK_BACKEND=x11 python3 scripts/identity-acceptance.py --fixture /private/fixture.json --vault`.
 The test must observe the native operation completing before reading the OS
 clipboard. Production UI confirmation uses the same native completion receipt.

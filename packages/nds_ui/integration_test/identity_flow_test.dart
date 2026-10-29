@@ -609,7 +609,10 @@ void main() {
         await tester.ensureVisible(find.byKey(const Key('share-text')));
         await tester.tap(find.byKey(const Key('share-text')));
         await waitFor(tester, find.textContaining('Server revision'));
-        if (!Platform.isIOS) {
+        // Physical Android identity/Vault acceptance preserves the user's OS
+        // clipboard. Native Android copy/capture belongs to the explicit
+        // device_modules scenario with its own disposable clipboard context.
+        if (!Platform.isIOS && !Platform.isAndroid) {
           await tester.ensureVisible(
             find.byKey(const Key('copy-shared-clipboard')),
           );
@@ -640,17 +643,6 @@ void main() {
             }
             await tester.pump(const Duration(milliseconds: 100));
             await Future<void>.delayed(const Duration(milliseconds: 100));
-          }
-          if (Platform.isAndroid) {
-            await tester.ensureVisible(
-              find.byKey(const Key('share-native-clipboard')),
-            );
-            await tester.pumpAndSettle();
-            await tester.tap(find.byKey(const Key('share-native-clipboard')));
-            await waitFor(
-              tester,
-              find.textContaining('This clipboard item is private'),
-            );
           }
         }
         await tester.pageBack();

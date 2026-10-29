@@ -25,7 +25,7 @@ parser.add_argument("--isolated-android", action="store_true",
 parser.add_argument("--company", action="store_true", help="Exercise company invitation and revocation through the real UI")
 parser.add_argument("--vault", action="store_true", help="Exercise real native vault creation and encrypted sync")
 parser.add_argument("--catalog-source", action="store_true", help="Also qualify saved GitHub choice through the real UI (requires --vault and --fixture-sync3)")
-parser.add_argument("--modules", action="store_true", help="Qualify Android module consent across online/offline app processes")
+parser.add_argument("--modules", action="store_true", help="Qualify Android module consent and native clipboard in an owned disposable clipboard context")
 parser.add_argument("--offline-pub", action="store_true", help="Resolve temporary test dependencies from a prewarmed cache; retain lockfile verification")
 parser.add_argument("--sync-role", choices=["owner", "recipient"])
 parser.add_argument("--resume", action="store_true", help="Verify a retained desktop session after another device changed the server")

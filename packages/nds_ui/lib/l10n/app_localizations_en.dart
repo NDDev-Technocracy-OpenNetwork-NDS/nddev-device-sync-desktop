@@ -140,6 +140,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The server response does not match the NDS contract.';
 
   @override
+  String get personalContextServerRequired =>
+      'Update the NDS server before using this version of the client.';
+
+  @override
   String get genericError => 'The operation failed. Try again.';
 
   @override

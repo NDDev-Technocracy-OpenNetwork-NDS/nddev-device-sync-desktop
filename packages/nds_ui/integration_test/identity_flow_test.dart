@@ -676,22 +676,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('This installation'), findsOneWidget);
-      final revoke = find.descendant(
-        of: currentCard(),
-        matching: find.widgetWithText(TextButton, 'Revoke device'),
-      );
-      await tester.ensureVisible(revoke);
-      await tester.tap(revoke);
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Revoke device'));
-      await tester.pumpAndSettle();
-      await waitFor(
-        tester,
-        find.descendant(
-          of: currentCard(),
-          matching: find.textContaining('· Revoked'),
-        ),
-      );
+      await revokeCurrentDevice(tester, currentCard);
       await tester.ensureVisible(find.byKey(const Key('logout')));
       await tester.tap(find.byKey(const Key('logout')));
       await waitFor(tester, find.byKey(const Key('email')));
@@ -703,6 +688,53 @@ void main() {
 
 bool nativeDesktop() =>
     Platform.isLinux || Platform.isMacOS || Platform.isWindows;
+
+Future<void> revokeCurrentDevice(
+  WidgetTester tester,
+  Finder Function() currentCard,
+) async {
+  final messages = AppLocalizations.of(
+    tester.element(find.byKey(const Key('logout'))),
+  )!;
+  final deadline = DateTime.now().add(const Duration(seconds: 25));
+  final revoked = find.descendant(
+    of: currentCard(),
+    matching: find.textContaining('· Revoked'),
+  );
+  Future<void> submit() async {
+    final revoke = find.descendant(
+      of: currentCard(),
+      matching: find.widgetWithText(TextButton, messages.revokeDevice),
+    );
+    await tester.ensureVisible(revoke);
+    await tester.tap(revoke);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, messages.revokeDevice));
+    await tester.pumpAndSettle();
+  }
+
+  await submit();
+  while (revoked.evaluate().isEmpty) {
+    if (DateTime.now().isAfter(deadline)) {
+      throw StateError('Device revocation remained unconfirmed');
+    }
+    final error = find.byKey(const Key('auth-error'));
+    if (error.evaluate().isNotEmpty) {
+      final message = tester.widget<Text>(error).data;
+      // Foreground identity admission may be busy while the retained replica
+      // signs a request. Exercise another explicit UI attempt only after the
+      // displayed admission refusal, within the original waitFor budget.
+      // Transport, authentication and unknown-result errors are not retried.
+      if (message != messages.rateError) {
+        throw StateError('Device revocation refused: $message');
+      }
+      await submit();
+    }
+    await tester.pump(const Duration(milliseconds: 100));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+  }
+  await tester.pumpAndSettle();
+}
 
 Future<void> writeScreenFact(
   String directory,

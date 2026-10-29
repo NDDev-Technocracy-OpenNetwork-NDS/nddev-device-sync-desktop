@@ -805,6 +805,22 @@ impl NdsClient {
             replica.set_active(true);
         }
     }
+    #[cfg_attr(feature = "flutter", frb(ignore))]
+    async fn clipboard_vault(&self) -> Result<Arc<VaultClient>, VaultError> {
+        let vault = self.vault().await?;
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        {
+            let view = vault.snapshot();
+            if self.native_runtime().is_some() && (view.catching_up || view.last_sync_at == 0) {
+                // The retained desktop owner reconciles a separate VaultClient.
+                // Refresh this facade through the existing authenticated inbox
+                // path; an owner's DTO cannot establish this reader's freshness.
+                // This never sends pending operations or clears an upload block.
+                vault.synchronize_inbox().await?;
+            }
+        }
+        Ok(vault)
+    }
     pub async fn clipboard_snapshot(
         &self,
     ) -> Result<nddev_device_sync_vault::view::ClipboardView, ClientError> {
@@ -812,7 +828,7 @@ impl NdsClient {
             .module_access("clipboard", super::module_control::Adapter::Shared)
             .await?;
         let value = self
-            .vault()
+            .clipboard_vault()
             .await
             .map_err(super::module_control::vault_error)?
             .clipboard()
@@ -953,7 +969,7 @@ impl NdsClient {
                 .module_access("clipboard", super::module_control::Adapter::Shared)
                 .await?;
             let (_, text) = self
-                .vault()
+                .clipboard_vault()
                 .await
                 .map_err(super::module_control::vault_error)?
                 .clipboard()

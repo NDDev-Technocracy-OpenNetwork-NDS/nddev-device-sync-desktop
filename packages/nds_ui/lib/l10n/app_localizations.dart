@@ -338,6 +338,12 @@ abstract class AppLocalizations {
   /// **'The server response does not match the NDS contract.'**
   String get responseError;
 
+  /// No description provided for @personalContextServerRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the NDS server before using this version of the client.'**
+  String get personalContextServerRequired;
+
   /// No description provided for @genericError.
   ///
   /// In en, this message translates to:

@@ -5,8 +5,14 @@
 
 import '../frb_generated.dart';
 import '../third_party/nddev_device_sync_accounts/view.dart';
+import '../third_party/nddev_device_sync_organizations/view.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+
+// These functions are ignored because they are not marked as `pub`: `check`, `check`, `command`, `deselect`, `open_organizations_locked`, `open`, `organization_client`, `organization_generation`, `publish`, `read`, `seal_organizations_if`, `seal_organizations_locked`, `seal_organizations`, `seal`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `OrganizationSlot`, `Selected`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `drop`
+// These functions are ignored (category: IgnoreBecauseOwnerTyShouldIgnore): `default`
 
 /// Browser route I/O only. No URL or invitation token is returned to presentation.
 void captureInvitationLink({required String route}) => RustLib.instance.api
@@ -14,6 +20,37 @@ void captureInvitationLink({required String route}) => RustLib.instance.api
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CompanyCommand>>
 abstract class CompanyCommand implements RustOpaqueInterface {
-  /// Every retry sends the original immutable command with fresh device proof.
+  /// Explicit retry always sends the original immutable command. A local
+  /// publication denial never establishes absence of a remote effect.
   Future<void> execute();
+
+  /// Local lifetime observation; execute still revalidates current authority.
+  bool isCurrent();
+}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>>
+abstract class LocalOrganization implements RustOpaqueInterface {
+  Future<CompanyCommand> changeMember({
+    required String user,
+    required BigInt revision,
+    OrganizationRoleView? role,
+  });
+
+  void close();
+
+  Future<OrganizationInvitationPageView> invitations({String? after});
+
+  Future<CompanyCommand> invite({
+    required String email,
+    required OrganizationRoleView role,
+  });
+
+  /// Local lifetime observation only, never a fresh membership grant.
+  bool isCurrent();
+
+  Future<OrganizationMemberPageView> members({String? after});
+
+  Future<OrganizationOverviewView> overview();
+
+  Future<CompanyCommand> revoke({required String invitation});
 }

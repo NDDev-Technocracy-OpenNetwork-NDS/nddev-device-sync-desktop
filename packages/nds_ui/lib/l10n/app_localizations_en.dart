@@ -1028,11 +1028,43 @@ class AppLocalizationsEn extends AppLocalizations {
       'The catalog could not finish updating because synchronization storage reached its limit. Saved observations remain available.';
 
   @override
-  String get companyTitle => 'Company';
+  String get companySpace => 'Space';
+
+  @override
+  String get companyPersonal => 'Personal space';
+
+  @override
+  String get companyPersonalHelp =>
+      'Organization membership does not change your personal storage owner. Select an organization to view its current membership.';
+
+  @override
+  String get companyName => 'Organization name';
+
+  @override
+  String get companyCreate => 'Create organization';
+
+  @override
+  String get companyCreateHelp =>
+      'This action uses your personal identity and creates a separate organization with you as its first administrator.';
+
+  @override
+  String get companyReviewedUnknown =>
+      'Current authorized state was reviewed. Finishing the retained command does not undo any previously submitted change.';
+
+  @override
+  String get companyServerRequired =>
+      'This server does not support explicit organization contexts. No other company is selected automatically.';
+
+  @override
+  String get companyContextClosed =>
+      'This context is closed. Refresh memberships or sign in again before another action.';
+
+  @override
+  String get companyTitle => 'Organizations';
 
   @override
   String get companyPrivacy =>
-      'Company administration is online. Personal Vault, secrets and repositories remain private to their owner.';
+      'Organization administration is online. Your personal Vault, secrets and repositories keep their original owner.';
 
   @override
   String get companyAdmin => 'Administrator';
@@ -1065,7 +1097,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your current membership does not allow this action.';
 
   @override
-  String get companyInvalid => 'Check the email address and selected action.';
+  String get companyInvalid =>
+      'Check the organization name, email address and selected action.';
 
   @override
   String get companyPending =>
@@ -1094,7 +1127,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String companyChangeHelp(String member) {
-    return 'Apply this membership change to $member? Removing a member ends their active sessions; their personal data is retained.';
+    return 'Apply this membership change to $member? Removing membership closes organization access; personal sessions and data remain separate.';
   }
 
   @override

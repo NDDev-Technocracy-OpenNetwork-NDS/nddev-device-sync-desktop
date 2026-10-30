@@ -17,7 +17,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 import 'screen.dart';
 
-// These functions are ignored because they are not marked as `pub`: `cancel_work`, `catalog_active`, `clear_replica_fenced`, `client_activity`, `client_replication_permitted`, `clipboard_error`, `clipboard_vault`, `data_directory`, `ensure_delivery`, `incident_view`, `native_cache_base`, `native_runtime`, `observe_cleanup`, `observe_in_span`, `observe_incident`, `observe_operation`, `observe`, `publish_state_inner`, `replica_start_error`, `reset_replica_schedule`, `reset_replica_session`, `retire_local_resources`, `schedule`, `shared_identity`, `start_replica_fenced`, `start_replica_for_schedule`, `stop_native_owner`, `stop_replica`, `vault`, `wake_replica`, `write_clipboard`
+// These functions are ignored because they are not marked as `pub`: `cancel_work`, `catalog_active`, `clear_replica_fenced`, `client_activity`, `client_replication_permitted`, `clipboard_error`, `clipboard_vault`, `data_directory`, `ensure_delivery`, `incident_view`, `native_cache_base`, `native_runtime`, `observe_cleanup`, `observe_in_span`, `observe_incident`, `observe_operation`, `observe`, `publish_state_inner`, `replica_start_error`, `reset_replica_schedule`, `reset_replica_session`, `retire_local_resources`, `schedule`, `seal_identity_modules`, `shared_identity`, `start_replica_fenced`, `start_replica_for_schedule`, `stop_native_owner`, `stop_replica`, `vault`, `wake_replica`, `write_clipboard`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `ClipboardReservation`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `drop`, `drop`
 
@@ -61,25 +61,6 @@ abstract class NdsClient implements RustOpaqueInterface {
 
   Future<ClipboardView> clipboardSnapshot();
 
-  Future<OrganizationOverviewView> company();
-
-  Future<CompanyCommand> companyChangeMember({
-    required String user,
-    required BigInt revision,
-    OrganizationRoleView? role,
-  });
-
-  Future<OrganizationInvitationPageView> companyInvitations({String? after});
-
-  Future<CompanyCommand> companyInvite({
-    required String email,
-    required OrganizationRoleView role,
-  });
-
-  Future<OrganizationMemberPageView> companyMembers({String? after});
-
-  Future<CompanyCommand> companyRevoke({required String invitation});
-
   Future<void> configureModule({
     required String module,
     required bool enabled,
@@ -94,6 +75,8 @@ abstract class NdsClient implements RustOpaqueInterface {
     required String owner,
     required String name,
   });
+
+  Future<CompanyCommand> createOrganization({required String name});
 
   DeliveryView deliverySnapshot();
 
@@ -137,6 +120,8 @@ abstract class NdsClient implements RustOpaqueInterface {
     endpoint: endpoint,
     cacheBase: cacheBase,
   );
+
+  Future<List<OrganizationOverviewView>> organizations();
 
   Future<List<PasskeyView>> passkeys();
 
@@ -195,6 +180,11 @@ abstract class NdsClient implements RustOpaqueInterface {
     String? pendingId,
     required String expectedSourceRevision,
     String? expectedSourcePending,
+  });
+
+  Future<LocalOrganization> selectOrganization({
+    required String company,
+    required BigInt membershipRevision,
   });
 
   void setLifecycle({required ClientLifecycle state});

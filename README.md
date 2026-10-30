@@ -130,8 +130,9 @@ applications. The two launches preserve test-app storage between phases, then
 revoke the session and uninstall only the test-owned app.
 ADB reverse admission refuses existing device-port bindings; teardown removes
 only the mappings successfully admitted by this run.
-When ADB runs on another computer, provide an owned loopback SSH tunnel and
-`--host-vmservice-port PORT`. The existing integration driver reserves that
+When ADB runs on another computer, make both fixture loopback ports reachable on
+that ADB host, and tunnel the owned VM service port back to the driver computer.
+Pass `--host-vmservice-port PORT`. The existing integration driver reserves that
 ADB-host port without replacing a binding, keeps DDS local, and removes only its
 own forward and test app. The source and build remain on the driver computer.
 

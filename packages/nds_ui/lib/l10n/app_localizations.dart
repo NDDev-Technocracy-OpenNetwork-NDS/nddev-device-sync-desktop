@@ -1995,7 +1995,7 @@ abstract class AppLocalizations {
   /// No description provided for @companyInvalid.
   ///
   /// In en, this message translates to:
-  /// **'Check the email address and selected action.'**
+  /// **'Check the organization name, email address and selected action.'**
   String get companyInvalid;
 
   /// No description provided for @companyPending.

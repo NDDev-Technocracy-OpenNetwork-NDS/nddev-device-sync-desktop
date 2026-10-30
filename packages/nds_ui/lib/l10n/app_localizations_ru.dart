@@ -1103,7 +1103,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get companyDenied => 'Ваша текущая роль не разрешает это действие.';
 
   @override
-  String get companyInvalid => 'Проверьте email и выбранное действие.';
+  String get companyInvalid =>
+      'Проверьте название организации, email и выбранное действие.';
 
   @override
   String get companyPending =>

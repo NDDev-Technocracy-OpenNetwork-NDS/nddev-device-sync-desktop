@@ -498,7 +498,7 @@
   "companyExpired": "The command has expired. Review the current state before a new action.",
   "companyInvitationUnavailable": "This invitation or recipient is no longer available for this action.",
   "companyDenied": "Your current membership does not allow this action.",
-  "companyInvalid": "Check the email address and selected action.",
+  "companyInvalid": "Check the organization name, email address and selected action.",
   "companyPending": "The original command is retained for retry. If the connection failed, the server may have applied it. Review the current state before creating another command. Closing this screen does not resend it.",
   "companyRetry": "Retry the same command",
   "companyReview": "Review state and finish this command",

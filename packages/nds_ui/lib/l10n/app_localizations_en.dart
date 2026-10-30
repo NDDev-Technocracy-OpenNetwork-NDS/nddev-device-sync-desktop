@@ -1097,7 +1097,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your current membership does not allow this action.';
 
   @override
-  String get companyInvalid => 'Check the email address and selected action.';
+  String get companyInvalid =>
+      'Check the organization name, email address and selected action.';
 
   @override
   String get companyPending =>

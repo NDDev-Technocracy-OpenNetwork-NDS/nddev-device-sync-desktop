@@ -1035,11 +1035,43 @@ class AppLocalizationsRu extends AppLocalizations {
       'Каталог обновлён не полностью: достигнут лимит хранилища синхронизации. Сохранённые сведения остаются доступны.';
 
   @override
-  String get companyTitle => 'Компания';
+  String get companySpace => 'Пространство';
+
+  @override
+  String get companyPersonal => 'Личное пространство';
+
+  @override
+  String get companyPersonalHelp =>
+      'Членство в организации не меняет владельца личного хранилища. Выберите организацию, чтобы посмотреть текущее членство.';
+
+  @override
+  String get companyName => 'Название организации';
+
+  @override
+  String get companyCreate => 'Создать организацию';
+
+  @override
+  String get companyCreateHelp =>
+      'Действие выполняется от вашей личной учётной записи и создаёт отдельную организацию, где вы будете первым администратором.';
+
+  @override
+  String get companyReviewedUnknown =>
+      'Текущее доступное состояние просмотрено. Завершение сохранённой команды не отменяет ранее отправленные изменения.';
+
+  @override
+  String get companyServerRequired =>
+      'Этот сервер не поддерживает явный контекст организации. Другая компания автоматически не выбирается.';
+
+  @override
+  String get companyContextClosed =>
+      'Этот контекст закрыт. Обновите членство или войдите снова перед следующим действием.';
+
+  @override
+  String get companyTitle => 'Организации';
 
   @override
   String get companyPrivacy =>
-      'Управление компанией доступно онлайн. Личный Vault, секреты и репозитории доступны только владельцу.';
+      'Управление организацией работает онлайн. Личный Vault, секреты и репозитории сохраняют исходного владельца.';
 
   @override
   String get companyAdmin => 'Администратор';
@@ -1071,7 +1103,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get companyDenied => 'Ваша текущая роль не разрешает это действие.';
 
   @override
-  String get companyInvalid => 'Проверьте email и выбранное действие.';
+  String get companyInvalid =>
+      'Проверьте название организации, email и выбранное действие.';
 
   @override
   String get companyPending =>
@@ -1100,7 +1133,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String companyChangeHelp(String member) {
-    return 'Применить изменение к $member? Удаление участника завершает его активные сессии; личные данные сохраняются.';
+    return 'Применить изменение к $member? Удаление членства закрывает доступ к организации; личные сессии и данные остаются отдельными.';
   }
 
   @override

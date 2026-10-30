@@ -1878,16 +1878,70 @@ abstract class AppLocalizations {
   /// **'The catalog could not finish updating because synchronization storage reached its limit. Saved observations remain available.'**
   String get catalogCapacityReached;
 
+  /// No description provided for @companySpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Space'**
+  String get companySpace;
+
+  /// No description provided for @companyPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal space'**
+  String get companyPersonal;
+
+  /// No description provided for @companyPersonalHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization membership does not change your personal storage owner. Select an organization to view its current membership.'**
+  String get companyPersonalHelp;
+
+  /// No description provided for @companyName.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization name'**
+  String get companyName;
+
+  /// No description provided for @companyCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create organization'**
+  String get companyCreate;
+
+  /// No description provided for @companyCreateHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'This action uses your personal identity and creates a separate organization with you as its first administrator.'**
+  String get companyCreateHelp;
+
+  /// No description provided for @companyReviewedUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Current authorized state was reviewed. Finishing the retained command does not undo any previously submitted change.'**
+  String get companyReviewedUnknown;
+
+  /// No description provided for @companyServerRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This server does not support explicit organization contexts. No other company is selected automatically.'**
+  String get companyServerRequired;
+
+  /// No description provided for @companyContextClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'This context is closed. Refresh memberships or sign in again before another action.'**
+  String get companyContextClosed;
+
   /// No description provided for @companyTitle.
   ///
   /// In en, this message translates to:
-  /// **'Company'**
+  /// **'Organizations'**
   String get companyTitle;
 
   /// No description provided for @companyPrivacy.
   ///
   /// In en, this message translates to:
-  /// **'Company administration is online. Personal Vault, secrets and repositories remain private to their owner.'**
+  /// **'Organization administration is online. Your personal Vault, secrets and repositories keep their original owner.'**
   String get companyPrivacy;
 
   /// No description provided for @companyAdmin.
@@ -1941,7 +1995,7 @@ abstract class AppLocalizations {
   /// No description provided for @companyInvalid.
   ///
   /// In en, this message translates to:
-  /// **'Check the email address and selected action.'**
+  /// **'Check the organization name, email address and selected action.'**
   String get companyInvalid;
 
   /// No description provided for @companyPending.
@@ -1995,7 +2049,7 @@ abstract class AppLocalizations {
   /// No description provided for @companyChangeHelp.
   ///
   /// In en, this message translates to:
-  /// **'Apply this membership change to {member}? Removing a member ends their active sessions; their personal data is retained.'**
+  /// **'Apply this membership change to {member}? Removing membership closes organization access; personal sessions and data remain separate.'**
   String companyChangeHelp(String member);
 
   /// No description provided for @companyConfirm.

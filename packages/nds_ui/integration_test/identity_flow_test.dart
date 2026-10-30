@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:nds_ui/nds_ui.dart';
+import 'package:nds_ui/company_screen.dart';
 import 'package:nds_ui/module_settings.dart';
 import 'package:nds_ui/state_screen.dart';
 import 'package:nds_ui/vault_screen.dart';
@@ -16,6 +17,63 @@ import 'package:nds_native/nds_native.dart' as native;
 import 'fixture_identity.dart';
 import 'local_modules_test.dart' as modules;
 import 'device_modules_test.dart' as device;
+
+Future<void> showCompanyControl(
+  WidgetTester tester,
+  Finder finder, {
+  double delta = 300,
+}) async {
+  FocusManager.instance.primaryFocus?.unfocus();
+  await tester.pumpAndSettle();
+  await tester.scrollUntilVisible(
+    finder,
+    delta,
+    maxScrolls: 16,
+    scrollable: find
+        .descendant(
+          of: find.byType(CompanyScreen),
+          matching: find.byType(Scrollable),
+        )
+        .first,
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> chooseOrganization(WidgetTester tester, String id) async {
+  await showCompanyControl(
+    tester,
+    find.byType(DropdownButton<String>),
+    delta: -300,
+  );
+  final enabled = find.byWidgetPredicate(
+    (widget) =>
+        widget is DropdownButton<String> &&
+        widget.onChanged != null &&
+        widget.items!.any((item) => item.value == id),
+  );
+  await waitFor(tester, enabled);
+  final picker = tester.widget<DropdownButton<String>>(enabled);
+  if (picker.value == id) return;
+  final label =
+      (picker.items!.singleWhere((item) => item.value == id).child as Text)
+          .data!;
+  FocusManager.instance.primaryFocus?.unfocus();
+  await tester.ensureVisible(enabled);
+  await tester.pumpAndSettle();
+  await tester.tap(enabled);
+  final choice = find.text(label).hitTestable();
+  await waitFor(tester, choice);
+  await tester.tap(choice.last);
+  await waitFor(
+    tester,
+    find.byWidgetPredicate(
+      (widget) =>
+          widget is DropdownButton<String> &&
+          widget.onChanged != null &&
+          widget.value == id,
+    ),
+  );
+}
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +100,8 @@ void main() {
   testWidgets(
     catalogSource
         ? 'actual saved GitHub choice, background catalog and encrypted convergence'
+        : company
+        ? 'actual personal and two organizations keep their original identity'
         : 'actual identity, device enrollment, native restore and revocation',
     (tester) async {
       expect(Uri.parse(server).host, '127.0.0.1');
@@ -148,6 +208,13 @@ void main() {
         await waitScreenFact(tester, screenHandoff, 'host-device.json');
         await tester.ensureVisible(find.byKey(const Key('company')));
         await tester.tap(find.byKey(const Key('company')));
+        await waitFor(tester, find.byType(CompanyScreen));
+        final originalCompany = tester
+            .widget<CompanyScreen>(find.byType(CompanyScreen))
+            .client
+            .snapshot()
+            .tenantId;
+        await chooseOrganization(tester, originalCompany);
         await waitFor(tester, find.text(screenPeer));
         final member = find.ancestor(
           of: find.text(screenPeer),
@@ -281,24 +348,76 @@ void main() {
       if (company && screenPeer.isEmpty) {
         await tester.ensureVisible(find.byKey(const Key('company')));
         await tester.tap(find.byKey(const Key('company')));
-        await waitFor(tester, find.byKey(const Key('company-email')));
+        await waitFor(tester, find.byType(CompanyScreen));
+        final client = tester
+            .widget<CompanyScreen>(find.byType(CompanyScreen))
+            .client;
+        final personal = client.snapshot();
+        await chooseOrganization(tester, personal.tenantId);
+        await showCompanyControl(tester, find.byKey(const Key('company-name')));
+        // Create through the real application, then switch the actual native
+        // selection. The personal principal/device is never relabeled.
+        await tester.enterText(
+          find.byKey(const Key('company-name')),
+          'Second UI space',
+        );
+        await showCompanyControl(
+          tester,
+          find.byKey(const Key('company-create')),
+        );
+        await tester.tap(find.byKey(const Key('company-create')));
+        await showCompanyControl(
+          tester,
+          find.byType(DropdownButton<String>),
+          delta: -300,
+        );
+        final twoSpaces = find.byWidgetPredicate(
+          (widget) =>
+              widget is DropdownButton<String> &&
+              widget.onChanged != null &&
+              widget.items!.where((item) => item.value != '').length == 2,
+        );
+        await waitFor(tester, twoSpaces);
+        final secondCompany = tester
+            .widget<DropdownButton<String>>(twoSpaces)
+            .items!
+            .singleWhere(
+              (item) => item.value != '' && item.value != personal.tenantId,
+            )
+            .value!;
+        await chooseOrganization(tester, secondCompany);
+        await showCompanyControl(
+          tester,
+          find.byKey(const Key('company-email')),
+        );
         final recipient =
             'ui-${DateTime.now().microsecondsSinceEpoch}@example.invalid';
         await tester.enterText(
           find.byKey(const Key('company-email')),
           recipient,
         );
-        FocusManager.instance.primaryFocus?.unfocus();
-        await tester.ensureVisible(find.byKey(const Key('company-invite')));
-        await tester.tap(find.byKey(const Key('company-invite')));
-        await waitFor(tester, find.text(recipient));
-        expect(
-          tester
-              .widget<TextField>(find.byKey(const Key('company-email')))
-              .controller!
-              .text,
-          isEmpty,
+        await showCompanyControl(
+          tester,
+          find.byKey(const Key('company-invite')),
         );
+        await tester.tap(find.byKey(const Key('company-invite')));
+        await waitFor(
+          tester,
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is TextField &&
+                widget.key == const Key('company-email') &&
+                widget.controller!.text.isEmpty,
+          ),
+        );
+        await chooseOrganization(tester, personal.tenantId);
+        await showCompanyControl(
+          tester,
+          find.byKey(const Key('company-invite')),
+        );
+        expect(find.text(recipient), findsNothing);
+        await chooseOrganization(tester, secondCompany);
+        await showCompanyControl(tester, find.text(recipient));
         final card = find.ancestor(
           of: find.text(recipient),
           matching: find.byType(Card),
@@ -325,6 +444,23 @@ void main() {
         await waitFor(
           tester,
           find.descendant(of: card, matching: find.textContaining('· Revoked')),
+        );
+        await chooseOrganization(tester, personal.tenantId);
+        await showCompanyControl(
+          tester,
+          find.byKey(const Key('company-invite')),
+        );
+        expect(find.text(recipient), findsNothing);
+        await chooseOrganization(tester, '');
+        expect(find.byKey(const Key('company-email')), findsNothing);
+        final messages = AppLocalizations.of(
+          tester.element(find.byType(CompanyScreen)),
+        )!;
+        expect(find.text(messages.companyPersonalHelp), findsOneWidget);
+        final retained = client.snapshot();
+        expect(
+          [retained.tenantId, retained.userId, retained.currentDeviceId],
+          [personal.tenantId, personal.userId, personal.currentDeviceId],
         );
         expect(tester.takeException(), isNull);
         await tester.pageBack();

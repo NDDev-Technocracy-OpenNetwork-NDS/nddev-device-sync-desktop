@@ -56,6 +56,7 @@ pub struct NdsClient {
     replica: Mutex<Option<Replica>>,
     replica_control: tokio::sync::Mutex<()>,
     pub(super) publication: Arc<Mutex<()>>,
+    pub(super) organizations: Arc<Mutex<super::organizations::OrganizationSlot>>,
     replica_schedule: Arc<Mutex<Arc<Mutex<ReplicaSchedule>>>>,
     active: AtomicBool,
     replication_active: AtomicBool,
@@ -115,6 +116,7 @@ impl NdsClient {
             replica: Mutex::default(),
             replica_control: tokio::sync::Mutex::default(),
             publication: Arc::default(),
+            organizations: Arc::default(),
             replica_schedule: Arc::default(),
             active: AtomicBool::new(true),
             replication_active: AtomicBool::new(true),
@@ -153,7 +155,7 @@ impl NdsClient {
         Ok(())
     }
     pub async fn refresh(&self) -> Result<View, ClientError> {
-        let generation = self.module_control.seal();
+        let generation = self.seal_identity_modules();
         self.module_control.shutdown_generation(&generation).await?;
         if let Some(task) = self.cancel_work(false) {
             task.join().await;
@@ -161,6 +163,7 @@ impl NdsClient {
         let view = self.inner.refresh().await?;
         let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
         self.module_control.new_identity_generation(&generation)?;
+        self.open_organizations_locked();
         Ok(view)
     }
     /// Reconcile shared local authorization on foreground ticks/resume. Pending
@@ -215,12 +218,14 @@ impl NdsClient {
         Ok(self.inner.view())
     }
     pub async fn request_email(&self, email: String, locale: String) -> Result<View, ClientError> {
+        self.seal_organizations();
         self.module_control.shutdown().await?;
         self.cancel_screen();
         self.invalidate_catalog();
         self.inner.request_email(email, &locale).await
     }
     pub async fn verify_email(&self, code: String) -> Result<View, ClientError> {
+        self.seal_organizations();
         self.module_control.shutdown().await?;
         let view = self.inner.verify_email(code).await?;
         // Verification is an owning Accounts fact even if later local cleanup
@@ -229,6 +234,7 @@ impl NdsClient {
         Ok(view)
     }
     pub async fn start_github(&self, locale: String) -> Result<View, ClientError> {
+        self.seal_organizations();
         self.module_control.shutdown().await?;
         self.cancel_screen();
         self.invalidate_catalog();
@@ -243,6 +249,7 @@ impl NdsClient {
         // Registration adds a credential to the retained session; it does not
         // replace identity and poll does not create a new module generation.
         if !registration {
+            self.seal_organizations();
             self.module_control.shutdown().await?;
         }
         self.invalidate_catalog();
@@ -252,10 +259,12 @@ impl NdsClient {
         self.inner.passkeys().await
     }
     pub async fn revoke_passkey(&self, id: String) -> Result<View, ClientError> {
+        let organization_generation = self.organization_generation();
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         let native_owner = self.native_runtime();
         let view = self.inner.revoke_passkey(id).await?;
         if !view.authenticated {
+            self.seal_organizations_if(&organization_generation);
             if self.module_control.shutdown().await.is_err() {
                 // Preserve the verified revocation result; cleanup remains HOLD
                 // in ModuleControl and cannot grant a replacement capability.
@@ -278,6 +287,7 @@ impl NdsClient {
     pub async fn poll_passkey(&self) -> Result<View, ClientError> {
         let sign_in = self.inner.view().flow == "passkey";
         if sign_in {
+            self.seal_organizations();
             self.module_control.shutdown().await?;
         }
         let view = self.inner.poll_passkey().await?;
@@ -289,6 +299,7 @@ impl NdsClient {
     pub async fn poll_github(&self) -> Result<View, ClientError> {
         let sign_in = self.inner.view().flow == "github";
         if sign_in {
+            self.seal_organizations();
             self.module_control.shutdown().await?;
         }
         let view = self.inner.poll_github().await?;
@@ -299,7 +310,7 @@ impl NdsClient {
     }
     pub async fn logout(&self) -> Result<View, ClientError> {
         let lifetime = self.inner.local_use_lifetime();
-        let generation = self.module_control.seal();
+        let generation = self.seal_identity_modules();
         self.module_control.shutdown_generation(&generation).await?;
         self.retire_local_resources(&generation, &lifetime, false)
             .await?;
@@ -349,6 +360,7 @@ impl NdsClient {
         }
     }
     pub async fn revoke_device(&self, id: String) -> Result<View, ClientError> {
+        let organization_generation = self.organization_generation();
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         let native_owner = self.native_runtime();
         self.cancel_screen();
@@ -358,6 +370,7 @@ impl NdsClient {
             .iter()
             .any(|device| device.is_current && device.revoked)
         {
+            self.seal_organizations_if(&organization_generation);
             if self.module_control.shutdown().await.is_err() {
                 return Ok(view);
             }
@@ -468,15 +481,22 @@ impl NdsClient {
         }
         Ok(())
     }
+    #[cfg_attr(feature = "flutter", frb(ignore))]
+    fn seal_identity_modules(&self) -> super::module_control::ControlGeneration {
+        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        self.seal_organizations_locked();
+        self.module_control.seal()
+    }
     async fn reset_replica_session(&self) -> Result<(), ClientError> {
         let lifetime = self.inner.local_use_lifetime();
-        let generation = self.module_control.seal();
+        let generation = self.seal_identity_modules();
         self.module_control.shutdown_generation(&generation).await?;
         self.retire_local_resources(&generation, &lifetime, true)
             .await?;
         let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
         self.inner.check_captured_local_use_lifetime(&lifetime)?;
         self.module_control.new_identity_generation(&generation)?;
+        self.open_organizations_locked();
         self.reset_replica_schedule();
         Ok(())
     }
@@ -490,6 +510,7 @@ impl NdsClient {
             self.inner.check_captured_local_use_lifetime(lifetime)?;
             self.cancel_screen();
             self.invalidate_catalog();
+            self.seal_organizations_locked();
             self.module_control.seal()
         };
         // Neither Vault, publication nor any module/owner mutex crosses this
@@ -1184,7 +1205,7 @@ impl NdsClient {
     /// A browser HOLD prevents releasing/replacing the old local resources.
     pub async fn shutdown(&self) -> Result<(), ClientError> {
         let lifetime = self.inner.local_use_lifetime();
-        let generation = self.module_control.seal();
+        let generation = self.seal_identity_modules();
         self.module_control.shutdown_generation(&generation).await?;
         self.retire_local_resources(&generation, &lifetime, true)
             .await?;
@@ -1198,11 +1219,13 @@ impl NdsClient {
     }
     #[cfg_attr(feature = "flutter", frb(sync))]
     pub fn cancel(&self) {
+        self.seal_organizations();
         self.module_control.stop();
         self.cancel_work(true);
     }
     fn cancel_work(&self, clear_sign_in: bool) -> Option<runtime::Task> {
         let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        self.seal_organizations_locked();
         self.cancel_screen();
         self.invalidate_catalog();
         #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
@@ -1611,29 +1634,17 @@ mod activity_tests {
                 std::mem::size_of_val(&client.clipboard_publish_text(String::new())),
             ),
             ("manual sync", std::mem::size_of_val(&client.vault_sync())),
-            ("company overview", std::mem::size_of_val(&client.company())),
             (
-                "company members",
-                std::mem::size_of_val(&client.company_members(None)),
+                "organization list",
+                std::mem::size_of_val(&client.organizations()),
             ),
             (
-                "company invitations",
-                std::mem::size_of_val(&client.company_invitations(None)),
+                "organization selection",
+                std::mem::size_of_val(&client.select_organization(String::new(), 1)),
             ),
             (
-                "company invite",
-                std::mem::size_of_val(&client.company_invite(
-                    String::new(),
-                    nddev_device_sync_organizations::view::OrganizationRoleView::User,
-                )),
-            ),
-            (
-                "company revoke",
-                std::mem::size_of_val(&client.company_revoke(String::new())),
-            ),
-            (
-                "company role",
-                std::mem::size_of_val(&client.company_change_member(String::new(), 1, None)),
+                "organization creation",
+                std::mem::size_of_val(&client.create_organization(String::new())),
             ),
             (
                 "invitation import",

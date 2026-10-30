@@ -46,7 +46,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1965234207;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1669441928;
 
 // Section: executor
 
@@ -535,6 +535,54 @@ fn wire__crate__api__organizations__CompanyCommand_execute_impl(
                     .await,
                 )
             }
+        },
+    )
+}
+fn wire__crate__api__organizations__CompanyCommand_is_current_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "CompanyCommand_is_current",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CompanyCommand>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let mut api_that_guard = None;
+                let decode_indices_ =
+                    flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                        flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                            &api_that, 0, false,
+                        ),
+                    ]);
+                for i in decode_indices_ {
+                    match i {
+                        0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                        _ => unreachable!(),
+                    }
+                }
+                let api_that_guard = api_that_guard.unwrap();
+                let output_ok = Ok::<_, ()>(
+                    crate::api::organizations::CompanyCommand::is_current(&*api_that_guard),
+                )?;
+                std::result::Result::Ok(output_ok)
+            })())
         },
     )
 }
@@ -2136,6 +2184,473 @@ fn wire__crate__api__modules__LocalAgent_update_plan_impl(
         },
     )
 }
+fn wire__crate__api__organizations__LocalOrganization_change_member_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "LocalOrganization_change_member",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>,
+            >>::sse_decode(&mut deserializer);
+            let api_user = <String>::sse_decode(&mut deserializer);
+            let api_revision = <u64>::sse_decode(&mut deserializer);
+            let api_role =
+                <Option<nddev_device_sync_organizations::view::OrganizationRoleView>>::sse_decode(
+                    &mut deserializer,
+                );
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ClientError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::organizations::LocalOrganization::change_member(
+                                &*api_that_guard,
+                                api_user,
+                                api_revision,
+                                api_role,
+                            )
+                            .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__organizations__LocalOrganization_close_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "LocalOrganization_close",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let mut api_that_guard = None;
+                let decode_indices_ =
+                    flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                        flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                            &api_that, 0, false,
+                        ),
+                    ]);
+                for i in decode_indices_ {
+                    match i {
+                        0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                        _ => unreachable!(),
+                    }
+                }
+                let api_that_guard = api_that_guard.unwrap();
+                let output_ok = Ok::<_, ()>({
+                    crate::api::organizations::LocalOrganization::close(&*api_that_guard);
+                })?;
+                std::result::Result::Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api__organizations__LocalOrganization_invitations_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "LocalOrganization_invitations",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>,
+            >>::sse_decode(&mut deserializer);
+            let api_after = <Option<String>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ClientError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::organizations::LocalOrganization::invitations(
+                            &*api_that_guard,
+                            api_after,
+                        )
+                        .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__organizations__LocalOrganization_invite_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "LocalOrganization_invite",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>,
+            >>::sse_decode(&mut deserializer);
+            let api_email = <String>::sse_decode(&mut deserializer);
+            let api_role =
+                <nddev_device_sync_organizations::view::OrganizationRoleView>::sse_decode(
+                    &mut deserializer,
+                );
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ClientError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::organizations::LocalOrganization::invite(
+                            &*api_that_guard,
+                            api_email,
+                            api_role,
+                        )
+                        .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__organizations__LocalOrganization_is_current_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "LocalOrganization_is_current",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let mut api_that_guard = None;
+                let decode_indices_ =
+                    flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                        flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                            &api_that, 0, false,
+                        ),
+                    ]);
+                for i in decode_indices_ {
+                    match i {
+                        0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                        _ => unreachable!(),
+                    }
+                }
+                let api_that_guard = api_that_guard.unwrap();
+                let output_ok = Ok::<_, ()>(
+                    crate::api::organizations::LocalOrganization::is_current(&*api_that_guard),
+                )?;
+                std::result::Result::Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api__organizations__LocalOrganization_members_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "LocalOrganization_members",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>,
+            >>::sse_decode(&mut deserializer);
+            let api_after = <Option<String>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ClientError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::organizations::LocalOrganization::members(
+                            &*api_that_guard,
+                            api_after,
+                        )
+                        .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__organizations__LocalOrganization_overview_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "LocalOrganization_overview",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ClientError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::organizations::LocalOrganization::overview(
+                            &*api_that_guard,
+                        )
+                        .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__organizations__LocalOrganization_revoke_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "LocalOrganization_revoke",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>,
+            >>::sse_decode(&mut deserializer);
+            let api_invitation = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ClientError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::organizations::LocalOrganization::revoke(
+                            &*api_that_guard,
+                            api_invitation,
+                        )
+                        .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__identity__NdsClient_cancel_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2610,374 +3125,6 @@ fn wire__crate__api__identity__NdsClient_clipboard_snapshot_impl(
         },
     )
 }
-fn wire__crate__api__identity__NdsClient_company_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "NdsClient_company",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_that = <RustOpaqueMoi<
-                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NdsClient>,
-            >>::sse_decode(&mut deserializer);
-            deserializer.end();
-            move |context| async move {
-                transform_result_sse::<_, ClientError>(
-                    (move || async move {
-                        let mut api_that_guard = None;
-                        let decode_indices_ =
-                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
-                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
-                                    &api_that, 0, false,
-                                )],
-                            );
-                        for i in decode_indices_ {
-                            match i {
-                                0 => {
-                                    api_that_guard =
-                                        Some(api_that.lockable_decode_async_ref().await)
-                                }
-                                _ => unreachable!(),
-                            }
-                        }
-                        let api_that_guard = api_that_guard.unwrap();
-                        let output_ok =
-                            crate::api::identity::NdsClient::company(&*api_that_guard).await?;
-                        std::result::Result::Ok(output_ok)
-                    })()
-                    .await,
-                )
-            }
-        },
-    )
-}
-fn wire__crate__api__identity__NdsClient_company_change_member_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "NdsClient_company_change_member",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_that = <RustOpaqueMoi<
-                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NdsClient>,
-            >>::sse_decode(&mut deserializer);
-            let api_user = <String>::sse_decode(&mut deserializer);
-            let api_revision = <u64>::sse_decode(&mut deserializer);
-            let api_role =
-                <Option<nddev_device_sync_organizations::view::OrganizationRoleView>>::sse_decode(
-                    &mut deserializer,
-                );
-            deserializer.end();
-            move |context| async move {
-                transform_result_sse::<_, ClientError>(
-                    (move || async move {
-                        let mut api_that_guard = None;
-                        let decode_indices_ =
-                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
-                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
-                                    &api_that, 0, false,
-                                )],
-                            );
-                        for i in decode_indices_ {
-                            match i {
-                                0 => {
-                                    api_that_guard =
-                                        Some(api_that.lockable_decode_async_ref().await)
-                                }
-                                _ => unreachable!(),
-                            }
-                        }
-                        let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::identity::NdsClient::company_change_member(
-                            &*api_that_guard,
-                            api_user,
-                            api_revision,
-                            api_role,
-                        )
-                        .await?;
-                        std::result::Result::Ok(output_ok)
-                    })()
-                    .await,
-                )
-            }
-        },
-    )
-}
-fn wire__crate__api__identity__NdsClient_company_invitations_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "NdsClient_company_invitations",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_that = <RustOpaqueMoi<
-                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NdsClient>,
-            >>::sse_decode(&mut deserializer);
-            let api_after = <Option<String>>::sse_decode(&mut deserializer);
-            deserializer.end();
-            move |context| async move {
-                transform_result_sse::<_, ClientError>(
-                    (move || async move {
-                        let mut api_that_guard = None;
-                        let decode_indices_ =
-                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
-                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
-                                    &api_that, 0, false,
-                                )],
-                            );
-                        for i in decode_indices_ {
-                            match i {
-                                0 => {
-                                    api_that_guard =
-                                        Some(api_that.lockable_decode_async_ref().await)
-                                }
-                                _ => unreachable!(),
-                            }
-                        }
-                        let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::identity::NdsClient::company_invitations(
-                            &*api_that_guard,
-                            api_after,
-                        )
-                        .await?;
-                        std::result::Result::Ok(output_ok)
-                    })()
-                    .await,
-                )
-            }
-        },
-    )
-}
-fn wire__crate__api__identity__NdsClient_company_invite_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "NdsClient_company_invite",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_that = <RustOpaqueMoi<
-                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NdsClient>,
-            >>::sse_decode(&mut deserializer);
-            let api_email = <String>::sse_decode(&mut deserializer);
-            let api_role =
-                <nddev_device_sync_organizations::view::OrganizationRoleView>::sse_decode(
-                    &mut deserializer,
-                );
-            deserializer.end();
-            move |context| async move {
-                transform_result_sse::<_, ClientError>(
-                    (move || async move {
-                        let mut api_that_guard = None;
-                        let decode_indices_ =
-                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
-                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
-                                    &api_that, 0, false,
-                                )],
-                            );
-                        for i in decode_indices_ {
-                            match i {
-                                0 => {
-                                    api_that_guard =
-                                        Some(api_that.lockable_decode_async_ref().await)
-                                }
-                                _ => unreachable!(),
-                            }
-                        }
-                        let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::identity::NdsClient::company_invite(
-                            &*api_that_guard,
-                            api_email,
-                            api_role,
-                        )
-                        .await?;
-                        std::result::Result::Ok(output_ok)
-                    })()
-                    .await,
-                )
-            }
-        },
-    )
-}
-fn wire__crate__api__identity__NdsClient_company_members_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "NdsClient_company_members",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_that = <RustOpaqueMoi<
-                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NdsClient>,
-            >>::sse_decode(&mut deserializer);
-            let api_after = <Option<String>>::sse_decode(&mut deserializer);
-            deserializer.end();
-            move |context| async move {
-                transform_result_sse::<_, ClientError>(
-                    (move || async move {
-                        let mut api_that_guard = None;
-                        let decode_indices_ =
-                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
-                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
-                                    &api_that, 0, false,
-                                )],
-                            );
-                        for i in decode_indices_ {
-                            match i {
-                                0 => {
-                                    api_that_guard =
-                                        Some(api_that.lockable_decode_async_ref().await)
-                                }
-                                _ => unreachable!(),
-                            }
-                        }
-                        let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::identity::NdsClient::company_members(
-                            &*api_that_guard,
-                            api_after,
-                        )
-                        .await?;
-                        std::result::Result::Ok(output_ok)
-                    })()
-                    .await,
-                )
-            }
-        },
-    )
-}
-fn wire__crate__api__identity__NdsClient_company_revoke_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "NdsClient_company_revoke",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_that = <RustOpaqueMoi<
-                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NdsClient>,
-            >>::sse_decode(&mut deserializer);
-            let api_invitation = <String>::sse_decode(&mut deserializer);
-            deserializer.end();
-            move |context| async move {
-                transform_result_sse::<_, ClientError>(
-                    (move || async move {
-                        let mut api_that_guard = None;
-                        let decode_indices_ =
-                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
-                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
-                                    &api_that, 0, false,
-                                )],
-                            );
-                        for i in decode_indices_ {
-                            match i {
-                                0 => {
-                                    api_that_guard =
-                                        Some(api_that.lockable_decode_async_ref().await)
-                                }
-                                _ => unreachable!(),
-                            }
-                        }
-                        let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::identity::NdsClient::company_revoke(
-                            &*api_that_guard,
-                            api_invitation,
-                        )
-                        .await?;
-                        std::result::Result::Ok(output_ok)
-                    })()
-                    .await,
-                )
-            }
-        },
-    )
-}
 fn wire__crate__api__identity__NdsClient_configure_module_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -3104,6 +3251,66 @@ fn wire__crate__api__identity__NdsClient_connect_github_repository_impl(
                             api_repository_id,
                             api_owner_id,
                             api_owner,
+                            api_name,
+                        )
+                        .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__identity__NdsClient_create_organization_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NdsClient_create_organization",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NdsClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_name = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ClientError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::identity::NdsClient::create_organization(
+                            &*api_that_guard,
                             api_name,
                         )
                         .await?;
@@ -3822,6 +4029,63 @@ fn wire__crate__api__identity__NdsClient_new_with_cache_base_impl(
                 )?;
                 std::result::Result::Ok(output_ok)
             })())
+        },
+    )
+}
+fn wire__crate__api__identity__NdsClient_organizations_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NdsClient_organizations",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NdsClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ClientError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::identity::NdsClient::organizations(&*api_that_guard)
+                                .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
         },
     )
 }
@@ -5160,6 +5424,68 @@ fn wire__crate__api__identity__NdsClient_select_github_credential_impl(
                             api_pending_id,
                             api_expected_source_revision,
                             api_expected_source_pending,
+                        )
+                        .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__identity__NdsClient_select_organization_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NdsClient_select_organization",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NdsClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_company = <String>::sse_decode(&mut deserializer);
+            let api_membership_revision = <u64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ClientError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::identity::NdsClient::select_organization(
+                            &*api_that_guard,
+                            api_company,
+                            api_membership_revision,
                         )
                         .await?;
                         std::result::Result::Ok(output_ok)
@@ -7914,6 +8240,9 @@ flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
     flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalAgent>
 );
 flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
+    flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>
+);
+flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
     flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NdsClient>
 );
 flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
@@ -7976,6 +8305,16 @@ impl SseDecode for LocalAgent {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <RustOpaqueMoi<
             flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalAgent>,
+        >>::sse_decode(deserializer);
+        return flutter_rust_bridge::for_generated::rust_auto_opaque_decode_owned(inner);
+    }
+}
+
+impl SseDecode for LocalOrganization {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <RustOpaqueMoi<
+            flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>,
         >>::sse_decode(deserializer);
         return flutter_rust_bridge::for_generated::rust_auto_opaque_decode_owned(inner);
     }
@@ -8071,6 +8410,16 @@ impl SseDecode
 
 impl SseDecode
     for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalAgent>>
+{
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <usize>::sse_decode(deserializer);
+        return decode_rust_opaque_moi(inner);
+    }
+}
+
+impl SseDecode
+    for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>>
 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -9392,6 +9741,22 @@ impl SseDecode for Vec<nddev_device_sync_organizations::view::OrganizationMember
     }
 }
 
+impl SseDecode for Vec<nddev_device_sync_organizations::view::OrganizationOverviewView> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <nddev_device_sync_organizations::view::OrganizationOverviewView>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<nddev_device_sync_accounts::view::PasskeyView> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -10449,441 +10814,464 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        11 => wire__crate__api__modules__LocalAgent_browser_close_impl(
+        12 => wire__crate__api__modules__LocalAgent_browser_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        12 => wire__crate__api__modules__LocalAgent_browser_execute_impl(
+        13 => wire__crate__api__modules__LocalAgent_browser_execute_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        13 => wire__crate__api__modules__LocalAgent_browser_open_impl(
+        14 => wire__crate__api__modules__LocalAgent_browser_open_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        14 => wire__crate__api__modules__LocalAgent_browser_sessions_impl(
+        15 => wire__crate__api__modules__LocalAgent_browser_sessions_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        15 => wire__crate__api__modules__LocalAgent_browser_status_impl(
+        16 => wire__crate__api__modules__LocalAgent_browser_status_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        16 => {
+        17 => {
             wire__crate__api__modules__LocalAgent_cache_bind_impl(port, ptr, rust_vec_len, data_len)
         }
-        17 => wire__crate__api__modules__LocalAgent_cache_status_impl(
+        18 => wire__crate__api__modules__LocalAgent_cache_status_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        18 => wire__crate__api__modules__LocalAgent_cache_unbind_impl(
+        19 => wire__crate__api__modules__LocalAgent_cache_unbind_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        19 => wire__crate__api__modules__LocalAgent_cleaner_diagnostics_impl(
+        20 => wire__crate__api__modules__LocalAgent_cleaner_diagnostics_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        20 => wire__crate__api__modules__LocalAgent_cleaner_last_run_impl(
+        21 => wire__crate__api__modules__LocalAgent_cleaner_last_run_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        21 => wire__crate__api__modules__LocalAgent_cleaner_preview_impl(
+        22 => wire__crate__api__modules__LocalAgent_cleaner_preview_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        22 => wire__crate__api__modules__LocalAgent_clipboard_content_impl(
+        23 => wire__crate__api__modules__LocalAgent_clipboard_content_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        23 => wire__crate__api__modules__LocalAgent_clipboard_entries_impl(
+        24 => wire__crate__api__modules__LocalAgent_clipboard_entries_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        26 => wire__crate__api__modules__LocalAgent_remote_sessions_impl(
+        27 => wire__crate__api__modules__LocalAgent_remote_sessions_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        27 => wire__crate__api__modules__LocalAgent_repository_status_impl(
+        28 => wire__crate__api__modules__LocalAgent_repository_status_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        28 => wire__crate__api__modules__LocalAgent_resume_browser_impl(
+        29 => wire__crate__api__modules__LocalAgent_resume_browser_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        29 => {
+        30 => {
             wire__crate__api__modules__LocalAgent_shutdown_impl(port, ptr, rust_vec_len, data_len)
         }
-        30 => wire__crate__api__modules__LocalAgent_system_info_impl(
+        31 => wire__crate__api__modules__LocalAgent_system_info_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        31 => wire__crate__api__modules__LocalAgent_update_last_run_impl(
+        32 => wire__crate__api__modules__LocalAgent_update_last_run_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        32 => wire__crate__api__modules__LocalAgent_update_plan_impl(
+        33 => wire__crate__api__modules__LocalAgent_update_plan_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        35 => wire__crate__api__identity__NdsClient_clear_github_catalog_source_impl(
+        34 => wire__crate__api__organizations__LocalOrganization_change_member_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        36 => wire__crate__api__identity__NdsClient_clipboard_copy_impl(
+        36 => wire__crate__api__organizations__LocalOrganization_invitations_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        37 => wire__crate__api__identity__NdsClient_clipboard_publish_archive_impl(
+        37 => wire__crate__api__organizations__LocalOrganization_invite_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        38 => wire__crate__api__identity__NdsClient_clipboard_publish_native_impl(
+        39 => wire__crate__api__organizations__LocalOrganization_members_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        39 => wire__crate__api__identity__NdsClient_clipboard_publish_text_impl(
+        40 => wire__crate__api__organizations__LocalOrganization_overview_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        40 => wire__crate__api__identity__NdsClient_clipboard_snapshot_impl(
+        41 => wire__crate__api__organizations__LocalOrganization_revoke_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        41 => wire__crate__api__identity__NdsClient_company_impl(port, ptr, rust_vec_len, data_len),
-        42 => wire__crate__api__identity__NdsClient_company_change_member_impl(
+        44 => wire__crate__api__identity__NdsClient_clear_github_catalog_source_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        43 => wire__crate__api__identity__NdsClient_company_invitations_impl(
+        45 => wire__crate__api__identity__NdsClient_clipboard_copy_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        44 => wire__crate__api__identity__NdsClient_company_invite_impl(
+        46 => wire__crate__api__identity__NdsClient_clipboard_publish_archive_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        45 => wire__crate__api__identity__NdsClient_company_members_impl(
+        47 => wire__crate__api__identity__NdsClient_clipboard_publish_native_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        46 => wire__crate__api__identity__NdsClient_company_revoke_impl(
+        48 => wire__crate__api__identity__NdsClient_clipboard_publish_text_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        47 => wire__crate__api__identity__NdsClient_configure_module_impl(
+        49 => wire__crate__api__identity__NdsClient_clipboard_snapshot_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        48 => wire__crate__api__identity__NdsClient_connect_github_repository_impl(
+        50 => wire__crate__api__identity__NdsClient_configure_module_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        50 => wire__crate__api__identity__NdsClient_device_modules_impl(
+        51 => wire__crate__api__identity__NdsClient_connect_github_repository_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        51 => wire__crate__api__identity__NdsClient_discover_local_agent_impl(
+        52 => wire__crate__api__identity__NdsClient_create_organization_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        52 => wire__crate__api__identity__NdsClient_github_catalog_credentials_impl(
+        54 => wire__crate__api__identity__NdsClient_device_modules_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        53 => wire__crate__api__identity__NdsClient_github_catalog_source_impl(
+        55 => wire__crate__api__identity__NdsClient_discover_local_agent_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        54 => wire__crate__api__identity__NdsClient_github_repository_page_impl(
+        56 => wire__crate__api__identity__NdsClient_github_catalog_credentials_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        55 => wire__crate__api__identity__NdsClient_import_browser_invitation_impl(
+        57 => wire__crate__api__identity__NdsClient_github_catalog_source_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        56 => wire__crate__api__identity__NdsClient_import_invitation_impl(
+        58 => wire__crate__api__identity__NdsClient_github_repository_page_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        57 => wire__crate__api__identity__NdsClient_incident_action_impl(
+        59 => wire__crate__api__identity__NdsClient_import_browser_invitation_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        58 => {
+        60 => wire__crate__api__identity__NdsClient_import_invitation_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        61 => wire__crate__api__identity__NdsClient_incident_action_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        62 => {
             wire__crate__api__identity__NdsClient_incidents_impl(port, ptr, rust_vec_len, data_len)
         }
-        59 => wire__crate__api__identity__NdsClient_logout_impl(port, ptr, rust_vec_len, data_len),
-        62 => {
+        63 => wire__crate__api__identity__NdsClient_logout_impl(port, ptr, rust_vec_len, data_len),
+        66 => wire__crate__api__identity__NdsClient_organizations_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        67 => {
             wire__crate__api__identity__NdsClient_passkeys_impl(port, ptr, rust_vec_len, data_len)
         }
-        63 => wire__crate__api__identity__NdsClient_poll_github_impl(
+        68 => wire__crate__api__identity__NdsClient_poll_github_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        64 => wire__crate__api__identity__NdsClient_poll_passkey_impl(
+        69 => wire__crate__api__identity__NdsClient_poll_passkey_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        65 => wire__crate__api__identity__NdsClient_prepare_device_impl(
+        70 => wire__crate__api__identity__NdsClient_prepare_device_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        66 => wire__crate__api__identity__NdsClient_publish_device_state_impl(
+        71 => wire__crate__api__identity__NdsClient_publish_device_state_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        67 => wire__crate__api__identity__NdsClient_publish_local_state_impl(
+        72 => wire__crate__api__identity__NdsClient_publish_local_state_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        68 => {
+        73 => {
             wire__crate__api__identity__NdsClient_reconcile_impl(port, ptr, rust_vec_len, data_len)
         }
-        69 => wire__crate__api__identity__NdsClient_refresh_impl(port, ptr, rust_vec_len, data_len),
-        70 => wire__crate__api__identity__NdsClient_refresh_devices_impl(
+        74 => wire__crate__api__identity__NdsClient_refresh_impl(port, ptr, rust_vec_len, data_len),
+        75 => wire__crate__api__identity__NdsClient_refresh_devices_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        71 => wire__crate__api__identity__NdsClient_request_email_impl(
+        76 => wire__crate__api__identity__NdsClient_request_email_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        73 => wire__crate__api__identity__NdsClient_revoke_device_impl(
+        78 => wire__crate__api__identity__NdsClient_revoke_device_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        74 => wire__crate__api__identity__NdsClient_revoke_passkey_impl(
+        79 => wire__crate__api__identity__NdsClient_revoke_passkey_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        75 => wire__crate__api__identity__NdsClient_saved_github_repository_page_impl(
+        80 => wire__crate__api__identity__NdsClient_saved_github_repository_page_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        76 => wire__crate__api__identity__NdsClient_screen_accept_impl(
+        81 => wire__crate__api__identity__NdsClient_screen_accept_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        78 => wire__crate__api__identity__NdsClient_screen_close_impl(
+        83 => wire__crate__api__identity__NdsClient_screen_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        79 => wire__crate__api__identity__NdsClient_screen_incoming_impl(
+        84 => wire__crate__api__identity__NdsClient_screen_incoming_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        80 => wire__crate__api__identity__NdsClient_screen_open_impl(
+        85 => wire__crate__api__identity__NdsClient_screen_open_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        81 => wire__crate__api__identity__NdsClient_screen_prepare_impl(
+        86 => wire__crate__api__identity__NdsClient_screen_prepare_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        82 => wire__crate__api__identity__NdsClient_screen_stop_impl(
+        87 => wire__crate__api__identity__NdsClient_screen_stop_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        83 => wire__crate__api__identity__NdsClient_screen_targets_impl(
+        88 => wire__crate__api__identity__NdsClient_screen_targets_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        84 => wire__crate__api__identity__NdsClient_select_github_credential_impl(
+        89 => wire__crate__api__identity__NdsClient_select_github_credential_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        86 => {
+        90 => wire__crate__api__identity__NdsClient_select_organization_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        92 => {
             wire__crate__api__identity__NdsClient_shutdown_impl(port, ptr, rust_vec_len, data_len)
         }
-        88 => wire__crate__api__identity__NdsClient_start_github_impl(
+        94 => wire__crate__api__identity__NdsClient_start_github_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        89 => wire__crate__api__identity__NdsClient_start_passkey_impl(
+        95 => wire__crate__api__identity__NdsClient_start_passkey_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        90 => wire__crate__api__identity__NdsClient_sync_states_impl(
+        96 => wire__crate__api__identity__NdsClient_sync_states_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        91 => wire__crate__api__identity__NdsClient_vault_copy_secret_impl(
+        97 => wire__crate__api__identity__NdsClient_vault_copy_secret_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        92 => wire__crate__api__identity__NdsClient_vault_delete_impl(
+        98 => wire__crate__api__identity__NdsClient_vault_delete_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        93 => wire__crate__api__identity__NdsClient_vault_records_impl(
+        99 => wire__crate__api__identity__NdsClient_vault_records_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        94 => wire__crate__api__identity__NdsClient_vault_refresh_impl(
+        100 => wire__crate__api__identity__NdsClient_vault_refresh_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        95 => wire__crate__api__identity__NdsClient_vault_resolve_impl(
+        101 => wire__crate__api__identity__NdsClient_vault_resolve_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        96 => {
+        102 => {
             wire__crate__api__identity__NdsClient_vault_save_impl(port, ptr, rust_vec_len, data_len)
         }
-        97 => wire__crate__api__identity__NdsClient_vault_snapshot_impl(
+        103 => wire__crate__api__identity__NdsClient_vault_snapshot_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        98 => {
+        104 => {
             wire__crate__api__identity__NdsClient_vault_sync_impl(port, ptr, rust_vec_len, data_len)
         }
-        99 => wire__crate__api__identity__NdsClient_verify_email_impl(
+        105 => wire__crate__api__identity__NdsClient_verify_email_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        104 => wire__crate__api__screen__ScreenHost_close_impl(port, ptr, rust_vec_len, data_len),
-        105 => wire__crate__api__screen__ScreenHost_closed_impl(port, ptr, rust_vec_len, data_len),
-        107 => wire__crate__api__screen__ScreenView_close_impl(port, ptr, rust_vec_len, data_len),
-        108 => wire__crate__api__screen__ScreenView_closed_impl(port, ptr, rust_vec_len, data_len),
-        109 => wire__crate__api__screen__ScreenView_frame_impl(port, ptr, rust_vec_len, data_len),
-        124 => {
+        110 => wire__crate__api__screen__ScreenHost_close_impl(port, ptr, rust_vec_len, data_len),
+        111 => wire__crate__api__screen__ScreenHost_closed_impl(port, ptr, rust_vec_len, data_len),
+        113 => wire__crate__api__screen__ScreenView_close_impl(port, ptr, rust_vec_len, data_len),
+        114 => wire__crate__api__screen__ScreenView_closed_impl(port, ptr, rust_vec_len, data_len),
+        115 => wire__crate__api__screen__ScreenView_frame_impl(port, ptr, rust_vec_len, data_len),
+        130 => {
             wire__crate__api__telemetry__shutdown_telemetry_impl(port, ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),
@@ -10907,90 +11295,105 @@ fn pde_ffi_dispatcher_sync_impl(
             rust_vec_len,
             data_len,
         ),
-        24 => wire__crate__api__modules__LocalAgent_close_impl(ptr, rust_vec_len, data_len),
-        25 => wire__crate__api__modules__LocalAgent_modules_impl(ptr, rust_vec_len, data_len),
-        33 => wire__crate__api__identity__NdsClient_cancel_impl(ptr, rust_vec_len, data_len),
-        34 => wire__crate__api__identity__NdsClient_cancel_github_catalog_impl(
+        11 => wire__crate__api__organizations__CompanyCommand_is_current_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        49 => wire__crate__api__identity__NdsClient_delivery_snapshot_impl(
+        25 => wire__crate__api__modules__LocalAgent_close_impl(ptr, rust_vec_len, data_len),
+        26 => wire__crate__api__modules__LocalAgent_modules_impl(ptr, rust_vec_len, data_len),
+        35 => wire__crate__api__organizations__LocalOrganization_close_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        60 => wire__crate__api__identity__NdsClient_new_impl(ptr, rust_vec_len, data_len),
-        61 => wire__crate__api__identity__NdsClient_new_with_cache_base_impl(
+        38 => wire__crate__api__organizations__LocalOrganization_is_current_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        72 => wire__crate__api__identity__NdsClient_reserve_clipboard_copy_impl(
+        42 => wire__crate__api__identity__NdsClient_cancel_impl(ptr, rust_vec_len, data_len),
+        43 => wire__crate__api__identity__NdsClient_cancel_github_catalog_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        77 => wire__crate__api__identity__NdsClient_screen_cancel_impl(ptr, rust_vec_len, data_len),
-        85 => wire__crate__api__identity__NdsClient_set_lifecycle_impl(ptr, rust_vec_len, data_len),
-        87 => wire__crate__api__identity__NdsClient_snapshot_impl(ptr, rust_vec_len, data_len),
-        100 => wire__crate__api__screen__ScreenFrame_check_live_impl(ptr, rust_vec_len, data_len),
-        101 => wire__crate__api__screen__ScreenFrame_layout_impl(ptr, rust_vec_len, data_len),
-        102 => wire__crate__api__screen__ScreenFrame_read_once_impl(ptr, rust_vec_len, data_len),
-        103 => wire__crate__api__screen__ScreenHost_cancel_impl(ptr, rust_vec_len, data_len),
-        106 => wire__crate__api__screen__ScreenView_cancel_impl(ptr, rust_vec_len, data_len),
-        110 => wire__crate__api__modules__cache_binding_bound_impl(ptr, rust_vec_len, data_len),
-        111 => wire__crate__api__modules__cache_binding_kind_impl(ptr, rust_vec_len, data_len),
-        112 => wire__crate__api__organizations__capture_invitation_link_impl(
+        53 => wire__crate__api__identity__NdsClient_delivery_snapshot_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        113 => wire__crate__api__telemetry__client_diagnostics_impl(ptr, rust_vec_len, data_len),
-        114 => wire__crate__api__identity__client_work_permitted_impl(ptr, rust_vec_len, data_len),
-        115 => wire__nddev_device_sync_vault__view__clipboard_view_default_impl(
+        64 => wire__crate__api__identity__NdsClient_new_impl(ptr, rust_vec_len, data_len),
+        65 => wire__crate__api__identity__NdsClient_new_with_cache_base_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        116 => wire__crate__api__telemetry__configure_debug_impl(ptr, rust_vec_len, data_len),
-        117 => wire__nddev_device_sync_accounts__view__delivery_view_default_impl(
+        77 => wire__crate__api__identity__NdsClient_reserve_clipboard_copy_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        118 => wire__nddev_device_sync_accounts__view__export_policy_default_impl(
+        82 => wire__crate__api__identity__NdsClient_screen_cancel_impl(ptr, rust_vec_len, data_len),
+        91 => wire__crate__api__identity__NdsClient_set_lifecycle_impl(ptr, rust_vec_len, data_len),
+        93 => wire__crate__api__identity__NdsClient_snapshot_impl(ptr, rust_vec_len, data_len),
+        106 => wire__crate__api__screen__ScreenFrame_check_live_impl(ptr, rust_vec_len, data_len),
+        107 => wire__crate__api__screen__ScreenFrame_layout_impl(ptr, rust_vec_len, data_len),
+        108 => wire__crate__api__screen__ScreenFrame_read_once_impl(ptr, rust_vec_len, data_len),
+        109 => wire__crate__api__screen__ScreenHost_cancel_impl(ptr, rust_vec_len, data_len),
+        112 => wire__crate__api__screen__ScreenView_cancel_impl(ptr, rust_vec_len, data_len),
+        116 => wire__crate__api__modules__cache_binding_bound_impl(ptr, rust_vec_len, data_len),
+        117 => wire__crate__api__modules__cache_binding_kind_impl(ptr, rust_vec_len, data_len),
+        118 => wire__crate__api__organizations__capture_invitation_link_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        119 => wire__crate__api__telemetry__init_app_impl(ptr, rust_vec_len, data_len),
-        120 => wire__crate__api__identity__new_vault_record_id_impl(ptr, rust_vec_len, data_len),
-        121 => wire__crate__api__telemetry__record_client_failure_impl(ptr, rust_vec_len, data_len),
-        122 => {
+        119 => wire__crate__api__telemetry__client_diagnostics_impl(ptr, rust_vec_len, data_len),
+        120 => wire__crate__api__identity__client_work_permitted_impl(ptr, rust_vec_len, data_len),
+        121 => wire__nddev_device_sync_vault__view__clipboard_view_default_impl(
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        122 => wire__crate__api__telemetry__configure_debug_impl(ptr, rust_vec_len, data_len),
+        123 => wire__nddev_device_sync_accounts__view__delivery_view_default_impl(
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        124 => wire__nddev_device_sync_accounts__view__export_policy_default_impl(
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        125 => wire__crate__api__telemetry__init_app_impl(ptr, rust_vec_len, data_len),
+        126 => wire__crate__api__identity__new_vault_record_id_impl(ptr, rust_vec_len, data_len),
+        127 => wire__crate__api__telemetry__record_client_failure_impl(ptr, rust_vec_len, data_len),
+        128 => {
             wire__crate__api__telemetry__record_client_lifecycle_impl(ptr, rust_vec_len, data_len)
         }
-        123 => wire__crate__api__screen__screen_supported_impl(ptr, rust_vec_len, data_len),
-        125 => wire__crate__api__modules__supports_local_agent_impl(ptr, rust_vec_len, data_len),
-        126 => {
+        129 => wire__crate__api__screen__screen_supported_impl(ptr, rust_vec_len, data_len),
+        131 => wire__crate__api__modules__supports_local_agent_impl(ptr, rust_vec_len, data_len),
+        132 => {
             wire__crate__api__identity__supports_native_clipboard_impl(ptr, rust_vec_len, data_len)
         }
-        127 => wire__crate__api__identity__supports_native_clipboard_read_impl(
+        133 => wire__crate__api__identity__supports_native_clipboard_read_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        128 => wire__crate__api__modules__update_action_kind_impl(ptr, rust_vec_len, data_len),
-        129 => wire__crate__api__modules__update_action_platform_impl(ptr, rust_vec_len, data_len),
-        130 => {
+        134 => wire__crate__api__modules__update_action_kind_impl(ptr, rust_vec_len, data_len),
+        135 => wire__crate__api__modules__update_action_platform_impl(ptr, rust_vec_len, data_len),
+        136 => {
             wire__nddev_device_sync_vault__view__vault_error_code_impl(ptr, rust_vec_len, data_len)
         }
-        131 => wire__nddev_device_sync_vault__view__vault_view_default_impl(
+        137 => wire__nddev_device_sync_vault__view__vault_view_default_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        132 => {
+        138 => {
             wire__nddev_device_sync_accounts__view__view_default_impl(ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),
@@ -11070,6 +11473,21 @@ impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<
 
 impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<LocalAgent>> for LocalAgent {
     fn into_into_dart(self) -> FrbWrapper<LocalAgent> {
+        self.into()
+    }
+}
+
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for FrbWrapper<LocalOrganization> {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self.0)
+            .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<LocalOrganization> {}
+
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<LocalOrganization>> for LocalOrganization {
+    fn into_into_dart(self) -> FrbWrapper<LocalOrganization> {
         self.into()
     }
 }
@@ -13520,6 +13938,13 @@ impl SseEncode for LocalAgent {
     }
 }
 
+impl SseEncode for LocalOrganization {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>>>::sse_encode(flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self), serializer);
+    }
+}
+
 impl SseEncode for NdsClient {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -13599,6 +14024,17 @@ impl SseEncode
 
 impl SseEncode
     for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalAgent>>
+{
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        let (ptr, size) = self.sse_encode_raw();
+        <usize>::sse_encode(ptr, serializer);
+        <i32>::sse_encode(size, serializer);
+    }
+}
+
+impl SseEncode
+    for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>>
 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -14623,6 +15059,18 @@ impl SseEncode for Vec<nddev_device_sync_organizations::view::OrganizationMember
     }
 }
 
+impl SseEncode for Vec<nddev_device_sync_organizations::view::OrganizationOverviewView> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <nddev_device_sync_organizations::view::OrganizationOverviewView>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
 impl SseEncode for Vec<nddev_device_sync_accounts::view::PasskeyView> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -15508,6 +15956,20 @@ mod io {
     }
 
     #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_nds_native_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLocalOrganization(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>>::increment_strong_count(ptr as _);
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_nds_native_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLocalOrganization(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>>::decrement_strong_count(ptr as _);
+    }
+
+    #[unsafe(no_mangle)]
     pub extern "C" fn frbgen_nds_native_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNdsClient(
         ptr: *const std::ffi::c_void,
     ) {
@@ -15676,6 +16138,20 @@ mod web {
         ptr: *const std::ffi::c_void,
     ) {
         MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalAgent>>::decrement_strong_count(ptr as _);
+    }
+
+    #[wasm_bindgen]
+    pub fn rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLocalOrganization(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>>::increment_strong_count(ptr as _);
+    }
+
+    #[wasm_bindgen]
+    pub fn rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLocalOrganization(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LocalOrganization>>::decrement_strong_count(ptr as _);
     }
 
     #[wasm_bindgen]

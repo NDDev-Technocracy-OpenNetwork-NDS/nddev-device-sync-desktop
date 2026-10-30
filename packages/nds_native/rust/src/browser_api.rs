@@ -7,7 +7,7 @@ use crate::api::{
     },
     identity::{IncidentPage, IncidentView, NdsClient},
     module_control::DeviceModuleView,
-    organizations::CompanyCommand,
+    organizations::{CompanyCommand, LocalOrganization},
     telemetry,
 };
 use nddev_device_sync_accounts::{
@@ -219,8 +219,39 @@ impl BrowserClient {
             .map(present)
             .collect()
     }
-    pub async fn company(&self) -> Result<Ts<OrganizationOverviewView>, JsError> {
-        present(self.inner.company().await.map_err(client_error)?)
+    pub async fn organizations(&self) -> Result<Vec<Ts<OrganizationOverviewView>>, JsError> {
+        self.inner
+            .organizations()
+            .await
+            .map_err(client_error)?
+            .into_iter()
+            .map(present)
+            .collect()
+    }
+    pub async fn select_organization(
+        &self,
+        company: String,
+        membership_revision: js_sys::BigInt,
+    ) -> Result<BrowserOrganization, JsError> {
+        Ok(BrowserOrganization {
+            inner: self
+                .inner
+                .select_organization(company, revision(membership_revision)?)
+                .await
+                .map_err(client_error)?,
+        })
+    }
+    pub async fn create_organization(
+        &self,
+        name: String,
+    ) -> Result<BrowserCompanyCommand, JsError> {
+        Ok(BrowserCompanyCommand {
+            inner: self
+                .inner
+                .create_organization(name)
+                .await
+                .map_err(client_error)?,
+        })
     }
     pub async fn incidents(&self, after: String) -> Result<Ts<IncidentPage>, JsError> {
         present(self.inner.incidents(after).await.map_err(client_error)?)
@@ -310,60 +341,6 @@ impl BrowserClient {
                 .await
                 .map_err(catalog_error)?,
         )
-    }
-    pub async fn company_members(
-        &self,
-        after: Option<String>,
-    ) -> Result<Ts<OrganizationMemberPageView>, JsError> {
-        present(
-            self.inner
-                .company_members(after)
-                .await
-                .map_err(client_error)?,
-        )
-    }
-    pub async fn company_invitations(
-        &self,
-        after: Option<String>,
-    ) -> Result<Ts<OrganizationInvitationPageView>, JsError> {
-        present(
-            self.inner
-                .company_invitations(after)
-                .await
-                .map_err(client_error)?,
-        )
-    }
-    pub async fn company_invite(
-        &self,
-        email: String,
-        role: Ts<OrganizationRoleView>,
-    ) -> Result<BrowserCompanyCommand, JsError> {
-        Ok(BrowserCompanyCommand {
-            inner: self
-                .inner
-                .company_invite(email, enum_input(role)?)
-                .await
-                .map_err(client_error)?,
-        })
-    }
-    pub async fn company_revoke(&self, id: String) -> Result<BrowserCompanyCommand, JsError> {
-        Ok(BrowserCompanyCommand {
-            inner: self.inner.company_revoke(id).await.map_err(client_error)?,
-        })
-    }
-    pub async fn company_change_member(
-        &self,
-        user: String,
-        expected: js_sys::BigInt,
-        role: Option<Ts<OrganizationRoleView>>,
-    ) -> Result<BrowserCompanyCommand, JsError> {
-        Ok(BrowserCompanyCommand {
-            inner: self
-                .inner
-                .company_change_member(user, revision(expected)?, role.map(enum_input).transpose()?)
-                .await
-                .map_err(client_error)?,
-        })
     }
     pub async fn vault_snapshot(&self) -> Result<Ts<VaultView>, JsError> {
         present(self.inner.vault_snapshot().await.map_err(vault_error)?)
@@ -510,12 +487,75 @@ impl BrowserClient {
             .map_err(vault_error)
     }
 }
+#[wasm_bindgen(js_name=Organization)]
+pub struct BrowserOrganization {
+    inner: LocalOrganization,
+}
+#[wasm_bindgen(js_class=Organization)]
+impl BrowserOrganization {
+    pub fn is_current(&self) -> bool {
+        self.inner.is_current()
+    }
+    pub async fn overview(&self) -> Result<Ts<OrganizationOverviewView>, JsError> {
+        present(self.inner.overview().await.map_err(client_error)?)
+    }
+    pub async fn members(
+        &self,
+        after: Option<String>,
+    ) -> Result<Ts<OrganizationMemberPageView>, JsError> {
+        present(self.inner.members(after).await.map_err(client_error)?)
+    }
+    pub async fn invitations(
+        &self,
+        after: Option<String>,
+    ) -> Result<Ts<OrganizationInvitationPageView>, JsError> {
+        present(self.inner.invitations(after).await.map_err(client_error)?)
+    }
+    pub async fn invite(
+        &self,
+        email: String,
+        role: Ts<OrganizationRoleView>,
+    ) -> Result<BrowserCompanyCommand, JsError> {
+        Ok(BrowserCompanyCommand {
+            inner: self
+                .inner
+                .invite(email, enum_input(role)?)
+                .await
+                .map_err(client_error)?,
+        })
+    }
+    pub async fn revoke(&self, id: String) -> Result<BrowserCompanyCommand, JsError> {
+        Ok(BrowserCompanyCommand {
+            inner: self.inner.revoke(id).await.map_err(client_error)?,
+        })
+    }
+    pub async fn change_member(
+        &self,
+        user: String,
+        expected: js_sys::BigInt,
+        role: Option<Ts<OrganizationRoleView>>,
+    ) -> Result<BrowserCompanyCommand, JsError> {
+        Ok(BrowserCompanyCommand {
+            inner: self
+                .inner
+                .change_member(user, revision(expected)?, role.map(enum_input).transpose()?)
+                .await
+                .map_err(client_error)?,
+        })
+    }
+    pub fn close(&self) {
+        self.inner.close();
+    }
+}
 #[wasm_bindgen(js_name=CompanyCommand)]
 pub struct BrowserCompanyCommand {
     inner: CompanyCommand,
 }
 #[wasm_bindgen(js_class=CompanyCommand)]
 impl BrowserCompanyCommand {
+    pub fn is_current(&self) -> bool {
+        self.inner.is_current()
+    }
     pub async fn execute(&self) -> Result<(), JsError> {
         self.inner.execute().await.map_err(client_error)
     }

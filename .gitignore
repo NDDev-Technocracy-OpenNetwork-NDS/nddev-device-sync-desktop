@@ -30,7 +30,8 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-**/build/
+# Managed build output may also be a worktree-local directory link.
+**/build
 /coverage/
 
 # Symbolication related

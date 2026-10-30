@@ -180,6 +180,7 @@ void main() {
         await waitScreenFact(tester, screenHandoff, 'host-device.json');
         await tester.ensureVisible(find.byKey(const Key('company')));
         await tester.tap(find.byKey(const Key('company')));
+        await waitFor(tester, find.byType(CompanyScreen));
         final originalCompany = tester
             .widget<CompanyScreen>(find.byType(CompanyScreen))
             .client
@@ -319,6 +320,7 @@ void main() {
       if (company && screenPeer.isEmpty) {
         await tester.ensureVisible(find.byKey(const Key('company')));
         await tester.tap(find.byKey(const Key('company')));
+        await waitFor(tester, find.byType(CompanyScreen));
         final client = tester
             .widget<CompanyScreen>(find.byType(CompanyScreen))
             .client;

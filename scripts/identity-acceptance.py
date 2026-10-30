@@ -22,6 +22,8 @@ parser.add_argument("--cold-restart", action="store_true",
                     help="Verify encrypted persistence across two Android app processes")
 parser.add_argument("--isolated-android", action="store_true",
                     help="Use a unique test applicationId on an explicitly selected Android device")
+parser.add_argument("--host-vmservice-port", type=int,
+                    help="Owned ADB-host loopback port tunneled to the driver for isolated remote Android acceptance")
 parser.add_argument("--company", action="store_true", help="Exercise company invitation and revocation through the real UI")
 parser.add_argument("--vault", action="store_true", help="Exercise real native vault creation and encrypted sync")
 parser.add_argument("--catalog-source", action="store_true", help="Also qualify saved GitHub choice through the real UI (requires --vault and --fixture-sync3)")
@@ -58,6 +60,9 @@ gradle_path = app / "android/app/build.gradle.kts"
 original_gradle = None
 temporary_gradle = None
 android = args.device.startswith("emulator-") or args.isolated_android
+if args.host_vmservice_port is not None and (
+        not args.isolated_android or args.sync_role or not 1 <= args.host_vmservice_port <= 65535):
+    parser.error("A VM service port requires isolated Android identity/module acceptance and port 1..65535")
 if args.modules and (not android or not args.isolated_android or not args.cold_restart
                      or args.company or args.vault or args.sync_role):
     parser.error("Module acceptance requires isolated Android cold restart without other scenario flags")
@@ -109,7 +114,8 @@ target = app / "integration_test/identity_acceptance_generated_test.dart"
 # flutter test forwards Dart test events, not the complete native stdout stream.
 # Keep the existing mobile and multi-replica runners; capture this ordinary Linux
 # identity flow through the same driver already used by module acceptance.
-driver = app / "integration_test/identity_acceptance_driver_generated.dart" if args.device == "linux" and not args.sync_role else None
+driver = app / "integration_test/identity_acceptance_driver_generated.dart" if (
+    args.device == "linux" and not args.sync_role or args.host_vmservice_port is not None) else None
 if target.exists() or (driver is not None and driver.exists()):
     raise SystemExit("Refuse to overwrite existing generated test target or driver")
 target.parent.mkdir(exist_ok=True)
@@ -122,6 +128,7 @@ if args.sync_role:
     log = log.with_stem(log.stem + "-sync-" + args.sync_role)
 runner = ExitStack()
 owned_reverse_ports = []
+owned_vm_forward = False
 
 def fixture_mode(mode):
     control = args.fixture.resolve().with_suffix(".control.json")
@@ -154,6 +161,13 @@ try:
         for port in ports:
             subprocess.run(["adb", "-s", args.device, "reverse", "--no-rebind", "tcp:" + port, "tcp:" + port], check=True, timeout=10)
             owned_reverse_ports.append(port)
+    if args.host_vmservice_port is not None:
+        # Reserve the ADB-host port before Flutter replaces our placeholder with
+        # the actual VM service. Never replace or later remove a foreign binding.
+        subprocess.run(["adb", "-s", args.device, "forward", "--no-rebind",
+                        "tcp:" + str(args.host_vmservice_port), "localabstract:" + app_id],
+                       check=True, timeout=10)
+        owned_vm_forward = True
     command = (["flutter", "drive", "--target=" + str(target), "--driver=" + str(driver)]
         if driver is not None else ["flutter", "test", str(target),
         "--timeout=5m" if args.sync_role else "--timeout=3m"])
@@ -162,6 +176,13 @@ try:
         "--dart-define=NDS_TEST_MAILPIT=" + fixture["mailpit_url"],
         "--dart-define=NDS_TEST_OWNER=" + fixture["owner_email"],
         "--dart-define=NDS_DEVICE_NAME=" + ("Sync " + args.sync_role if args.sync_role else "Acceptance device")]
+    if args.host_vmservice_port is not None:
+        # The native ADB host and this driver can be on different computers.
+        # DDS stays local; only the authenticated VM service uses the owned tunnel.
+        # Retain the installation between phases; this runner owns its exact
+        # force-stop, uninstall and forward cleanup.
+        command += ["--host-vmservice-port=" + str(args.host_vmservice_port),
+                    "--dds-port=0", "--keep-app-running"]
     if fixture.get("screen_peer_email") is not None:
         handoff = Path(fixture["screen_handoff"])
         screen_case = fixture.get("screen_case", "role")
@@ -201,7 +222,7 @@ try:
         phase_log = log.with_stem(log.stem + "-" + phase) if args.cold_restart else log
         with phase_log.open("w") as output:
             phase_command = command + ["--dart-define=NDS_TEST_PHASE=" + phase]
-            if phase != phases[-1]:
+            if phase != phases[-1] and driver is None:
                 phase_command.append("--no-uninstall")
             process = subprocess.Popen(phase_command,
                 cwd=app, env=environment, stdout=output,
@@ -257,5 +278,9 @@ finally:
             for port in owned_reverse_ports:
                 subprocess.run(["adb", "-s", args.device, "reverse", "--remove", "tcp:" + port],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+        if owned_vm_forward:
+            subprocess.run(["adb", "-s", args.device, "forward", "--remove",
+                            "tcp:" + str(args.host_vmservice_port)],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
         if args.modules and json.loads(args.fixture.read_text())["status"] == "offline":
             fixture_mode("online")

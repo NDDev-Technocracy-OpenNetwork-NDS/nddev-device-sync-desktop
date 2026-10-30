@@ -493,6 +493,9 @@ pub struct BrowserOrganization {
 }
 #[wasm_bindgen(js_class=Organization)]
 impl BrowserOrganization {
+    pub fn is_current(&self) -> bool {
+        self.inner.is_current()
+    }
     pub async fn overview(&self) -> Result<Ts<OrganizationOverviewView>, JsError> {
         present(self.inner.overview().await.map_err(client_error)?)
     }

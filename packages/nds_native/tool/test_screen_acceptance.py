@@ -23,9 +23,10 @@ class ScreenOrganizationContext(unittest.TestCase):
             Path('/unused-synthetic-scope'))
 
     def test_read_uses_the_original_organization_and_revision(self):
-        reply = {'context': self.context, 'members': []}
+        page = {'members': [], 'next_cursor': None}
+        reply = {'context': self.context, 'page': page}
         self.authority.signed = Mock(return_value=(200, reply))
-        self.assertIs(self.authority.scoped(self.actor, '/members'), reply)
+        self.assertIs(self.authority.members(self.actor), page)
         self.authority.signed.assert_called_once_with(
             self.actor, '/v3/organizations/synthetic-company/members?membership_revision=7', None)
 

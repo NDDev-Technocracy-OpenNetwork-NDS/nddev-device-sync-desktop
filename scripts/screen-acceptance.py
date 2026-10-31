@@ -224,6 +224,9 @@ class Authority:
             "membership_revision": actor["membership_revision"]}
         return reply
 
+    def members(self, actor):
+        return self.scoped(actor, "/members")["page"]
+
     def invite(self, actor, role):
         email = uuid.uuid4().hex + "@example.invalid"
         prior = {row["ID"] for row in get(self.mailbox + "/api/v1/messages")["messages"]}
@@ -345,12 +348,16 @@ def qualify(args, fixture):
             start("viewer")
         fact("host-streaming.json", 180)
         pixels = fact("viewer-frame.json")
+        write(args.output / "progress.json", {"source": args.source, "case": args.case,
+              "stage": "actual_frame", "actual_frame": pixels, "acceptance_complete": False})
         if args.case == "role":
-            page = authority.scoped(controller, "/members")
+            page = authority.members(controller)
             member = next(row for row in page["members"] if row["user_id"] == owner["user"])
             authority.scoped(controller, "/members/" + owner["user"],
                 {"operation_id": operation(), "expected_revision": member["revision"], "action": "set_role", "role": "user"})
             write(root / "demoted.json", {"demoted": True})
+            write(args.output / "progress.json", {"source": args.source, "case": args.case,
+                  "stage": "actual_role_changed", "actual_frame": pixels, "acceptance_complete": False})
         elif args.case == "source-loss":
             stop(role_displays["host"])
         write(root / "end-trigger.json", {"case": args.case})

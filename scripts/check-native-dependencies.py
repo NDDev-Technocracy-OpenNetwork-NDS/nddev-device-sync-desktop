@@ -20,10 +20,10 @@ for name in (
     'nddev-device-sync-organizations',
     'nddev-device-sync-telemetry',
     'nddev-device-sync-vault',
-    'nddev-device-sync-gds',
+    'nddev-device-sync-github',
     'nddev-device-sync-clipboard',
 ):
     packages = [package for package in metadata['packages'] if package['name'] == name]
     if len(packages) != 1:
         raise SystemExit(f'Expected one {name} package across all platforms, found {len(packages)}')
-print('Locked native graph has one application, domain, adapter I/O, accounts, telemetry, vault, GDS and clipboard package')
+print('Locked native graph has one application, domain, adapter I/O, accounts, telemetry, vault, GitHub module and clipboard package')

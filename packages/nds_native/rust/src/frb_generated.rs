@@ -2778,7 +2778,7 @@ fn wire__crate__api__identity__NdsClient_clear_github_catalog_source_impl(
             move |context| async move {
                 transform_result_sse::<
                     _,
-                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError,
+                    nddev_device_sync_github::catalog_runtime::view::GithubCatalogError,
                 >(
                     (move || async move {
                         let mut api_that_guard = None;
@@ -3226,7 +3226,7 @@ fn wire__crate__api__identity__NdsClient_connect_github_repository_impl(
             move |context| async move {
                 transform_result_sse::<
                     _,
-                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError,
+                    nddev_device_sync_github::catalog_runtime::view::GithubCatalogError,
                 >(
                     (move || async move {
                         let mut api_that_guard = None;
@@ -3571,7 +3571,7 @@ fn wire__crate__api__identity__NdsClient_github_catalog_credentials_impl(
             move |context| async move {
                 transform_result_sse::<
                     _,
-                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError,
+                    nddev_device_sync_github::catalog_runtime::view::GithubCatalogError,
                 >(
                     (move || async move {
                         let mut api_that_guard = None;
@@ -3634,7 +3634,7 @@ fn wire__crate__api__identity__NdsClient_github_catalog_source_impl(
             move |context| async move {
                 transform_result_sse::<
                     _,
-                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError,
+                    nddev_device_sync_github::catalog_runtime::view::GithubCatalogError,
                 >(
                     (move || async move {
                         let mut api_that_guard = None;
@@ -3696,7 +3696,7 @@ fn wire__crate__api__identity__NdsClient_github_repository_page_impl(
             move |context| async move {
                 transform_result_sse::<
                     _,
-                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError,
+                    nddev_device_sync_github::catalog_runtime::view::GithubCatalogError,
                 >(
                     (move || async move {
                         let mut api_that_guard = None;
@@ -4932,7 +4932,7 @@ fn wire__crate__api__identity__NdsClient_saved_github_repository_page_impl(
             move |context| async move {
                 transform_result_sse::<
                     _,
-                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError,
+                    nddev_device_sync_github::catalog_runtime::view::GithubCatalogError,
                 >(
                     (move || async move {
                         let mut api_that_guard = None;
@@ -5532,7 +5532,7 @@ fn wire__crate__api__identity__NdsClient_select_github_credential_impl(
             move |context| async move {
                 transform_result_sse::<
                     _,
-                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError,
+                    nddev_device_sync_github::catalog_runtime::view::GithubCatalogError,
                 >(
                     (move || async move {
                         let mut api_that_guard = None;
@@ -7965,7 +7965,7 @@ const _: fn() = || {
         let _: bool = ActionResult.output_truncated;
     }
     {
-        let Branch = None::<nddev_device_sync_gds::view::Branch>.unwrap();
+        let Branch = None::<nddev_device_sync_github::view::Branch>.unwrap();
         let _: Option<String> = Branch.name;
         let _: Option<String> = Branch.upstream;
         let _: String = Branch.upstream_state;
@@ -8013,7 +8013,7 @@ const _: fn() = || {
         let _: Vec<Binding> = CacheStatus.bindings;
     }
     {
-        let Changes = None::<nddev_device_sync_gds::view::Changes>.unwrap();
+        let Changes = None::<nddev_device_sync_github::view::Changes>.unwrap();
         let _: u32 = Changes.staged;
         let _: u32 = Changes.unstaged;
         let _: u32 = Changes.untracked;
@@ -8114,28 +8114,28 @@ const _: fn() = || {
         let _: u64 = Entry.at;
     }
     {
-        let Finding = None::<nddev_device_sync_gds::view::Finding>.unwrap();
+        let Finding = None::<nddev_device_sync_github::view::Finding>.unwrap();
         let _: String = Finding.code;
         let _: String = Finding.severity;
         let _: String = Finding.message;
     }
     {
-        let GitStatus = None::<nddev_device_sync_gds::view::GitStatus>.unwrap();
-        let _: nddev_device_sync_gds::view::Branch = GitStatus.branch;
-        let _: nddev_device_sync_gds::view::Changes = GitStatus.changes;
+        let GitStatus = None::<nddev_device_sync_github::view::GitStatus>.unwrap();
+        let _: nddev_device_sync_github::view::Branch = GitStatus.branch;
+        let _: nddev_device_sync_github::view::Changes = GitStatus.changes;
         let _: String = GitStatus.classification;
         let _: String = GitStatus.remote_freshness;
     }
     {
         let GithubCommitSyncView =
-            None::<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView>.unwrap();
+            None::<nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView>.unwrap();
         let _: String = GithubCommitSyncView.outcome;
         let _: String = GithubCommitSyncView.reason;
         let _: Option<String> = GithubCommitSyncView.observed_at_ms;
     }
     {
         let GithubConnectionView =
-            None::<nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView>.unwrap();
+            None::<nddev_device_sync_github::catalog_runtime::view::GithubConnectionView>.unwrap();
         let _: String = GithubConnectionView.outcome;
         let _: String = GithubConnectionView.reason;
         let _: String = GithubConnectionView.relative_path;
@@ -8143,7 +8143,7 @@ const _: fn() = || {
     }
     {
         let GithubCredentialReference =
-            None::<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>
+            None::<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference>
                 .unwrap();
         let _: String = GithubCredentialReference.record_ref;
         let _: String = GithubCredentialReference.title;
@@ -8153,16 +8153,16 @@ const _: fn() = || {
     }
     {
         let GithubCredentialReferencePage =
-            None::<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage>
+            None::<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReferencePage>
                 .unwrap();
-        let _: Vec<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference> =
+        let _: Vec<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference> =
             GithubCredentialReferencePage.items;
         let _: String = GithubCredentialReferencePage.next_after;
         let _: bool = GithubCredentialReferencePage.has_more;
     }
     {
         let GithubObservationView =
-            None::<nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>.unwrap();
+            None::<nddev_device_sync_github::catalog_runtime::view::GithubObservationView>.unwrap();
         let _: String = GithubObservationView.revision;
         let _: bool = GithubObservationView.pending;
         let _: bool = GithubObservationView.conflicted;
@@ -8170,87 +8170,89 @@ const _: fn() = || {
     }
     {
         let GithubOwnerView =
-            None::<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>.unwrap();
+            None::<nddev_device_sync_github::catalog_runtime::view::GithubOwnerView>.unwrap();
         let _: String = GithubOwnerView.id;
         let _: String = GithubOwnerView.login;
-        let _: nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView =
+        let _: nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView =
             GithubOwnerView.kind;
     }
     {
         let GithubRepositoryGroupView =
-            None::<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView>
+            None::<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView>
                 .unwrap();
-        let _: nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView =
+        let _: nddev_device_sync_github::catalog_runtime::view::GithubOwnerView =
             GithubRepositoryGroupView.owner;
-        let _: Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView> =
+        let _: Vec<nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView> =
             GithubRepositoryGroupView.repositories;
     }
     {
         let GithubRepositoryPageView =
-            None::<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView>.unwrap();
-        let _: nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView =
+            None::<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryPageView>
+                .unwrap();
+        let _: nddev_device_sync_github::catalog_runtime::view::GithubOwnerView =
             GithubRepositoryPageView.principal;
-        let _: Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView> =
+        let _: Vec<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView> =
             GithubRepositoryPageView.groups;
         let _: String = GithubRepositoryPageView.observed_at_ms;
-        let _: nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView =
+        let _: nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView =
             GithubRepositoryPageView.continuation;
     }
     {
         let GithubRepositorySummaryView =
-            None::<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>
+            None::<nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView>
                 .unwrap();
         let _: String = GithubRepositorySummaryView.id;
         let _: String = GithubRepositorySummaryView.name;
-        let _: nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView =
+        let _: nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView =
             GithubRepositorySummaryView.visibility;
         let _: bool = GithubRepositorySummaryView.archived;
         let _: Option<String> = GithubRepositorySummaryView.default_branch;
     }
     {
         let GithubSavedOwnerView =
-            None::<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView>.unwrap();
-        let _: nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView =
+            None::<nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView>.unwrap();
+        let _: nddev_device_sync_github::catalog_runtime::view::GithubOwnerView =
             GithubSavedOwnerView.owner;
-        let _: nddev_device_sync_gds::catalog_runtime::view::GithubObservationView =
+        let _: nddev_device_sync_github::catalog_runtime::view::GithubObservationView =
             GithubSavedOwnerView.observation;
     }
     {
         let GithubSavedRepositoryGroupView =
-            None::<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>
+            None::<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView>
                 .unwrap();
         let _: String = GithubSavedRepositoryGroupView.owner_id;
-        let _: Option<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView> =
+        let _: Option<nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView> =
             GithubSavedRepositoryGroupView.owner;
-        let _: Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView> =
+        let _: Vec<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView> =
             GithubSavedRepositoryGroupView.repositories;
     }
     {
         let GithubSavedRepositoryPageView =
-            None::<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView>
+            None::<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryPageView>
                 .unwrap();
         let _: bool = GithubSavedRepositoryPageView.local_workspace_supported;
-        let _: Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView> =
-            GithubSavedRepositoryPageView.groups;
+        let _: Vec<
+            nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView,
+        > = GithubSavedRepositoryPageView.groups;
         let _: String = GithubSavedRepositoryPageView.observed_seq;
         let _: String = GithubSavedRepositoryPageView.local_revision;
         let _: bool = GithubSavedRepositoryPageView.has_more;
     }
     {
         let GithubSavedRepositoryView =
-            None::<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView>
+            None::<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView>
                 .unwrap();
-        let _: nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView =
+        let _: nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView =
             GithubSavedRepositoryView.repository;
-        let _: nddev_device_sync_gds::catalog_runtime::view::GithubObservationView =
+        let _: nddev_device_sync_github::catalog_runtime::view::GithubObservationView =
             GithubSavedRepositoryView.observation;
-        let _: Option<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView> =
+        let _: Option<nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView> =
             GithubSavedRepositoryView.synchronization;
     }
     {
         let GithubSourceView =
-            None::<nddev_device_sync_gds::catalog_runtime::view::GithubSourceView>.unwrap();
-        let _: Option<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference> =
+            None::<nddev_device_sync_github::catalog_runtime::view::GithubSourceView>.unwrap();
+        let _: Option<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference> =
             GithubSourceView.credential;
         let _: String = GithubSourceView.revision;
         let _: Option<String> = GithubSourceView.pending_id;
@@ -8378,18 +8380,18 @@ const _: fn() = || {
         let _: Option<nddev_device_sync_vault::view::ConflictView> = RecordView.conflict;
     }
     {
-        let RemoteSession = None::<nddev_device_sync_rds::view::RemoteSession>.unwrap();
+        let RemoteSession = None::<nddev_device_sync_remote::view::RemoteSession>.unwrap();
         let _: String = RemoteSession.id;
         let _: String = RemoteSession.peer;
-        let _: nddev_device_sync_rds::view::SessionState = RemoteSession.status;
+        let _: nddev_device_sync_remote::view::SessionState = RemoteSession.status;
     }
     {
-        let RemoteSnapshot = None::<nddev_device_sync_rds::view::RemoteSnapshot>.unwrap();
+        let RemoteSnapshot = None::<nddev_device_sync_remote::view::RemoteSnapshot>.unwrap();
         let _: String = RemoteSnapshot.instance;
         let _: u64 = RemoteSnapshot.generation;
         let _: String = RemoteSnapshot.endpoint;
         let _: Option<String> = RemoteSnapshot.selected;
-        let _: Vec<nddev_device_sync_rds::view::RemoteSession> = RemoteSnapshot.sessions;
+        let _: Vec<nddev_device_sync_remote::view::RemoteSession> = RemoteSnapshot.sessions;
     }
     {
         let StatePage = None::<nddev_device_sync_vault::view::StatePage>.unwrap();
@@ -8420,11 +8422,11 @@ const _: fn() = || {
         let _: bool = StateView.conflicted;
     }
     {
-        let Status = None::<nddev_device_sync_gds::view::Status>.unwrap();
+        let Status = None::<nddev_device_sync_github::view::Status>.unwrap();
         let _: String = Status.result;
         let _: String = Status.exit_class;
-        let _: Option<nddev_device_sync_gds::view::GitStatus> = Status.status;
-        let _: Vec<nddev_device_sync_gds::view::Finding> = Status.findings;
+        let _: Option<nddev_device_sync_github::view::GitStatus> = Status.status;
+        let _: Vec<nddev_device_sync_github::view::Finding> = Status.findings;
     }
     {
         let SystemSnapshot = None::<nddev_device_sync_sysinfo::view::SystemSnapshot>.unwrap();
@@ -8843,7 +8845,7 @@ impl SseDecode for bool {
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::view::Branch {
+impl SseDecode for nddev_device_sync_github::view::Branch {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_name = <Option<String>>::sse_decode(deserializer);
@@ -8853,7 +8855,7 @@ impl SseDecode for nddev_device_sync_gds::view::Branch {
         let mut var_ahead = <u32>::sse_decode(deserializer);
         let mut var_behind = <u32>::sse_decode(deserializer);
         let mut var_diverged = <bool>::sse_decode(deserializer);
-        return nddev_device_sync_gds::view::Branch {
+        return nddev_device_sync_github::view::Branch {
             name: var_name,
             upstream: var_upstream,
             upstream_state: var_upstreamState,
@@ -8967,7 +8969,7 @@ impl SseDecode for crate::api::module_types::CacheStatus {
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::view::Changes {
+impl SseDecode for nddev_device_sync_github::view::Changes {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_staged = <u32>::sse_decode(deserializer);
@@ -8975,7 +8977,7 @@ impl SseDecode for nddev_device_sync_gds::view::Changes {
         let mut var_untracked = <u32>::sse_decode(deserializer);
         let mut var_conflicted = <u32>::sse_decode(deserializer);
         let mut var_submoduleChanges = <u32>::sse_decode(deserializer);
-        return nddev_device_sync_gds::view::Changes {
+        return nddev_device_sync_github::view::Changes {
             staged: var_staged,
             unstaged: var_unstaged,
             untracked: var_untracked,
@@ -9341,13 +9343,13 @@ impl SseDecode for nddev_device_sync_telemetry::view::FailureKind {
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::view::Finding {
+impl SseDecode for nddev_device_sync_github::view::Finding {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_code = <String>::sse_decode(deserializer);
         let mut var_severity = <String>::sse_decode(deserializer);
         let mut var_message = <String>::sse_decode(deserializer);
-        return nddev_device_sync_gds::view::Finding {
+        return nddev_device_sync_github::view::Finding {
             code: var_code,
             severity: var_severity,
             message: var_message,
@@ -9355,14 +9357,14 @@ impl SseDecode for nddev_device_sync_gds::view::Finding {
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::view::GitStatus {
+impl SseDecode for nddev_device_sync_github::view::GitStatus {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_branch = <nddev_device_sync_gds::view::Branch>::sse_decode(deserializer);
-        let mut var_changes = <nddev_device_sync_gds::view::Changes>::sse_decode(deserializer);
+        let mut var_branch = <nddev_device_sync_github::view::Branch>::sse_decode(deserializer);
+        let mut var_changes = <nddev_device_sync_github::view::Changes>::sse_decode(deserializer);
         let mut var_classification = <String>::sse_decode(deserializer);
         let mut var_remoteFreshness = <String>::sse_decode(deserializer);
-        return nddev_device_sync_gds::view::GitStatus {
+        return nddev_device_sync_github::view::GitStatus {
             branch: var_branch,
             changes: var_changes,
             classification: var_classification,
@@ -9371,49 +9373,49 @@ impl SseDecode for nddev_device_sync_gds::view::GitStatus {
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <i32>::sse_decode(deserializer);
         return match inner {
-            0 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::More,
-1 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::EndOfAccessScope,
-2 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::LimitReached,
+            0 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView::More,
+1 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView::EndOfAccessScope,
+2 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView::LimitReached,
             _ => unreachable!("Invalid variant for GithubCatalogContinuationView: {}", inner),
         };
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubCatalogError {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <i32>::sse_decode(deserializer);
         return match inner {
-            0 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::InvalidInput,
-1 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::AuthorizationRequired,
-2 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::CredentialChanged,
-3 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Busy,
-4 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Cancelled,
-5 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Timeout,
-6 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Unavailable,
-7 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ProviderFailed,
-8 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::InvalidResponse,
-9 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::CapacityExhausted,
-10 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModuleDisabled,
-11 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired,
-12 => nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict,
+            0 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::InvalidInput,
+1 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::AuthorizationRequired,
+2 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::CredentialChanged,
+3 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::Busy,
+4 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::Cancelled,
+5 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::Timeout,
+6 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::Unavailable,
+7 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ProviderFailed,
+8 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::InvalidResponse,
+9 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::CapacityExhausted,
+10 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleDisabled,
+11 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired,
+12 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict,
             _ => unreachable!("Invalid variant for GithubCatalogError: {}", inner),
         };
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_outcome = <String>::sse_decode(deserializer);
         let mut var_reason = <String>::sse_decode(deserializer);
         let mut var_observedAtMs = <Option<String>>::sse_decode(deserializer);
-        return nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView {
+        return nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView {
             outcome: var_outcome,
             reason: var_reason,
             observed_at_ms: var_observedAtMs,
@@ -9421,14 +9423,14 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyn
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubConnectionView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_outcome = <String>::sse_decode(deserializer);
         let mut var_reason = <String>::sse_decode(deserializer);
         let mut var_relativePath = <String>::sse_decode(deserializer);
         let mut var_intentQueued = <bool>::sse_decode(deserializer);
-        return nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView {
+        return nddev_device_sync_github::catalog_runtime::view::GithubConnectionView {
             outcome: var_outcome,
             reason: var_reason,
             relative_path: var_relativePath,
@@ -9437,7 +9439,7 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubConnectio
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_recordRef = <String>::sse_decode(deserializer);
@@ -9445,7 +9447,7 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCredentia
         let mut var_username = <String>::sse_decode(deserializer);
         let mut var_revision = <String>::sse_decode(deserializer);
         let mut var_pendingId = <Option<String>>::sse_decode(deserializer);
-        return nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference {
+        return nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference {
             record_ref: var_recordRef,
             title: var_title,
             username: var_username,
@@ -9455,15 +9457,15 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCredentia
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubCredentialReferencePage {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_items = <Vec<
-            nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference,
+            nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference,
         >>::sse_decode(deserializer);
         let mut var_nextAfter = <String>::sse_decode(deserializer);
         let mut var_hasMore = <bool>::sse_decode(deserializer);
-        return nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage {
+        return nddev_device_sync_github::catalog_runtime::view::GithubCredentialReferencePage {
             items: var_items,
             next_after: var_nextAfter,
             has_more: var_hasMore,
@@ -9471,14 +9473,14 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubCredentia
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubObservationView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubObservationView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_revision = <String>::sse_decode(deserializer);
         let mut var_pending = <bool>::sse_decode(deserializer);
         let mut var_conflicted = <bool>::sse_decode(deserializer);
         let mut var_observedAtMs = <String>::sse_decode(deserializer);
-        return nddev_device_sync_gds::catalog_runtime::view::GithubObservationView {
+        return nddev_device_sync_github::catalog_runtime::view::GithubObservationView {
             revision: var_revision,
             pending: var_pending,
             conflicted: var_conflicted,
@@ -9487,28 +9489,28 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubObservati
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <i32>::sse_decode(deserializer);
         return match inner {
-            0 => nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView::User,
-            1 => nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView::Organization,
+            0 => nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView::User,
+            1 => nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView::Organization,
             _ => unreachable!("Invalid variant for GithubOwnerKindView: {}", inner),
         };
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubOwnerView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_id = <String>::sse_decode(deserializer);
         let mut var_login = <String>::sse_decode(deserializer);
         let mut var_kind =
-            <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView>::sse_decode(
+            <nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView>::sse_decode(
                 deserializer,
             );
-        return nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView {
+        return nddev_device_sync_github::catalog_runtime::view::GithubOwnerView {
             id: var_id,
             login: var_login,
             kind: var_kind,
@@ -9516,36 +9518,36 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_owner =
-            <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>::sse_decode(
+            <nddev_device_sync_github::catalog_runtime::view::GithubOwnerView>::sse_decode(
                 deserializer,
             );
         let mut var_repositories = <Vec<
-            nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView,
+            nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView,
         >>::sse_decode(deserializer);
-        return nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView {
+        return nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView {
             owner: var_owner,
             repositories: var_repositories,
         };
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubRepositoryPageView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_principal =
-            <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>::sse_decode(
+            <nddev_device_sync_github::catalog_runtime::view::GithubOwnerView>::sse_decode(
                 deserializer,
             );
         let mut var_groups = <Vec<
-            nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView,
+            nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView,
         >>::sse_decode(deserializer);
         let mut var_observedAtMs = <String>::sse_decode(deserializer);
-        let mut var_continuation = <nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView>::sse_decode(deserializer);
-        return nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView {
+        let mut var_continuation = <nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView>::sse_decode(deserializer);
+        return nddev_device_sync_github::catalog_runtime::view::GithubRepositoryPageView {
             principal: var_principal,
             groups: var_groups,
             observed_at_ms: var_observedAtMs,
@@ -9554,15 +9556,15 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositor
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_id = <String>::sse_decode(deserializer);
         let mut var_name = <String>::sse_decode(deserializer);
-        let mut var_visibility = <nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView>::sse_decode(deserializer);
+        let mut var_visibility = <nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView>::sse_decode(deserializer);
         let mut var_archived = <bool>::sse_decode(deserializer);
         let mut var_defaultBranch = <Option<String>>::sse_decode(deserializer);
-        return nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView {
+        return nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView {
             id: var_id,
             name: var_name,
             visibility: var_visibility,
@@ -9572,48 +9574,48 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositor
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <i32>::sse_decode(deserializer);
         return match inner {
-            0 => nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Public,
-1 => nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Private,
-2 => nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Internal,
+            0 => nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView::Public,
+1 => nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView::Private,
+2 => nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView::Internal,
             _ => unreachable!("Invalid variant for GithubRepositoryVisibilityView: {}", inner),
         };
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_owner =
-            <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>::sse_decode(
+            <nddev_device_sync_github::catalog_runtime::view::GithubOwnerView>::sse_decode(
                 deserializer,
             );
         let mut var_observation =
-            <nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>::sse_decode(
+            <nddev_device_sync_github::catalog_runtime::view::GithubObservationView>::sse_decode(
                 deserializer,
             );
-        return nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView {
+        return nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView {
             owner: var_owner,
             observation: var_observation,
         };
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_ownerId = <String>::sse_decode(deserializer);
         let mut var_owner = <Option<
-            nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView,
+            nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView,
         >>::sse_decode(deserializer);
         let mut var_repositories = <Vec<
-            nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView,
+            nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView,
         >>::sse_decode(deserializer);
-        return nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView {
+        return nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView {
             owner_id: var_ownerId,
             owner: var_owner,
             repositories: var_repositories,
@@ -9621,17 +9623,17 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepo
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryPageView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_localWorkspaceSupported = <bool>::sse_decode(deserializer);
         let mut var_groups = <Vec<
-            nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView,
+            nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView,
         >>::sse_decode(deserializer);
         let mut var_observedSeq = <String>::sse_decode(deserializer);
         let mut var_localRevision = <String>::sse_decode(deserializer);
         let mut var_hasMore = <bool>::sse_decode(deserializer);
-        return nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView {
+        return nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryPageView {
             local_workspace_supported: var_localWorkspaceSupported,
             groups: var_groups,
             observed_seq: var_observedSeq,
@@ -9641,21 +9643,18 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepo
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_repository =
-            <nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>::sse_decode(
-                deserializer,
-            );
+        let mut var_repository = <nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView>::sse_decode(deserializer);
         let mut var_observation =
-            <nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>::sse_decode(
+            <nddev_device_sync_github::catalog_runtime::view::GithubObservationView>::sse_decode(
                 deserializer,
             );
         let mut var_synchronization = <Option<
-            nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView,
+            nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView,
         >>::sse_decode(deserializer);
-        return nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView {
+        return nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView {
             repository: var_repository,
             observation: var_observation,
             synchronization: var_synchronization,
@@ -9663,17 +9662,17 @@ impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepo
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::catalog_runtime::view::GithubSourceView {
+impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubSourceView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_credential = <Option<
-            nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference,
+            nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference,
         >>::sse_decode(deserializer);
         let mut var_revision = <String>::sse_decode(deserializer);
         let mut var_pendingId = <Option<String>>::sse_decode(deserializer);
         let mut var_localRevision = <String>::sse_decode(deserializer);
         let mut var_conflicted = <bool>::sse_decode(deserializer);
-        return nddev_device_sync_gds::catalog_runtime::view::GithubSourceView {
+        return nddev_device_sync_github::catalog_runtime::view::GithubSourceView {
             credential: var_credential,
             revision: var_revision,
             pending_id: var_pendingId,
@@ -9887,13 +9886,13 @@ impl SseDecode for Vec<nddev_device_sync_clipboard::view::Entry> {
     }
 }
 
-impl SseDecode for Vec<nddev_device_sync_gds::view::Finding> {
+impl SseDecode for Vec<nddev_device_sync_github::view::Finding> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(<nddev_device_sync_gds::view::Finding>::sse_decode(
+            ans_.push(<nddev_device_sync_github::view::Finding>::sse_decode(
                 deserializer,
             ));
         }
@@ -9901,63 +9900,65 @@ impl SseDecode for Vec<nddev_device_sync_gds::view::Finding> {
     }
 }
 
-impl SseDecode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference> {
+impl SseDecode for Vec<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>::sse_decode(deserializer));
+            ans_.push(<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference>::sse_decode(deserializer));
         }
         return ans_;
     }
 }
 
-impl SseDecode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView> {
+impl SseDecode for Vec<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView>::sse_decode(deserializer));
-        }
-        return ans_;
-    }
-}
-
-impl SseDecode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut len_ = <i32>::sse_decode(deserializer);
-        let mut ans_ = Vec::with_capacity(len_ as usize);
-        for idx_ in 0..len_ {
-            ans_.push(<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>::sse_decode(deserializer));
+            ans_.push(<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView>::sse_decode(deserializer));
         }
         return ans_;
     }
 }
 
 impl SseDecode
-    for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>
+    for Vec<nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView>
 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>::sse_decode(deserializer));
+            ans_.push(<nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView>::sse_decode(deserializer));
         }
         return ans_;
     }
 }
 
-impl SseDecode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView> {
+impl SseDecode
+    for Vec<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView>
+{
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView>::sse_decode(deserializer));
+            ans_.push(<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView>::sse_decode(deserializer));
         }
         return ans_;
     }
@@ -10079,13 +10080,13 @@ impl SseDecode for Vec<nddev_device_sync_vault::view::RecordView> {
     }
 }
 
-impl SseDecode for Vec<nddev_device_sync_rds::view::RemoteSession> {
+impl SseDecode for Vec<nddev_device_sync_remote::view::RemoteSession> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(<nddev_device_sync_rds::view::RemoteSession>::sse_decode(
+            ans_.push(<nddev_device_sync_remote::view::RemoteSession>::sse_decode(
                 deserializer,
             ));
         }
@@ -10311,11 +10312,11 @@ impl SseDecode for Option<f64> {
     }
 }
 
-impl SseDecode for Option<nddev_device_sync_gds::view::GitStatus> {
+impl SseDecode for Option<nddev_device_sync_github::view::GitStatus> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
-            return Some(<nddev_device_sync_gds::view::GitStatus>::sse_decode(
+            return Some(<nddev_device_sync_github::view::GitStatus>::sse_decode(
                 deserializer,
             ));
         } else {
@@ -10324,12 +10325,12 @@ impl SseDecode for Option<nddev_device_sync_gds::view::GitStatus> {
     }
 }
 
-impl SseDecode for Option<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView> {
+impl SseDecode for Option<nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(
-                <nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView>::sse_decode(
+                <nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView>::sse_decode(
                     deserializer,
                 ),
             );
@@ -10339,23 +10340,25 @@ impl SseDecode for Option<nddev_device_sync_gds::catalog_runtime::view::GithubCo
     }
 }
 
-impl SseDecode for Option<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference> {
+impl SseDecode
+    for Option<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference>
+{
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
-            return Some(<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>::sse_decode(deserializer));
+            return Some(<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference>::sse_decode(deserializer));
         } else {
             return None;
         }
     }
 }
 
-impl SseDecode for Option<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView> {
+impl SseDecode for Option<nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(
-                <nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView>::sse_decode(
+                <nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView>::sse_decode(
                     deserializer,
                 ),
             );
@@ -10688,13 +10691,14 @@ impl SseDecode for nddev_device_sync_vault::view::RecordView {
     }
 }
 
-impl SseDecode for nddev_device_sync_rds::view::RemoteSession {
+impl SseDecode for nddev_device_sync_remote::view::RemoteSession {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_id = <String>::sse_decode(deserializer);
         let mut var_peer = <String>::sse_decode(deserializer);
-        let mut var_status = <nddev_device_sync_rds::view::SessionState>::sse_decode(deserializer);
-        return nddev_device_sync_rds::view::RemoteSession {
+        let mut var_status =
+            <nddev_device_sync_remote::view::SessionState>::sse_decode(deserializer);
+        return nddev_device_sync_remote::view::RemoteSession {
             id: var_id,
             peer: var_peer,
             status: var_status,
@@ -10702,7 +10706,7 @@ impl SseDecode for nddev_device_sync_rds::view::RemoteSession {
     }
 }
 
-impl SseDecode for nddev_device_sync_rds::view::RemoteSnapshot {
+impl SseDecode for nddev_device_sync_remote::view::RemoteSnapshot {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_instance = <String>::sse_decode(deserializer);
@@ -10710,8 +10714,8 @@ impl SseDecode for nddev_device_sync_rds::view::RemoteSnapshot {
         let mut var_endpoint = <String>::sse_decode(deserializer);
         let mut var_selected = <Option<String>>::sse_decode(deserializer);
         let mut var_sessions =
-            <Vec<nddev_device_sync_rds::view::RemoteSession>>::sse_decode(deserializer);
-        return nddev_device_sync_rds::view::RemoteSnapshot {
+            <Vec<nddev_device_sync_remote::view::RemoteSession>>::sse_decode(deserializer);
+        return nddev_device_sync_remote::view::RemoteSnapshot {
             instance: var_instance,
             generation: var_generation,
             endpoint: var_endpoint,
@@ -10795,13 +10799,13 @@ impl SseDecode for crate::api::screen::ScreenTargetView {
     }
 }
 
-impl SseDecode for nddev_device_sync_rds::view::SessionState {
+impl SseDecode for nddev_device_sync_remote::view::SessionState {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <i32>::sse_decode(deserializer);
         return match inner {
-            0 => nddev_device_sync_rds::view::SessionState::Connecting,
-            1 => nddev_device_sync_rds::view::SessionState::Connected,
+            0 => nddev_device_sync_remote::view::SessionState::Connecting,
+            1 => nddev_device_sync_remote::view::SessionState::Connected,
             _ => unreachable!("Invalid variant for SessionState: {}", inner),
         };
     }
@@ -10868,16 +10872,16 @@ impl SseDecode for nddev_device_sync_vault::view::StateView {
     }
 }
 
-impl SseDecode for nddev_device_sync_gds::view::Status {
+impl SseDecode for nddev_device_sync_github::view::Status {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_result = <String>::sse_decode(deserializer);
         let mut var_exitClass = <String>::sse_decode(deserializer);
         let mut var_status =
-            <Option<nddev_device_sync_gds::view::GitStatus>>::sse_decode(deserializer);
+            <Option<nddev_device_sync_github::view::GitStatus>>::sse_decode(deserializer);
         let mut var_findings =
-            <Vec<nddev_device_sync_gds::view::Finding>>::sse_decode(deserializer);
-        return nddev_device_sync_gds::view::Status {
+            <Vec<nddev_device_sync_github::view::Finding>>::sse_decode(deserializer);
+        return nddev_device_sync_github::view::Status {
             result: var_result,
             exit_class: var_exitClass,
             status: var_status,
@@ -11990,7 +11994,7 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::app_update::AppUpdateView>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_gds::view::Branch> {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_github::view::Branch> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.0.name.into_into_dart().into_dart(),
@@ -12005,13 +12009,13 @@ impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_gds::view::B
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::view::Branch>
+    for FrbWrapper<nddev_device_sync_github::view::Branch>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_gds::view::Branch>>
-    for nddev_device_sync_gds::view::Branch
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_github::view::Branch>>
+    for nddev_device_sync_github::view::Branch
 {
-    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_gds::view::Branch> {
+    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_github::view::Branch> {
         self.into()
     }
 }
@@ -12172,7 +12176,7 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::api::module_types::Cach
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_gds::view::Changes> {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_github::view::Changes> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.0.staged.into_into_dart().into_dart(),
@@ -12185,13 +12189,13 @@ impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_gds::view::C
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::view::Changes>
+    for FrbWrapper<nddev_device_sync_github::view::Changes>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_gds::view::Changes>>
-    for nddev_device_sync_gds::view::Changes
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_github::view::Changes>>
+    for nddev_device_sync_github::view::Changes
 {
-    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_gds::view::Changes> {
+    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_github::view::Changes> {
         self.into()
     }
 }
@@ -12658,7 +12662,7 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_telemetry::v
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_gds::view::Finding> {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_github::view::Finding> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.0.code.into_into_dart().into_dart(),
@@ -12669,18 +12673,18 @@ impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_gds::view::F
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::view::Finding>
+    for FrbWrapper<nddev_device_sync_github::view::Finding>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_gds::view::Finding>>
-    for nddev_device_sync_gds::view::Finding
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_github::view::Finding>>
+    for nddev_device_sync_github::view::Finding
 {
-    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_gds::view::Finding> {
+    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_github::view::Finding> {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_gds::view::GitStatus> {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_github::view::GitStatus> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.0.branch.into_into_dart().into_dart(),
@@ -12692,86 +12696,86 @@ impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_gds::view::G
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::view::GitStatus>
+    for FrbWrapper<nddev_device_sync_github::view::GitStatus>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_gds::view::GitStatus>>
-    for nddev_device_sync_gds::view::GitStatus
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_github::view::GitStatus>>
+    for nddev_device_sync_github::view::GitStatus
 {
-    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_gds::view::GitStatus> {
+    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_github::view::GitStatus> {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self.0 {
-                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::More => 0.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::EndOfAccessScope => 1.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::LimitReached => 2.into_dart(),
+                    nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView::More => 0.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView::EndOfAccessScope => 1.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView::LimitReached => 2.into_dart(),
                     _ => unreachable!(),
                 }
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView>
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView>
     {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCatalogError>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self.0 {
-                    nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::InvalidInput => 0.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::AuthorizationRequired => 1.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::CredentialChanged => 2.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Busy => 3.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Cancelled => 4.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Timeout => 5.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Unavailable => 6.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ProviderFailed => 7.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::InvalidResponse => 8.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::CapacityExhausted => 9.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModuleDisabled => 10.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired => 11.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict => 12.into_dart(),
+                    nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::InvalidInput => 0.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::AuthorizationRequired => 1.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::CredentialChanged => 2.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::Busy => 3.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::Cancelled => 4.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::Timeout => 5.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::Unavailable => 6.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ProviderFailed => 7.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::InvalidResponse => 8.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::CapacityExhausted => 9.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleDisabled => 10.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired => 11.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict => 12.into_dart(),
                     _ => unreachable!(),
                 }
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCatalogError>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCatalogError>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubCatalogError
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError> {
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCatalogError> {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -12783,23 +12787,23 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView> {
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView> {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubConnectionView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -12812,23 +12816,23 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubConnectionView>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubConnectionView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubConnectionView
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView> {
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubConnectionView> {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -12842,23 +12846,24 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference> {
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference>
+    {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReferencePage>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -12870,24 +12875,24 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReferencePage>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReferencePage>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubCredentialReferencePage
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage>
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReferencePage>
     {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubObservationView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -12900,30 +12905,30 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubObservationView>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubObservationView
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubObservationView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubObservationView
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubObservationView> {
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubObservationView> {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self.0 {
-            nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView::User => {
+            nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView::User => {
                 0.into_dart()
             }
-            nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView::Organization => {
+            nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView::Organization => {
                 1.into_dart()
             }
             _ => unreachable!(),
@@ -12931,23 +12936,23 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView> {
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView> {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubOwnerView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -12959,23 +12964,23 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubOwnerView>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubOwnerView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubOwnerView
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView> {
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubOwnerView> {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -12986,23 +12991,24 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView> {
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView>
+    {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryPageView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -13015,23 +13021,23 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryPageView>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryPageView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubRepositoryPageView
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView> {
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryPageView> {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -13045,52 +13051,53 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView> {
-        self.into()
-    }
-}
-// Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView>
-{
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self.0 {
-                    nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Public => 0.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Private => 1.into_dart(),
-nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Internal => 2.into_dart(),
-                    _ => unreachable!(),
-                }
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView>
-{
-}
-impl
-    flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView
-{
-    fn into_into_dart(
-        self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView>
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView>
     {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView>
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self.0 {
+                    nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView::Public => 0.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView::Private => 1.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView::Internal => 2.into_dart(),
+                    _ => unreachable!(),
+                }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView>
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView
+{
+    fn into_into_dart(
+        self,
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView>
+    {
+        self.into()
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -13101,23 +13108,23 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView> {
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView> {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -13129,24 +13136,24 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView>
     {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryPageView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -13163,24 +13170,24 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryPageView>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryPageView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryPageView
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView>
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryPageView>
     {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -13192,23 +13199,24 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView> {
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView>
+    {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSourceView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSourceView>
 {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -13222,17 +13230,17 @@ impl flutter_rust_bridge::IntoDart
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSourceView>
+    for FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSourceView>
 {
 }
 impl
     flutter_rust_bridge::IntoIntoDart<
-        FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSourceView>,
-    > for nddev_device_sync_gds::catalog_runtime::view::GithubSourceView
+        FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSourceView>,
+    > for nddev_device_sync_github::catalog_runtime::view::GithubSourceView
 {
     fn into_into_dart(
         self,
-    ) -> FrbWrapper<nddev_device_sync_gds::catalog_runtime::view::GithubSourceView> {
+    ) -> FrbWrapper<nddev_device_sync_github::catalog_runtime::view::GithubSourceView> {
         self.into()
     }
 }
@@ -13825,7 +13833,7 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_vault::view:
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_rds::view::RemoteSession> {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_remote::view::RemoteSession> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.0.id.into_into_dart().into_dart(),
@@ -13836,18 +13844,18 @@ impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_rds::view::R
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_rds::view::RemoteSession>
+    for FrbWrapper<nddev_device_sync_remote::view::RemoteSession>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_rds::view::RemoteSession>>
-    for nddev_device_sync_rds::view::RemoteSession
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_remote::view::RemoteSession>>
+    for nddev_device_sync_remote::view::RemoteSession
 {
-    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_rds::view::RemoteSession> {
+    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_remote::view::RemoteSession> {
         self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_rds::view::RemoteSnapshot> {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_remote::view::RemoteSnapshot> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.0.instance.into_into_dart().into_dart(),
@@ -13860,13 +13868,13 @@ impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_rds::view::R
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_rds::view::RemoteSnapshot>
+    for FrbWrapper<nddev_device_sync_remote::view::RemoteSnapshot>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_rds::view::RemoteSnapshot>>
-    for nddev_device_sync_rds::view::RemoteSnapshot
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_remote::view::RemoteSnapshot>>
+    for nddev_device_sync_remote::view::RemoteSnapshot
 {
-    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_rds::view::RemoteSnapshot> {
+    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_remote::view::RemoteSnapshot> {
         self.into()
     }
 }
@@ -13973,23 +13981,23 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::screen::ScreenTargetView>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_rds::view::SessionState> {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_remote::view::SessionState> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self.0 {
-            nddev_device_sync_rds::view::SessionState::Connecting => 0.into_dart(),
-            nddev_device_sync_rds::view::SessionState::Connected => 1.into_dart(),
+            nddev_device_sync_remote::view::SessionState::Connecting => 0.into_dart(),
+            nddev_device_sync_remote::view::SessionState::Connected => 1.into_dart(),
             _ => unreachable!(),
         }
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_rds::view::SessionState>
+    for FrbWrapper<nddev_device_sync_remote::view::SessionState>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_rds::view::SessionState>>
-    for nddev_device_sync_rds::view::SessionState
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_remote::view::SessionState>>
+    for nddev_device_sync_remote::view::SessionState
 {
-    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_rds::view::SessionState> {
+    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_remote::view::SessionState> {
         self.into()
     }
 }
@@ -14054,7 +14062,7 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_vault::view:
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_gds::view::Status> {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_github::view::Status> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.0.result.into_into_dart().into_dart(),
@@ -14066,13 +14074,13 @@ impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_gds::view::S
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for FrbWrapper<nddev_device_sync_gds::view::Status>
+    for FrbWrapper<nddev_device_sync_github::view::Status>
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_gds::view::Status>>
-    for nddev_device_sync_gds::view::Status
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_github::view::Status>>
+    for nddev_device_sync_github::view::Status
 {
-    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_gds::view::Status> {
+    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_github::view::Status> {
         self.into()
     }
 }
@@ -14520,7 +14528,7 @@ impl SseEncode for bool {
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::view::Branch {
+impl SseEncode for nddev_device_sync_github::view::Branch {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <Option<String>>::sse_encode(self.name, serializer);
@@ -14609,7 +14617,7 @@ impl SseEncode for crate::api::module_types::CacheStatus {
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::view::Changes {
+impl SseEncode for nddev_device_sync_github::view::Changes {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <u32>::sse_encode(self.staged, serializer);
@@ -14891,7 +14899,7 @@ impl SseEncode for nddev_device_sync_telemetry::view::FailureKind {
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::view::Finding {
+impl SseEncode for nddev_device_sync_github::view::Finding {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.code, serializer);
@@ -14900,47 +14908,47 @@ impl SseEncode for nddev_device_sync_gds::view::Finding {
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::view::GitStatus {
+impl SseEncode for nddev_device_sync_github::view::GitStatus {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <nddev_device_sync_gds::view::Branch>::sse_encode(self.branch, serializer);
-        <nddev_device_sync_gds::view::Changes>::sse_encode(self.changes, serializer);
+        <nddev_device_sync_github::view::Branch>::sse_encode(self.branch, serializer);
+        <nddev_device_sync_github::view::Changes>::sse_encode(self.changes, serializer);
         <String>::sse_encode(self.classification, serializer);
         <String>::sse_encode(self.remote_freshness, serializer);
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(match self {nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::More => { 0 }
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::EndOfAccessScope => { 1 }
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView::LimitReached => { 2 }
+        <i32>::sse_encode(match self {nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView::More => { 0 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView::EndOfAccessScope => { 1 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView::LimitReached => { 2 }
  _ => { unimplemented!(""); }}, serializer);
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubCatalogError {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(match self {nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::InvalidInput => { 0 }
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::AuthorizationRequired => { 1 }
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::CredentialChanged => { 2 }
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Busy => { 3 }
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Cancelled => { 4 }
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Timeout => { 5 }
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::Unavailable => { 6 }
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ProviderFailed => { 7 }
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::InvalidResponse => { 8 }
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::CapacityExhausted => { 9 }
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModuleDisabled => { 10 }
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired => { 11 }
-nddev_device_sync_gds::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict => { 12 }
+        <i32>::sse_encode(match self {nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::InvalidInput => { 0 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::AuthorizationRequired => { 1 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::CredentialChanged => { 2 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::Busy => { 3 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::Cancelled => { 4 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::Timeout => { 5 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::Unavailable => { 6 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ProviderFailed => { 7 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::InvalidResponse => { 8 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::CapacityExhausted => { 9 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleDisabled => { 10 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired => { 11 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict => { 12 }
  _ => { unimplemented!(""); }}, serializer);
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.outcome, serializer);
@@ -14949,7 +14957,7 @@ impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyn
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubConnectionView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubConnectionView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.outcome, serializer);
@@ -14959,7 +14967,7 @@ impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubConnectio
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.record_ref, serializer);
@@ -14970,18 +14978,16 @@ impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubCredentia
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReferencePage {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubCredentialReferencePage {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <Vec<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>>::sse_encode(
-            self.items, serializer,
-        );
+        <Vec<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference>>::sse_encode(self.items, serializer);
         <String>::sse_encode(self.next_after, serializer);
         <bool>::sse_encode(self.has_more, serializer);
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubObservationView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubObservationView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.revision, serializer);
@@ -14991,148 +14997,127 @@ impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubObservati
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(
-            match self {
-                nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView::User => 0,
-                nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView::Organization => {
-                    1
-                }
-                _ => {
-                    unimplemented!("");
-                }
-            },
-            serializer,
-        );
+        <i32>::sse_encode(match self {nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView::User => { 0 }
+nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView::Organization => { 1 }
+ _ => { unimplemented!(""); }}, serializer);
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubOwnerView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.id, serializer);
         <String>::sse_encode(self.login, serializer);
-        <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerKindView>::sse_encode(
+        <nddev_device_sync_github::catalog_runtime::view::GithubOwnerKindView>::sse_encode(
             self.kind, serializer,
         );
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>::sse_encode(
+        <nddev_device_sync_github::catalog_runtime::view::GithubOwnerView>::sse_encode(
             self.owner, serializer,
         );
-        <Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>>::sse_encode(self.repositories, serializer);
+        <Vec<nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView>>::sse_encode(self.repositories, serializer);
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryPageView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubRepositoryPageView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>::sse_encode(
+        <nddev_device_sync_github::catalog_runtime::view::GithubOwnerView>::sse_encode(
             self.principal,
             serializer,
         );
-        <Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView>>::sse_encode(
-            self.groups,
-            serializer,
-        );
+        <Vec<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView>>::sse_encode(self.groups, serializer);
         <String>::sse_encode(self.observed_at_ms, serializer);
-        <nddev_device_sync_gds::catalog_runtime::view::GithubCatalogContinuationView>::sse_encode(
-            self.continuation,
-            serializer,
-        );
+        <nddev_device_sync_github::catalog_runtime::view::GithubCatalogContinuationView>::sse_encode(self.continuation, serializer);
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.id, serializer);
         <String>::sse_encode(self.name, serializer);
-        <nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView>::sse_encode(
-            self.visibility,
-            serializer,
-        );
+        <nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView>::sse_encode(self.visibility, serializer);
         <bool>::sse_encode(self.archived, serializer);
         <Option<String>>::sse_encode(self.default_branch, serializer);
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(match self {nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Public => { 0 }
-nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Private => { 1 }
-nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryVisibilityView::Internal => { 2 }
+        <i32>::sse_encode(match self {nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView::Public => { 0 }
+nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView::Private => { 1 }
+nddev_device_sync_github::catalog_runtime::view::GithubRepositoryVisibilityView::Internal => { 2 }
  _ => { unimplemented!(""); }}, serializer);
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <nddev_device_sync_gds::catalog_runtime::view::GithubOwnerView>::sse_encode(
+        <nddev_device_sync_github::catalog_runtime::view::GithubOwnerView>::sse_encode(
             self.owner, serializer,
         );
-        <nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>::sse_encode(
+        <nddev_device_sync_github::catalog_runtime::view::GithubObservationView>::sse_encode(
             self.observation,
             serializer,
         );
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.owner_id, serializer);
-        <Option<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView>>::sse_encode(
+        <Option<nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView>>::sse_encode(
             self.owner, serializer,
         );
-        <Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView>>::sse_encode(
-            self.repositories,
-            serializer,
-        );
+        <Vec<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView>>::sse_encode(self.repositories, serializer);
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryPageView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryPageView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.local_workspace_supported, serializer);
-        <Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>>::sse_encode(self.groups, serializer);
+        <Vec<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView>>::sse_encode(self.groups, serializer);
         <String>::sse_encode(self.observed_seq, serializer);
         <String>::sse_encode(self.local_revision, serializer);
         <bool>::sse_encode(self.has_more, serializer);
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>::sse_encode(
+        <nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView>::sse_encode(
             self.repository,
             serializer,
         );
-        <nddev_device_sync_gds::catalog_runtime::view::GithubObservationView>::sse_encode(
+        <nddev_device_sync_github::catalog_runtime::view::GithubObservationView>::sse_encode(
             self.observation,
             serializer,
         );
-        <Option<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView>>::sse_encode(
+        <Option<nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView>>::sse_encode(
             self.synchronization,
             serializer,
         );
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::catalog_runtime::view::GithubSourceView {
+impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubSourceView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <Option<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>>::sse_encode(self.credential, serializer);
+        <Option<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference>>::sse_encode(self.credential, serializer);
         <String>::sse_encode(self.revision, serializer);
         <Option<String>>::sse_encode(self.pending_id, serializer);
         <String>::sse_encode(self.local_revision, serializer);
@@ -15288,72 +15273,66 @@ impl SseEncode for Vec<nddev_device_sync_clipboard::view::Entry> {
     }
 }
 
-impl SseEncode for Vec<nddev_device_sync_gds::view::Finding> {
+impl SseEncode for Vec<nddev_device_sync_github::view::Finding> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <nddev_device_sync_gds::view::Finding>::sse_encode(item, serializer);
+            <nddev_device_sync_github::view::Finding>::sse_encode(item, serializer);
         }
     }
 }
 
-impl SseEncode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference> {
+impl SseEncode for Vec<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>::sse_encode(
-                item, serializer,
-            );
+            <nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference>::sse_encode(item, serializer);
         }
     }
 }
 
-impl SseEncode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView> {
+impl SseEncode for Vec<nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <nddev_device_sync_gds::catalog_runtime::view::GithubRepositoryGroupView>::sse_encode(
-                item, serializer,
-            );
-        }
-    }
-}
-
-impl SseEncode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(self.len() as _, serializer);
-        for item in self {
-            <nddev_device_sync_gds::catalog_runtime::view::GithubRepositorySummaryView>::sse_encode(
-                item, serializer,
-            );
+            <nddev_device_sync_github::catalog_runtime::view::GithubRepositoryGroupView>::sse_encode(item, serializer);
         }
     }
 }
 
 impl SseEncode
-    for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>
+    for Vec<nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView>
 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryGroupView>::sse_encode(item, serializer);
+            <nddev_device_sync_github::catalog_runtime::view::GithubRepositorySummaryView>::sse_encode(item, serializer);
         }
     }
 }
 
-impl SseEncode for Vec<nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView> {
+impl SseEncode
+    for Vec<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView>
+{
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <nddev_device_sync_gds::catalog_runtime::view::GithubSavedRepositoryView>::sse_encode(
-                item, serializer,
-            );
+            <nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView>::sse_encode(item, serializer);
         }
     }
 }
@@ -15444,12 +15423,12 @@ impl SseEncode for Vec<nddev_device_sync_vault::view::RecordView> {
     }
 }
 
-impl SseEncode for Vec<nddev_device_sync_rds::view::RemoteSession> {
+impl SseEncode for Vec<nddev_device_sync_remote::view::RemoteSession> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <nddev_device_sync_rds::view::RemoteSession>::sse_encode(item, serializer);
+            <nddev_device_sync_remote::view::RemoteSession>::sse_encode(item, serializer);
         }
     }
 }
@@ -15623,46 +15602,46 @@ impl SseEncode for Option<f64> {
     }
 }
 
-impl SseEncode for Option<nddev_device_sync_gds::view::GitStatus> {
+impl SseEncode for Option<nddev_device_sync_github::view::GitStatus> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
-            <nddev_device_sync_gds::view::GitStatus>::sse_encode(value, serializer);
+            <nddev_device_sync_github::view::GitStatus>::sse_encode(value, serializer);
         }
     }
 }
 
-impl SseEncode for Option<nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView> {
+impl SseEncode for Option<nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
-            <nddev_device_sync_gds::catalog_runtime::view::GithubCommitSyncView>::sse_encode(
+            <nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView>::sse_encode(
                 value, serializer,
             );
         }
     }
 }
 
-impl SseEncode for Option<nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference> {
+impl SseEncode
+    for Option<nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference>
+{
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
-            <nddev_device_sync_gds::catalog_runtime::view::GithubCredentialReference>::sse_encode(
-                value, serializer,
-            );
+            <nddev_device_sync_github::catalog_runtime::view::GithubCredentialReference>::sse_encode(value, serializer);
         }
     }
 }
 
-impl SseEncode for Option<nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView> {
+impl SseEncode for Option<nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
-            <nddev_device_sync_gds::catalog_runtime::view::GithubSavedOwnerView>::sse_encode(
+            <nddev_device_sync_github::catalog_runtime::view::GithubSavedOwnerView>::sse_encode(
                 value, serializer,
             );
         }
@@ -15927,23 +15906,23 @@ impl SseEncode for nddev_device_sync_vault::view::RecordView {
     }
 }
 
-impl SseEncode for nddev_device_sync_rds::view::RemoteSession {
+impl SseEncode for nddev_device_sync_remote::view::RemoteSession {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.id, serializer);
         <String>::sse_encode(self.peer, serializer);
-        <nddev_device_sync_rds::view::SessionState>::sse_encode(self.status, serializer);
+        <nddev_device_sync_remote::view::SessionState>::sse_encode(self.status, serializer);
     }
 }
 
-impl SseEncode for nddev_device_sync_rds::view::RemoteSnapshot {
+impl SseEncode for nddev_device_sync_remote::view::RemoteSnapshot {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.instance, serializer);
         <u64>::sse_encode(self.generation, serializer);
         <String>::sse_encode(self.endpoint, serializer);
         <Option<String>>::sse_encode(self.selected, serializer);
-        <Vec<nddev_device_sync_rds::view::RemoteSession>>::sse_encode(self.sessions, serializer);
+        <Vec<nddev_device_sync_remote::view::RemoteSession>>::sse_encode(self.sessions, serializer);
     }
 }
 
@@ -16005,13 +15984,13 @@ impl SseEncode for crate::api::screen::ScreenTargetView {
     }
 }
 
-impl SseEncode for nddev_device_sync_rds::view::SessionState {
+impl SseEncode for nddev_device_sync_remote::view::SessionState {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(
             match self {
-                nddev_device_sync_rds::view::SessionState::Connecting => 0,
-                nddev_device_sync_rds::view::SessionState::Connected => 1,
+                nddev_device_sync_remote::view::SessionState::Connecting => 0,
+                nddev_device_sync_remote::view::SessionState::Connected => 1,
                 _ => {
                     unimplemented!("");
                 }
@@ -16055,13 +16034,13 @@ impl SseEncode for nddev_device_sync_vault::view::StateView {
     }
 }
 
-impl SseEncode for nddev_device_sync_gds::view::Status {
+impl SseEncode for nddev_device_sync_github::view::Status {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.result, serializer);
         <String>::sse_encode(self.exit_class, serializer);
-        <Option<nddev_device_sync_gds::view::GitStatus>>::sse_encode(self.status, serializer);
-        <Vec<nddev_device_sync_gds::view::Finding>>::sse_encode(self.findings, serializer);
+        <Option<nddev_device_sync_github::view::GitStatus>>::sse_encode(self.status, serializer);
+        <Vec<nddev_device_sync_github::view::Finding>>::sse_encode(self.findings, serializer);
     }
 }
 

@@ -1,9 +1,9 @@
-//! Thin presentation adapter over the retained GDS/Vault runtime.
+//! Thin presentation adapter over the retained GitHub-module/Vault runtime.
 use super::{catalog_types::*, identity::NdsClient};
 #[cfg(feature = "flutter")]
 use flutter_rust_bridge::frb;
 use nddev_device_sync_domain::repositories::catalog::CredentialSelection;
-use nddev_device_sync_gds::catalog_runtime::{CatalogClient, CatalogRuntime};
+use nddev_device_sync_github::catalog_runtime::{CatalogClient, CatalogRuntime};
 use std::sync::Arc;
 
 fn catalog_revision(text: &str) -> Result<u64, GithubCatalogError> {
@@ -48,7 +48,7 @@ impl NdsClient {
         let generation = self.catalog_operations.generation();
         let lifetime = self.shared_identity().local_use_lifetime();
         let guard = self
-            .module_access("gds", super::module_control::Adapter::Shared)
+            .module_access("github", super::module_control::Adapter::Shared)
             .await?;
         let client = self.catalog_session().await?;
         self.catalog_operations.reap_completed().await?;
@@ -190,8 +190,8 @@ impl NdsClient {
     }
     pub async fn github_catalog_source(&self) -> Result<GithubSourceView, GithubCatalogError> {
         super::identity::observe_operation(
-            "gds",
-            "gds.catalog.source.read",
+            "github",
+            "github.catalog.source.read",
             async {
                 let source = self.vault().await?.github_source().await?;
                 Ok(GithubSourceView {
@@ -209,7 +209,7 @@ impl NdsClient {
                 })
             },
             GithubCatalogError::Unavailable,
-            nddev_device_sync_gds::catalog_runtime::classify_error,
+            nddev_device_sync_github::catalog_runtime::classify_error,
         )
         .await
     }
@@ -246,8 +246,8 @@ impl NdsClient {
         pending: Option<String>,
     ) -> Result<(), GithubCatalogError> {
         super::identity::observe_operation(
-            "gds",
-            "gds.catalog.source.write",
+            "github",
+            "github.catalog.source.write",
             async {
                 let revision = catalog_revision(&revision)?;
                 self.invalidate_catalog();
@@ -259,7 +259,7 @@ impl NdsClient {
                 Ok(())
             },
             GithubCatalogError::Unavailable,
-            nddev_device_sync_gds::catalog_runtime::classify_error,
+            nddev_device_sync_github::catalog_runtime::classify_error,
         )
         .await
     }

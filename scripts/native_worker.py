@@ -14,26 +14,26 @@ def package_linux_worker(source: Path, staging: Path):
         ['cargo', 'metadata', '--locked', '--format-version', '1', '--manifest-path', str(manifest)],
         cwd=source, text=True, timeout=120))
     agent = [p for p in metadata['packages'] if p['name'] == 'nddev-device-sync-agent']
-    gds = [p for p in metadata['packages'] if p['name'] == 'nddev-device-sync-gds']
+    gds = [p for p in metadata['packages'] if p['name'] == 'nddev-device-sync-github']
     if len(agent) != 1 or len(gds) != 1:
-        raise SystemExit('One locked Agent and GDS package required')
+        raise SystemExit('One locked Agent and GitHub module package required')
     # The standalone worker retains its owning graph. Shared's native
-    # provider overrides must not rewrite the Agent/GDS lockfiles.
+    # provider overrides must not rewrite the Agent/GitHub module lockfiles.
     worker_environment = dict(os.environ, CARGO_HOME=os.environ['NDS_NATIVE_SOURCE_HOME'])
     subprocess.run(
         ['cargo', 'run', '--locked', '--manifest-path', agent[0]['manifest_path'],
-         '--bin', 'nds-package-gds-worker', '--', '--bundle', str(staging)],
+         '--bin', 'nds-package-github-worker', '--', '--bundle', str(staging)],
         cwd=source, env=worker_environment, check=True, timeout=600)
-    receipt_path = staging / 'nds-gds-worker.build.json'
+    receipt_path = staging / 'nds-github-worker.build.json'
     if receipt_path.stat().st_size > 16384:
         raise SystemExit('Worker receipt exceeds its bound')
     receipt = json.loads(receipt_path.read_text())
     worker_digest = receipt['sha256']
-    worker = staging / 'nds-gds-readonly-worker'
+    worker = staging / 'nds-github-readonly-worker'
     if (receipt['schema_version'] != 1 or receipt['worker'] != worker.name or
             receipt['target'] != 'x86_64-unknown-linux-gnu' or
             receipt['source'] != gds[0]['source'] or
-            receipt['host_build_environment'] != {'NDS_GDS_WORKER_SHA256': worker_digest} or
+            receipt['host_build_environment'] != {'NDS_GITHUB_WORKER_SHA256': worker_digest} or
             not re.fullmatch('[a-f0-9]{64}', worker_digest) or
             worker.is_symlink() or not worker.is_file() or
             not 0 < worker.stat().st_size <= 128 * 1024 * 1024):
@@ -47,8 +47,8 @@ def package_linux_worker(source: Path, staging: Path):
 def deliver_linux_worker(staging: Path, bundle: Path, digest: str):
     if not bundle.is_dir():
         raise RuntimeError('Expected Linux bundle for worker delivery')
-    for name in ['nds-gds-readonly-worker', 'nds-gds-worker.build.json']:
+    for name in ['nds-github-readonly-worker', 'nds-github-worker.build.json']:
         shutil.copy2(staging / name, bundle / name)
-    with (bundle / 'nds-gds-readonly-worker').open('rb') as payload:
+    with (bundle / 'nds-github-readonly-worker').open('rb') as payload:
         if hashlib.file_digest(payload, 'sha256').hexdigest() != digest:
             raise RuntimeError('Delivered worker digest differs')

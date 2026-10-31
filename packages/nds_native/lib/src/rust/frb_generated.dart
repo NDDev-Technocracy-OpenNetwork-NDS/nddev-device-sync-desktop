@@ -24,10 +24,10 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'third_party/nddev_device_sync_accounts/view.dart';
 import 'third_party/nddev_device_sync_cleaner/view.dart';
 import 'third_party/nddev_device_sync_clipboard/view.dart';
-import 'third_party/nddev_device_sync_gds/catalog_runtime/view.dart';
-import 'third_party/nddev_device_sync_gds/view.dart';
+import 'third_party/nddev_device_sync_github/catalog_runtime/view.dart';
+import 'third_party/nddev_device_sync_github/view.dart';
 import 'third_party/nddev_device_sync_organizations/view.dart';
-import 'third_party/nddev_device_sync_rds/view.dart';
+import 'third_party/nddev_device_sync_remote/view.dart';
 import 'third_party/nddev_device_sync_sysinfo/view.dart';
 import 'third_party/nddev_device_sync_telemetry/view.dart';
 import 'third_party/nddev_device_sync_updater/view.dart';
@@ -12898,7 +12898,7 @@ class LocalAgentImpl extends RustOpaque implements LocalAgent {
       .crateApiModulesLocalAgentCacheBind(that: this, client: client);
 
   /// Reads the supplied base and managed markers. This neither binds/unbinds
-  /// nor authenticates the RDS route; ready=false remains an honest status.
+  /// nor authenticates the remote-module route; ready=false remains an honest status.
   Future<CacheStatus> cacheStatus({required NdsClient client}) => RustLib
       .instance
       .api

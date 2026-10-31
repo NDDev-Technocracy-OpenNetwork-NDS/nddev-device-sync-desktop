@@ -51,11 +51,11 @@ async fn prepare(client: &NdsClient) {
                 .device_modules()
                 .await?
                 .into_iter()
-                .find(|m| m.id == "rds")
+                .find(|m| m.id == "remote")
                 .unwrap();
             client
                 .configure_module(
-                    "rds".into(),
+                    "remote".into(),
                     true,
                     vec!["read_only".into(), "local_network".into()],
                     module.revision,
@@ -71,7 +71,7 @@ async fn prepare(client: &NdsClient) {
             }
             Err(error) => {
                 eprintln!("NDS_SCREEN_CONSENT_REFUSED code={}", error.code());
-                panic!("actual RDS module consent failed: {}", error.code());
+                panic!("actual remote module consent failed: {}", error.code());
             }
         }
     }
@@ -87,7 +87,7 @@ async fn prepare(client: &NdsClient) {
     for attempt in 0..8 {
         match client.device_modules().await {
             Ok(modules) => {
-                let module = modules.iter().find(|m| m.id == "rds").unwrap();
+                let module = modules.iter().find(|m| m.id == "remote").unwrap();
                 assert_eq!(module.readiness, "ready");
                 assert!(module.checked_at_ms.is_some());
                 return;
@@ -95,7 +95,10 @@ async fn prepare(client: &NdsClient) {
             Err(ClientError::Busy) if attempt < 7 => {
                 tokio::time::sleep(Duration::from_millis(400)).await
             }
-            Err(error) => panic!("actual RDS readiness read failed: {}", error.code()),
+            Err(error) => panic!(
+                "actual remote module readiness read failed: {}",
+                error.code()
+            ),
         }
     }
 }
@@ -233,7 +236,7 @@ fn screen_case(expected_case: &str) {
             let host = accepted.expect("actual host consent was not obtained");
             let injected = if cleanup_failure { Some(host.fail_after_join_for_fixture().await) } else { None };
             let purpose_busy_before = if cleanup_failure {
-                matches!(client.shared_identity().rds_endpoint_key().await, Err(ClientError::Busy))
+                matches!(client.shared_identity().remote_endpoint_key().await, Err(ClientError::Busy))
             } else { false };
             // Xvfb resets its root when its last client leaves. Paint only after
             // the production capturer owns a live connection, then observe the change.
@@ -247,13 +250,13 @@ fn screen_case(expected_case: &str) {
             if completion_loss {
                 use super::screen::ScreenFailure;
                 assert!(wait_file(&root.join("capture-paused.json")).await["paused"].as_bool().unwrap());
-                let busy_before = matches!(client.shared_identity().rds_endpoint_key().await, Err(ClientError::Busy));
+                let busy_before = matches!(client.shared_identity().remote_endpoint_key().await, Err(ClientError::Busy));
                 // Abort only this registered outer task while it is still
                 // running. Its handle is consumed by the production join.
                 host.abort_running_host_for_fixture().await;
                 let first = client.screen_close().await;
                 let held_before = host.retains_unresolved_owner_for_fixture();
-                let purpose_held = matches!(client.shared_identity().rds_endpoint_key().await, Err(ClientError::Busy));
+                let purpose_held = matches!(client.shared_identity().remote_endpoint_key().await, Err(ClientError::Busy));
                 tokio::time::timeout(Duration::from_secs(1), host.closed()).await.expect("lost host admission stayed open");
                 assert!(matches!(first, Err(ScreenFailure::Unresolved | ScreenFailure::Timeout)));
                 if first == Err(ScreenFailure::Unresolved) { assert!(held_before); }
@@ -284,8 +287,8 @@ fn screen_case(expected_case: &str) {
             if case == "local-disable" {
                 for attempt in 0..8 {
                     let result = async {
-                        let module = client.device_modules().await?.into_iter().find(|m|m.id=="rds").unwrap();
-                        client.configure_module("rds".into(),false,vec![],module.revision,module.pending_id).await
+                        let module = client.device_modules().await?.into_iter().find(|m|m.id=="remote").unwrap();
+                        client.configure_module("remote".into(),false,vec![],module.revision,module.pending_id).await
                     }.await;
                     match result {
                         Ok(())=>break,
@@ -311,7 +314,7 @@ fn screen_case(expected_case: &str) {
                 let (second, third) = tokio::join!(client.screen_close(), client.screen_close());
                 let repeated_role = host.close().await;
                 let joined = host.device_joined_for_fixture();
-                let purpose_released = client.shared_identity().rds_endpoint_key().await.is_ok();
+                let purpose_released = client.shared_identity().remote_endpoint_key().await.is_ok();
                 let shutdown = client.shutdown().await;
                 let refused = matches!(shutdown, Err(ClientError::Server(ref code)) if code == "screen_failed");
                 let acknowledged = client.acknowledge_joined_screen_for_fixture();

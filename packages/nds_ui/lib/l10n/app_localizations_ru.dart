@@ -326,10 +326,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get aheadBehind => 'Впереди / позади';
 
   @override
-  String get gdsUnavailable => 'Недоступно';
+  String get githubUnavailable => 'Недоступно';
 
   @override
-  String get gdsComparisonNotApplicable => 'Неприменимо';
+  String get githubComparisonNotApplicable => 'Неприменимо';
 
   @override
   String get staged => 'Подготовлено изменений';
@@ -1287,7 +1287,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get catalogSourceHelp =>
-      'Выбор сохраняется и синхронизируется в аккаунте. Разрешения GDS включаются отдельно на каждом устройстве.';
+      'Выбор сохраняется и синхронизируется в аккаунте. Разрешения модуля GitHub включаются отдельно на каждом устройстве.';
 
   @override
   String get catalogClearSource => 'Сбросить выбор GitHub';
@@ -1461,6 +1461,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get networkCache => 'Сетевой кеш';
+
+  @override
+  String get remoteScreen => 'Удалённый экран';
 
   @override
   String get browserOwnerSwitch => 'Переключатель владельца браузера';

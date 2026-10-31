@@ -5,7 +5,7 @@
 
 import '../frb_generated.dart';
 import '../third_party/nddev_device_sync_accounts/view.dart';
-import '../third_party/nddev_device_sync_gds/catalog_runtime/view.dart';
+import '../third_party/nddev_device_sync_github/catalog_runtime/view.dart';
 import '../third_party/nddev_device_sync_organizations/view.dart';
 import '../third_party/nddev_device_sync_telemetry/view.dart';
 import '../third_party/nddev_device_sync_vault/view.dart';
@@ -114,7 +114,7 @@ abstract class NdsClient implements RustOpaqueInterface {
   factory NdsClient({required String endpoint}) =>
       RustLib.instance.api.crateApiIdentityNdsClientNew(endpoint: endpoint);
 
-  /// The host assembly may supply its existing RDS-owned cache forward base.
+  /// The host assembly may supply its existing remote-module-owned cache forward base.
   /// This neither discovers a port nor binds a scope or starts a forward.
   static NdsClient newWithCacheBase({
     required String endpoint,

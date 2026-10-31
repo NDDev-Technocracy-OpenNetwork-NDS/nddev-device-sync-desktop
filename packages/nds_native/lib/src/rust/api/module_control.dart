@@ -7,10 +7,45 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `attach`, `capabilities`, `descriptor`, `detach_drained`, `edit_basis_matches`, `generation`, `is_generation`, `module_access_inner`, `module_access`, `module_changed`, `module_observations`, `native_module_observations`, `new_identity_generation`, `observe_configuration`, `observe`, `observe`, `optional_permissions`, `platform`, `publish`, `read_device_modules`, `read_module_state`, `seal`, `shared_permissions`, `shutdown_generation`, `stop`, `tag`, `validate`, `vault_error`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `Adapter`, `ControlGeneration`, `ModuleControl`, `ModuleUseGuard`, `Slot`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`
+// These functions are ignored because they are not marked as `pub`: `admission_event`, `attach`, `cached_basis`, `capabilities`, `control_view`, `descriptor`, `detach_drained`, `edit_basis_matches`, `effective_policy`, `generation`, `is_generation`, `module_access_inner`, `module_access`, `module_changed`, `module_observations`, `native_module_observations`, `new_identity_generation`, `observe_configuration`, `observe_policy`, `observe`, `observe`, `optional_permissions`, `platform`, `policy_unreachable`, `publish`, `read_device_modules`, `read_module_state`, `seal`, `shared_permissions`, `shutdown_generation`, `stop`, `tag`, `validate_with`, `validate`, `vault_error`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `Adapter`, `ControlBasis`, `ControlGeneration`, `ModuleControl`, `ModuleUseGuard`, `Slot`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `eq`, `fmt`
 // These functions are ignored (category: IgnoreBecauseOwnerTyShouldIgnore): `default`
+
+/// Authenticated device control as observed by this client (ADR 0018).
+/// Presentation only: Rust admission decides with the same values.
+class DeviceControlView {
+  /// `fullauto` or `manual`.
+  final String mode;
+  final List<String> purposes;
+
+  /// Zero means no authenticated policy was observed; manual applies.
+  final BigInt revision;
+
+  /// `server`, `cached` (server unreachable) or `default` (never observed).
+  final String source;
+
+  const DeviceControlView({
+    required this.mode,
+    required this.purposes,
+    required this.revision,
+    required this.source,
+  });
+
+  @override
+  int get hashCode =>
+      mode.hashCode ^ purposes.hashCode ^ revision.hashCode ^ source.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DeviceControlView &&
+          runtimeType == other.runtimeType &&
+          mode == other.mode &&
+          purposes == other.purposes &&
+          revision == other.revision &&
+          source == other.source;
+}
 
 class DeviceModuleView {
   final String id;

@@ -1523,4 +1523,68 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get browserSwitchDisabled => 'Disabled';
+
+  @override
+  String get deviceControl => 'Device control';
+
+  @override
+  String get controlFullauto => 'Full auto';
+
+  @override
+  String get controlManual => 'Manual';
+
+  @override
+  String get controlFullautoHint =>
+      'Trusted agents run supported system tools on this device without per-tool approval. Git writes, remote display and integrations keep their own settings.';
+
+  @override
+  String get controlManualHint =>
+      'Each tool runs only when enabled with its permissions below.';
+
+  @override
+  String controlFromServer(String revision) {
+    return 'Server policy, revision $revision';
+  }
+
+  @override
+  String controlCached(String revision) {
+    return 'Server unreachable; using policy revision $revision';
+  }
+
+  @override
+  String get controlDefaultManual =>
+      'No server policy observed; manual settings apply.';
+
+  @override
+  String get controlSave => 'Save device control';
+
+  @override
+  String get controlRecentSignIn =>
+      'Sign in again to switch this device to full auto.';
+
+  @override
+  String get controlChangedElsewhere =>
+      'The policy changed elsewhere. Refresh and review it.';
+
+  @override
+  String get controlUnavailable =>
+      'This server does not support device control yet.';
+
+  @override
+  String get purposeServerHosting => 'Server hosting';
+
+  @override
+  String get purposeServerDevDesktop => 'Server development';
+
+  @override
+  String get purposeServerDesktop => 'Server desktop';
+
+  @override
+  String get purposeBuildDevDesktop => 'Build and development';
+
+  @override
+  String get purposeDevDesktop => 'Development';
+
+  @override
+  String get purposeDesktop => 'Desktop';
 }

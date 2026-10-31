@@ -44,6 +44,22 @@ void main() {
     await tapVisible(tester, find.text('Local modules'));
     await tester.pumpAndSettle();
     await waitFor(tester, find.byKey(const Key('module-selector')));
+    // ADR 0018: a new enrollment is fullauto. A supported system tool runs
+    // without the module checklist and without a prompt.
+    await waitFor(tester, find.text('Server policy, revision 1'));
+    expect(
+      tester
+          .widget<SegmentedButton<String>>(
+            find.byKey(const Key('device-control-mode')),
+          )
+          .selected,
+      {'fullauto'},
+    );
+    await tapVisible(tester, find.byKey(const Key('read-system-info')));
+    await waitFor(tester, find.text('CPU usage:'));
+    expect(find.byKey(const Key('module-error')), findsNothing);
+    // Narrowing to manual closes fullauto admission; the existing checklist applies.
+    await setControl(tester, 'Manual', 'Server policy, revision 2');
     await tapVisible(tester, find.byKey(const Key('read-system-info')));
     await waitFor(tester, find.byKey(const Key('module-error')));
     expect(
@@ -141,6 +157,18 @@ void main() {
       tester.widget<Text>(find.byKey(const Key('module-error'))).data,
       'Enable this module to use its features.',
     );
+    // Widening within the recent sign-in window restores fullauto; the
+    // explicit disable stays stored for a later manual choice.
+    await setControl(tester, 'Full auto', 'Server policy, revision 3');
+    await tapVisible(tester, find.byKey(const Key('read-system-info')));
+    await waitFor(tester, find.text('CPU usage:'));
+    expect(find.byKey(const Key('module-error')), findsNothing);
+    expect(
+      tester
+          .widget<SwitchListTile>(find.byKey(const Key('module-enabled')))
+          .value,
+      isFalse,
+    );
     expect(native.clientDiagnostics().sinkInitialized, isTrue);
     final deadline = DateTime.now().add(const Duration(seconds: 5));
     while (native.clientDiagnostics().pendingEvents != BigInt.zero) {
@@ -156,6 +184,21 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   }, timeout: const Timeout(Duration(minutes: 3)));
+}
+
+Future<void> setControl(
+  WidgetTester tester,
+  String mode,
+  String confirmation,
+) async {
+  final segment = find.descendant(
+    of: find.byKey(const Key('device-control-mode')),
+    matching: find.text(mode),
+  );
+  await tapVisible(tester, segment);
+  await tapVisible(tester, find.byKey(const Key('device-control-save')));
+  await waitFor(tester, find.text(confirmation));
+  expect(find.byKey(const Key('device-control-error')), findsNothing);
 }
 
 Future<void> choose(WidgetTester tester, String label) async {

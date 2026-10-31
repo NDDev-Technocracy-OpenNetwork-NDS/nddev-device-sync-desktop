@@ -421,6 +421,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   DeliveryView dco_decode_delivery_view(dynamic raw);
 
   @protected
+  DeviceControlView dco_decode_device_control_view(dynamic raw);
+
+  @protected
   DeviceModuleView dco_decode_device_module_view(dynamic raw);
 
   @protected
@@ -1177,6 +1180,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   DeliveryView sse_decode_delivery_view(SseDeserializer deserializer);
+
+  @protected
+  DeviceControlView sse_decode_device_control_view(
+    SseDeserializer deserializer,
+  );
 
   @protected
   DeviceModuleView sse_decode_device_module_view(SseDeserializer deserializer);
@@ -2062,6 +2070,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_delivery_view(DeliveryView self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_device_control_view(
+    DeviceControlView self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_device_module_view(

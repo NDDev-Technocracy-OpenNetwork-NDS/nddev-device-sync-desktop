@@ -80,6 +80,9 @@ abstract class NdsClient implements RustOpaqueInterface {
 
   DeliveryView deliverySnapshot();
 
+  /// Current device control (ADR 0018) under a fresh local-use fence.
+  Future<DeviceControlView> deviceControl();
+
   Future<List<DeviceModuleView>> deviceModules();
 
   Future<LocalAgent> discoverLocalAgent();
@@ -192,6 +195,15 @@ abstract class NdsClient implements RustOpaqueInterface {
   Future<LocalOrganization> selectOrganization({
     required String company,
     required BigInt membershipRevision,
+  });
+
+  /// Owner compare-and-set replacement. Widening manual into fullauto needs
+  /// a recent sign-in (`recent_authentication_required`); a stale revision
+  /// returns `operation_conflict`. Success closes system-tool admissions.
+  Future<DeviceControlView> setDeviceControl({
+    required BigInt expectedRevision,
+    required String mode,
+    required List<String> purposes,
   });
 
   void setLifecycle({required ClientLifecycle state});

@@ -195,7 +195,7 @@ void main() {
         expect(Directory(screenHandoff).isAbsolute, isTrue);
         await modules.tapVisible(tester, find.text('Local modules'));
         await modules.waitFor(tester, find.byKey(const Key('module-selector')));
-        await modules.choose(tester, 'RDS');
+        await modules.choose(tester, 'Remote screen');
         await modules.configure(
           tester,
           enabled: true,
@@ -576,8 +576,8 @@ void main() {
           );
           await tester.pumpAndSettle();
           await tester.tap(find.byKey(const Key('open-synced-state')));
-          await waitFor(tester, find.text('gds'));
-          expect(find.text('rds'), findsOneWidget);
+          await waitFor(tester, find.text('github'));
+          expect(find.text('remote'), findsOneWidget);
           await tester.pageBack();
           await tester.pumpAndSettle();
           await tester.pageBack();
@@ -644,7 +644,7 @@ void main() {
               tester,
               find.byKey(const Key('module-selector')),
             );
-            await modules.choose(tester, 'GDS');
+            await modules.choose(tester, 'GitHub');
             await modules.configure(
               tester,
               enabled: true,
@@ -658,21 +658,21 @@ void main() {
             // after this page has been closed, using the saved source/consent.
             while (true) {
               final observed = (await device.settled(client.deviceModules))
-                  .singleWhere((module) => module.id == 'gds');
+                  .singleWhere((module) => module.id == 'github');
               if (observed.checkedAtMs != null &&
                   observed.errorClass == 'provider_unavailable') {
                 break;
               }
               if (DateTime.now().isAfter(deadline)) {
                 throw StateError(
-                  'Background GDS did not report actual refusal: ${observed.readiness}/${observed.errorClass}',
+                  'Background GitHub module did not report actual refusal: ${observed.readiness}/${observed.errorClass}',
                 );
               }
               await tester.pump(const Duration(milliseconds: 200));
               await Future<void>.delayed(const Duration(milliseconds: 200));
             }
             final configured = (await device.settled(client.deviceModules))
-                .singleWhere((module) => module.id == 'gds');
+                .singleWhere((module) => module.id == 'github');
             if (Platform.isLinux || Platform.isMacOS) {
               expect(configured.optionalPermissions, contains('git_write'));
               expect(configured.permissions, isNot(contains('git_write')));
@@ -688,7 +688,7 @@ void main() {
               );
               expect(
                 (await device.settled(client.deviceModules))
-                    .singleWhere((module) => module.id == 'gds')
+                    .singleWhere((module) => module.id == 'github')
                     .permissions,
                 contains('git_write'),
               );
@@ -699,7 +699,7 @@ void main() {
               );
               expect(
                 (await device.settled(client.deviceModules))
-                    .singleWhere((module) => module.id == 'gds')
+                    .singleWhere((module) => module.id == 'github')
                     .permissions,
                 isNot(contains('git_write')),
               );

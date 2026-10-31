@@ -668,17 +668,17 @@ abstract class AppLocalizations {
   /// **'Ahead / behind'**
   String get aheadBehind;
 
-  /// No description provided for @gdsUnavailable.
+  /// No description provided for @githubUnavailable.
   ///
   /// In en, this message translates to:
   /// **'Not available'**
-  String get gdsUnavailable;
+  String get githubUnavailable;
 
-  /// No description provided for @gdsComparisonNotApplicable.
+  /// No description provided for @githubComparisonNotApplicable.
   ///
   /// In en, this message translates to:
   /// **'Not applicable'**
-  String get gdsComparisonNotApplicable;
+  String get githubComparisonNotApplicable;
 
   /// No description provided for @staged.
   ///
@@ -2319,7 +2319,7 @@ abstract class AppLocalizations {
   /// No description provided for @catalogSourceHelp.
   ///
   /// In en, this message translates to:
-  /// **'This choice is saved and synchronized across your account. Enable GDS permissions separately on each device.'**
+  /// **'This choice is saved and synchronized across your account. Enable GitHub module permissions separately on each device.'**
   String get catalogSourceHelp;
 
   /// No description provided for @catalogClearSource.
@@ -2603,6 +2603,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Network cache'**
   String get networkCache;
+
+  /// No description provided for @remoteScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote screen'**
+  String get remoteScreen;
 
   /// No description provided for @browserOwnerSwitch.
   ///

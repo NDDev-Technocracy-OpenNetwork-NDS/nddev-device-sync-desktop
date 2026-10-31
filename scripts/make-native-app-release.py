@@ -20,7 +20,7 @@ from urllib.parse import parse_qs, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 DESKTOP = 'https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-desktop'
-GDS = 'https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds'
+GITHUB_MODULE = 'https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-github'
 DESIGN_NAME = 'NDDev-Technocracy-OpenNetwork-NDS/nddev-opennetwork-design-system'
 DESIGN_HISTORY = 'NDDev-OpenNetwork/nddev-opennetwork-design-system'
 MAX_PAYLOAD = 1024 * 1024 * 1024
@@ -213,7 +213,7 @@ def source_graph(commit, shared, worker, standards, design, worker_commit):
         sources[role] = {'role': role, 'repository': repository, 'commit': revision}
 
     add('desktop', DESKTOP, commit)
-    add('worker', GDS, worker_commit)
+    add('worker', GITHUB_MODULE, worker_commit)
     for lock, prefix in [(shared, 'crate.'), (worker, 'worker.crate.')]:
         require(isinstance(lock.get('package'), list))
         for package in lock['package']:
@@ -392,10 +392,10 @@ def produce(args):
         'app_pubspec': digest(lock_bytes['shared/pubspec.lock'])})
     shared = tomllib.loads(lock_bytes['shared/Cargo.lock'].decode())
     worker = tomllib.loads(lock_bytes['worker/Cargo.lock'].decode())
-    gds = [package for package in shared['package'] if package['name'] == 'nddev-device-sync-gds']
-    require(len(gds) == 1 and git_source(gds[0]['source']) == (GDS, worker_commit))
-    worker_root = [package for package in worker['package'] if package['name'] == 'nddev-device-sync-gds' and 'source' not in package]
-    require(len(worker_root) == 1 and worker_root[0]['version'] == gds[0]['version'])
+    github = [package for package in shared['package'] if package['name'] == 'nddev-device-sync-github']
+    require(len(github) == 1 and git_source(github[0]['source']) == (GITHUB_MODULE, worker_commit))
+    worker_root = [package for package in worker['package'] if package['name'] == 'nddev-device-sync-github' and 'source' not in package]
+    require(len(worker_root) == 1 and worker_root[0]['version'] == github[0]['version'])
     standards_bytes = read_bytes(ROOT / 'standarts.lock')
     design_bytes = read_bytes(ROOT / 'generated/launcher-provenance.json')
     sources = source_graph(commit, shared, worker, tomllib.loads(standards_bytes.decode()),

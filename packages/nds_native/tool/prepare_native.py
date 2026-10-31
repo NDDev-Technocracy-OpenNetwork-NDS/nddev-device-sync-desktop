@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare canonical RDS build inputs without changing the user's Cargo config."""
+"""Prepare canonical remote-module build inputs without changing the user's Cargo config."""
 import argparse
 from contextlib import contextmanager
 import errno
@@ -16,7 +16,7 @@ import tomllib
 
 
 PACKAGE = Path(__file__).resolve().parents[1]
-RDS_REPOSITORY = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-rds"
+REMOTE_REPOSITORY = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-remote"
 
 
 def standards_release():
@@ -99,10 +99,10 @@ def preparation_lock(path):
 def prepare(cache, *, configured=False):
     release = standards_release()
     manifest = tomllib.loads((PACKAGE / "rust/Cargo.toml").read_text())
-    dependency = manifest["dependencies"]["nddev-device-sync-rds"]
+    dependency = manifest["dependencies"]["nddev-device-sync-remote"]
     revision = dependency["rev"]
-    if dependency["git"] != RDS_REPOSITORY or not re.fullmatch(r"[a-f0-9]{40}", revision):
-        raise ValueError("RDS preparation requires its canonical immutable source")
+    if dependency["git"] != REMOTE_REPOSITORY or not re.fullmatch(r"[a-f0-9]{40}", revision):
+        raise ValueError("Remote module preparation requires its canonical immutable source")
     channel = tomllib.loads((PACKAGE / "rust/rust-toolchain.toml").read_text())["toolchain"]["channel"]
     cache = cache.resolve()
     destination = cache / revision
@@ -127,7 +127,7 @@ def prepare(cache, *, configured=False):
         (probe / "Cargo.toml").write_text(
             '[package]\nname="nds-build-input"\nversion="0.0.0"\nedition="2024"\n'
             '[lib]\npath="lib.rs"\n[workspace]\n[dependencies]\n'
-            'nddev-device-sync-rds={git=' + json.dumps(RDS_REPOSITORY) +
+            'nddev-device-sync-remote={git=' + json.dumps(REMOTE_REPOSITORY) +
             ',rev=' + json.dumps(revision) + ',default-features=false}\n'
         )
         command = ["rustup", "run", channel, "cargo", "metadata", "--format-version", "1"]
@@ -138,17 +138,17 @@ def prepare(cache, *, configured=False):
         metadata = json.loads(run_command(
             command, cwd=probe, env=environment, timeout=180, capture=True,
         ))
-        packages = [p for p in metadata["packages"] if p["name"] == "nddev-device-sync-rds"]
-        expected = f"git+{RDS_REPOSITORY}?rev={revision}#{revision}"
+        packages = [p for p in metadata["packages"] if p["name"] == "nddev-device-sync-remote"]
+        expected = f"git+{REMOTE_REPOSITORY}?rev={revision}#{revision}"
         if len(packages) != 1 or packages[0]["source"] != expected:
-            raise ValueError("RDS preparation source was overridden")
+            raise ValueError("Remote module preparation source was overridden")
         sdk = Path(packages[0]["manifest_path"]).parent
         actual = run_command(["git", "rev-parse", "HEAD"], cwd=sdk, env=environment, capture=True).strip()
         dirty = run_command(
             ["git", "status", "--porcelain", "--untracked-files=no"], cwd=sdk, env=environment, capture=True,
         ).strip()
         if actual != revision or dirty:
-            raise ValueError("RDS preparation source has tracked changes")
+            raise ValueError("Remote module preparation source has tracked changes")
         if configured:
             # The outer build already performed the owning source verification.
             # Hooks consume those inputs without receiving CI credentials.

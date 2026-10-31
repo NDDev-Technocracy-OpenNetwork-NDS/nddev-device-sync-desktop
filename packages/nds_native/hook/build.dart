@@ -40,12 +40,12 @@ void main(List<String> args) async {
             !RegExp(r'^[a-f0-9]{40}$').hasMatch(sourceCommit))) {
       throw const FormatException('source_commit must be an immutable Git SHA');
     }
-    final workerDigest = input.userDefines['gds_worker_sha256'];
+    final workerDigest = input.userDefines['github_worker_sha256'];
     if (workerDigest != null &&
         (workerDigest is! String ||
             !RegExp(r'^[a-f0-9]{64}$').hasMatch(workerDigest))) {
       throw const FormatException(
-        'gds_worker_sha256 must be an artifact digest',
+        'github_worker_sha256 must be an artifact digest',
       );
     }
     final preparation = input.packageRoot.resolve('tool/prepare_native.py');
@@ -138,7 +138,7 @@ void main(List<String> args) async {
         // replace any ambient policy, including when the assembly disables it.
         'NDS_APP_UPDATE_POLICY': appUpdatePolicy,
         if (workerDigest != null)
-          'NDS_GDS_WORKER_SHA256': workerDigest as String,
+          'NDS_GITHUB_WORKER_SHA256': workerDigest as String,
       },
     ).run(input: input, output: output, logger: safeLogger);
   });

@@ -30,7 +30,7 @@ for line in args.log.open(errors='replace'):
             processes.append(event)
         if len(modules)+len(processes)>1024:
             raise SystemExit('Unexpected module/process event volume')
-if not {'sysinfo','clipboard','cleaner','updater','gds'} <= {event.get('module') for event in modules} or not processes:
+if not {'sysinfo','clipboard','cleaner','updater','github'} <= {event.get('module') for event in modules} or not processes:
     raise SystemExit('Actual module/process telemetry was not captured')
 for event in [*modules,*processes]:
     if not re.fullmatch('[a-f0-9]{32}',event.get('trace_id','')) or not re.fullmatch('[a-f0-9]{16}',event.get('span_id','')):

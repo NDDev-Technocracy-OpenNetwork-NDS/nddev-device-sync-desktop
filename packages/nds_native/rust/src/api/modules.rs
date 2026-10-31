@@ -291,7 +291,7 @@ impl LocalAgent {
         }
     }
     /// Reads the supplied base and managed markers. This neither binds/unbinds
-    /// nor authenticates the RDS route; ready=false remains an honest status.
+    /// nor authenticates the remote-module route; ready=false remains an honest status.
     pub async fn cache_status(
         &self,
         client: &NdsClient,
@@ -535,9 +535,9 @@ impl LocalAgent {
         &self,
         client: &NdsClient,
         path: String,
-    ) -> Result<nddev_device_sync_agent::view::gds::Status, ClientError> {
+    ) -> Result<nddev_device_sync_agent::view::github::Status, ClientError> {
         self.check_client(client)?;
-        let guard = client.module_access("gds", Adapter::Native).await?;
+        let guard = client.module_access("github", Adapter::Native).await?;
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         {
             let result = self
@@ -557,9 +557,9 @@ impl LocalAgent {
     pub async fn remote_sessions(
         &self,
         client: &NdsClient,
-    ) -> Result<nddev_device_sync_agent::view::rds::RemoteSnapshot, ClientError> {
+    ) -> Result<nddev_device_sync_agent::view::remote::RemoteSnapshot, ClientError> {
         self.check_client(client)?;
-        let guard = client.module_access("rds", Adapter::Native).await?;
+        let guard = client.module_access("remote", Adapter::Native).await?;
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         {
             let result = self.inner.remote_sessions().await;

@@ -73,7 +73,7 @@ def integration_runner(app: Path, *, development_http=False, worker_digest=None,
     if worker_digest is not None:
         if not re.fullmatch('[a-f0-9]{64}', worker_digest):
             raise RuntimeError('An immutable worker digest is required')
-        source += f'      gds_worker_sha256: "{worker_digest}"\n'
+        source += f'      github_worker_sha256: "{worker_digest}"\n'
     if development_http:
         source += '      development_http: true\n'
     if app_update_policy is not None:
@@ -84,7 +84,7 @@ def integration_runner(app: Path, *, development_http=False, worker_digest=None,
         # Preserve the caller's exact string and the original spec on teardown.
         source += '      app_update_policy: ' + json.dumps(app_update_policy) + '\n'
     # The same explicit, receipt-checked cache contract as scripts/build.py.
-    # Hooks still verify the selected RDS source, config and build receipt.
+    # Hooks still verify the selected remote-module source, config and build receipt.
     cache = os.environ.get('NDS_NATIVE_BUILD_HOME')
     if cache is not None:
         if not Path(cache).is_absolute():

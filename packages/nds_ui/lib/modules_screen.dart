@@ -8,8 +8,8 @@ import 'package:nds_native/sysinfo.dart' as sysinfo;
 import 'package:nds_native/clipboard.dart' as clipboard;
 import 'package:nds_native/cleaner.dart' as cleaner;
 import 'package:nds_native/updater.dart' as updater;
-import 'package:nds_native/gds.dart' as gds;
-import 'package:nds_native/rds.dart' as rds;
+import 'package:nds_native/github.dart' as github;
+import 'package:nds_native/remote.dart' as remote;
 
 import 'l10n/app_localizations.dart';
 import 'device_control.dart';
@@ -410,8 +410,8 @@ class _ModulesScreenState extends State<ModulesScreen> {
     'clipboard' => l.clipboardHistory,
     'cleaner' => l.cleaner,
     'updater' => l.updater,
-    'gds' => 'GDS',
-    'rds' => 'RDS',
+    'github' => 'GitHub',
+    'remote' => l.remoteScreen,
     'browser-use' => l.browserAutomation,
     'cache' => l.networkCache,
     _ => id,
@@ -633,21 +633,21 @@ class _ModulesScreenState extends State<ModulesScreen> {
           ),
       ],
     ),
-    gds.Status value => Column(
+    github.Status value => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _rows([(l.result, value.result), (l.exitClass, value.exitClass)]),
         if (value.status case final status?)
           _rows([
-            (l.branch, status.branch.name ?? l.gdsUnavailable),
-            (l.upstream, status.branch.upstream ?? l.gdsUnavailable),
+            (l.branch, status.branch.name ?? l.githubUnavailable),
+            (l.upstream, status.branch.upstream ?? l.githubUnavailable),
             (
               l.aheadBehind,
               switch (status.branch.comparisonState) {
                 'available' =>
                   '${status.branch.ahead} / ${status.branch.behind}',
-                'not-applicable' => l.gdsComparisonNotApplicable,
-                _ => l.gdsUnavailable,
+                'not-applicable' => l.githubComparisonNotApplicable,
+                _ => l.githubUnavailable,
               },
             ),
             (l.staged, '${status.changes.staged}'),
@@ -660,7 +660,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
           ListTile(title: Text(finding.code), subtitle: Text(finding.message)),
       ],
     ),
-    rds.RemoteSnapshot value => Column(
+    remote.RemoteSnapshot value => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (value.sessions.isEmpty) Text(l.noRecords),
@@ -669,7 +669,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
             title: Text(session.peer),
             subtitle: Text(session.id),
             trailing: Text(
-              session.status == rds.SessionState.connected
+              session.status == remote.SessionState.connected
                   ? l.connected
                   : l.connecting,
             ),
@@ -819,7 +819,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
                         await _refreshModules();
                       },
                     ),
-                  if (_selected == 'gds')
+                  if (_selected == 'github')
                     Padding(
                       padding: const EdgeInsets.only(
                         bottom: OpenNetworkSpacing.four,
@@ -875,7 +875,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
                           () => _agent!.updateLastRun(client: widget.client!),
                         ),
                       ],
-                      if (_selected == 'gds')
+                      if (_selected == 'github')
                         action(
                           l.moduleRefresh,
                           () => _agent!.repositoryStatus(
@@ -883,7 +883,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
                             path: _repository.text.trim(),
                           ),
                         ),
-                      if (_selected == 'rds')
+                      if (_selected == 'remote')
                         action(
                           l.moduleRefresh,
                           () => _agent!.remoteSessions(client: widget.client!),

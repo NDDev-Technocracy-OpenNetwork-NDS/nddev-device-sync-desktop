@@ -187,8 +187,8 @@ void main() {
                 .isNotEmpty,
           );
           await visible('publish-device-state');
-          await waitUntil(() => find.text('gds').evaluate().isNotEmpty);
-          expect(find.text('rds'), findsOneWidget);
+          await waitUntil(() => find.text('github').evaluate().isNotEmpty);
+          expect(find.text('remote'), findsOneWidget);
           expect(find.text('Sync owner'), findsOneWidget);
           await tester.pageBack();
           await tester.pumpAndSettle();
@@ -204,7 +204,7 @@ void main() {
         expect(find.text('Android shared record'), findsOneWidget);
         expect(find.byKey(const Key('vault-create')), findsNothing);
         await visible('open-synced-state');
-        await waitUntil(() => find.text('gds').evaluate().isNotEmpty);
+        await waitUntil(() => find.text('github').evaluate().isNotEmpty);
         expect(find.text('Sync owner'), findsOneWidget);
       }
       expect(find.text('PRIVATE_PAIR_LINUX_VALUE'), findsNothing);

@@ -24,7 +24,7 @@ env:
 
 jobs:
   contracts:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       # Lean check builds only; release and app builds keep their profiles.
       CARGO_PROFILE_DEV_DEBUG: 0
@@ -67,8 +67,12 @@ jobs:
         working-directory: packages/nds_ui
       - run: flutter pub get --enforce-lockfile
         working-directory: packages/nds_native
-      - run: cargo install --locked --version 0.22.2 cargo-audit
-      - run: cargo install --locked --version 0.20.2 cargo-deny
+      - name: Install verified prebuilt Rust quality tools
+        uses: NDDev-Technocracy-Standarts/std-0004-ci-cd-workflows/.github/actions/tools@365415f32190ae22ff22462e791a4829ad6e91fc # nddev-cicd-v0.6.16
+        with:
+          # cargo-audit 0.22.2, cargo-deny 0.20.2 and cargo-nextest 0.9.149 from checksummed
+          # releases instead of compiling them with cargo install in every job.
+          capability: rust
       - run: just generated-check
       - run: just check
       - run: rustup target add --toolchain 1.99.1 wasm32-unknown-unknown
@@ -98,7 +102,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-24.04
+          - os: ubuntu-26.04
             target: linux
             mode: release
             artifact: build/linux/x64/release/bundle
@@ -285,14 +289,14 @@ jobs:
   quality:
     if: always()
     needs: [contracts, builds]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - run: test '${{ needs.contracts.result }}' = success && test '${{ needs.builds.result }}' = success
 
   authenticate-native-candidate:
     needs: [quality]
     if: needs.quality.result == 'success' && github.ref == 'refs/heads/main' && github.repository_id == '1412610357'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read

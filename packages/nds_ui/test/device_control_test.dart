@@ -72,9 +72,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(save);
     await tester.pumpAndSettle();
-    expect(client.writes, [
-      (BigInt.from(3), 'manual', ['desktop', 'dev-desktop']),
-    ]);
+    // Records compare lists by identity; check each field explicitly.
+    expect(client.writes, hasLength(1));
+    final (expected, mode, purposes) = client.writes.single;
+    expect(expected, BigInt.from(3));
+    expect(mode, 'manual');
+    expect(purposes, ['desktop', 'dev-desktop']);
     expect(changed, 1);
     expect(find.text('Server policy, revision 4'), findsOneWidget);
   });

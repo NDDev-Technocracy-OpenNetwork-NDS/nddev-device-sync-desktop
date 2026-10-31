@@ -195,7 +195,10 @@ impl ModuleControl {
     }
     /// Every owner starts its retained drain before this caller can suspend.
     /// Cancellation of a shutdown waiter never owns or aborts those tasks.
-    #[cfg(test)]
+    #[cfg(all(
+        test,
+        any(target_os = "linux", target_os = "macos", target_os = "windows")
+    ))]
     pub(crate) async fn shutdown(&self) -> Result<(), ClientError> {
         let generation = self.seal();
         self.shutdown_generation(&generation).await

@@ -11,9 +11,15 @@ import 'screen_viewer.dart';
 /// Transient presentation of server-authorized discovery; no device key or
 /// permission is retained here. ScreenViewer obtains fresh authority again.
 class ScreenTargets extends StatefulWidget {
-  const ScreenTargets({super.key, required this.client, required this.userId});
+  const ScreenTargets({
+    super.key,
+    required this.client,
+    required this.userId,
+    this.organization,
+  });
   final native.NdsClient client;
   final String userId;
+  final native.LocalOrganization? organization;
   @override
   State<ScreenTargets> createState() => _ScreenTargetsState();
 }
@@ -26,6 +32,7 @@ class _ScreenTargetsState extends State<ScreenTargets> {
   Timer? _watch;
   ApplicationActivity? _activity;
   String get _currentScope {
+    if (widget.organization?.isCurrent() == false) return '';
     final view = widget.client.snapshot();
     return view.authenticated
         ? '${view.tenantId}/${view.userId}/${view.currentDeviceId}'
@@ -106,8 +113,11 @@ class _ScreenTargetsState extends State<ScreenTargets> {
     try {
       await Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
-          builder: (_) =>
-              ScreenViewer(client: widget.client, deviceId: target.deviceId),
+          builder: (_) => ScreenViewer(
+            client: widget.client,
+            deviceId: target.deviceId,
+            organization: widget.organization,
+          ),
         ),
       );
     } finally {

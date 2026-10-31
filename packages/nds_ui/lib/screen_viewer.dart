@@ -10,9 +10,15 @@ import 'l10n/app_localizations.dart';
 // Presentation owns one current image and one decode. Rust owns credentials,
 // native receive/decode, cancellation, original expiry and retained tickets.
 class ScreenViewer extends StatefulWidget {
-  const ScreenViewer({super.key, required this.client, required this.deviceId});
+  const ScreenViewer({
+    super.key,
+    required this.client,
+    required this.deviceId,
+    this.organization,
+  });
   final native.NdsClient client;
   final String deviceId;
+  final native.LocalOrganization? organization;
   @override
   State<ScreenViewer> createState() => _ScreenViewerState();
 }
@@ -59,7 +65,13 @@ class _ScreenViewerState extends State<ScreenViewer> {
   Future<void> _open() async {
     final epoch = _epoch;
     try {
-      final view = await widget.client.screenOpen(target: widget.deviceId);
+      final organization = widget.organization;
+      final view = organization == null
+          ? await widget.client.screenOpen(target: widget.deviceId)
+          : await widget.client.screenOpenForOrganization(
+              organization: organization,
+              target: widget.deviceId,
+            );
       if (!mounted || epoch != _epoch || _activity?.value != true) {
         await view.close();
         view.dispose();
@@ -89,7 +101,7 @@ class _ScreenViewerState extends State<ScreenViewer> {
       try {
         ticket = await view.frame();
         final layout = ticket.layout();
-        final bytes = ticket.readOnce();
+        final bytes = await ticket.readOnce();
         buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
         descriptor = ui.ImageDescriptor.raw(
           buffer,
@@ -101,6 +113,7 @@ class _ScreenViewerState extends State<ScreenViewer> {
         codec = await descriptor.instantiateCodec();
         image = (await codec.getNextFrame()).image;
         // Native ticket remains held through every async renderer boundary.
+        await ticket.validateContext();
         ticket.checkLive();
         if (!mounted || epoch != _epoch || _activity?.value != true) return;
         final previous = _current;
@@ -134,13 +147,13 @@ class _ScreenViewerState extends State<ScreenViewer> {
     if (mounted && !_disposed) {
       setState(() => _current = null);
       await WidgetsBinding.instance.endOfFrame;
+      old?.dispose();
     } else {
       _current = null;
       if (old != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
       }
     }
-    if (!_disposed) old?.dispose();
     if (view != null) {
       try {
         await view.close();

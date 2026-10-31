@@ -43,13 +43,58 @@ impl NdsClient {
             owner,
             name,
         )?;
-        self.catalog_session()
-            .await?
-            .connect_repository(location)
-            .await
+        // Capture before any credential/configuration wait. The provider retains
+        // its own original Git/Vault guards; this owner retains the actual work.
+        let generation = self.catalog_operations.generation();
+        let lifetime = self.shared_identity().local_use_lifetime();
+        let guard = self
+            .module_access("gds", super::module_control::Adapter::Shared)
+            .await?;
+        let client = self.catalog_session().await?;
+        self.catalog_operations.reap_completed().await?;
+        let mut waiter = {
+            let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+            guard.publish(|| {
+                self.shared_identity()
+                    .check_captured_local_use_lifetime(&lifetime)?;
+                if !self.catalog_active() {
+                    return Err(GithubCatalogError::Cancelled);
+                }
+                let owner = client.clone();
+                self.catalog_operations
+                    .start(&generation, owner, async move {
+                        client.connect_repository(location).await
+                    })
+            })?
+        };
+        let result = waiter.result().await?;
+        guard.validate().await?;
+        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        guard.publish(|| {
+            self.catalog_operations
+                .publish(&generation, &mut waiter, || {
+                    self.shared_identity()
+                        .check_captured_local_use_lifetime(&lifetime)?;
+                    if !self.catalog_active() {
+                        return Err(GithubCatalogError::Cancelled);
+                    }
+                    // Copy only the authorized owning view. Provider errors and
+                    // results remain retained privately even if publication refuses.
+                    Ok(match result.as_ref() {
+                        Ok(value) => Ok(GithubConnectionView {
+                            outcome: value.outcome.clone(),
+                            reason: value.reason.clone(),
+                            relative_path: value.relative_path.clone(),
+                            intent_queued: value.intent_queued,
+                        }),
+                        Err(error) => Err(*error),
+                    })
+                })
+        })?
     }
     #[cfg_attr(feature = "flutter", frb(ignore))]
     pub(crate) fn invalidate_catalog(&self) {
+        self.catalog_operations.invalidate();
         if let Some(client) = self
             .catalog
             .lock()

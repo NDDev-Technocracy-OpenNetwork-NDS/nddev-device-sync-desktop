@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,9 +53,11 @@ def main():
     socket = Path(os.environ["XDG_RUNTIME_DIR"]) / "rldyour-sysinfo.sock"
     assert socket.is_socket(), "the installed rldyour-sysinfo socket is required"
     args.output.mkdir(mode=0o700)
-    root = args.output / "scope"
+    # Unix socket paths are limited to 108 bytes: keep the private scope short.
+    root = Path(tempfile.mkdtemp(prefix="nds-ctl-", dir="/tmp"))
     for relative in ["data", "state", "config", "cache", "runtime", "control", "markers"]:
-        (root / relative).mkdir(mode=0o700, parents=True)
+        (root / relative).mkdir(mode=0o700)
+    assert len(str(root / "runtime/rldyour-sysinfo.sock")) < 100
     # The installed read-only metrics daemon keeps its own socket; only its path
     # is exposed inside the private runtime directory.
     (root / "runtime/rldyour-sysinfo.sock").symlink_to(socket)
@@ -74,7 +77,7 @@ def main():
         ("XDG_CACHE_HOME", "cache"), ("XDG_RUNTIME_DIR", "runtime")]}
     env |= {"PYTHONDONTWRITEBYTECODE": "1", "RUST_MIN_STACK": "8388608"}
     log = args.output / "test.log"
-    record = {"status": "RUNNING", "fixture_source": fixture.get("source_commit"), "test": TEST,
+    record = {"status": "RUNNING", "fixture_source": fixture.get("source_commit"), "test": TEST, "scope_root": str(root),
               "scope": "Actual Linux device control through public client APIs, owned PG/SMTP, private "
                        "Secret Service and the installed sysinfo tool; no Flutter UI or installed NDS app claim."}
     started = time.monotonic()

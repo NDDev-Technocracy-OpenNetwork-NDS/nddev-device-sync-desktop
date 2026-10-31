@@ -260,7 +260,11 @@ class _CompanyState extends State<CompanyScreen> {
     if (organization == null || !_current(epoch, organization)) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => ScreenTargets(client: _client, userId: member.userId),
+        builder: (_) => ScreenTargets(
+          client: _client,
+          userId: member.userId,
+          organization: organization,
+        ),
       ),
     );
     if (_current(epoch, organization)) await _run(_load);

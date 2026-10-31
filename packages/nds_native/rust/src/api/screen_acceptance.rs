@@ -257,7 +257,7 @@ fn screen_case(expected_case: &str) {
                 loop {
                     let frame=viewer.frame().await.expect("changed actual frame did not arrive");
                     let layout=frame.layout().unwrap();
-                    let bytes=frame.read_once().unwrap();
+                    let bytes=frame.read_once().await.unwrap();
                     assert!(layout.width>0 && layout.height>0 && bytes.len()==(layout.stride*layout.height) as usize);
                     let red=bytes.as_chunks::<4>().0.iter().filter(|p| p[2]>150 && p[1]<90 && p[0]<90).count();
                     let facts=json!({"width":layout.width,"height":layout.height,"red_pixels":red});

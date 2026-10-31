@@ -25,6 +25,26 @@ struct Selected {
     generation: Arc<()>,
     selection: Arc<()>,
 }
+/// A captured presentation context, never a membership grant. A personal
+/// operation does not borrow a later selection; an organizational operation
+/// keeps the exact selected owner even after an unrelated await.
+#[cfg_attr(feature = "flutter", frb(ignore))]
+#[cfg(target_os = "linux")]
+pub(super) struct OrganizationObservation {
+    slot: Slot,
+    generation: Arc<()>,
+    selected: Option<Arc<Selected>>,
+}
+#[cfg(target_os = "linux")]
+impl OrganizationObservation {
+    // The caller serializes this check with NdsClient publication.
+    pub(super) fn check(&self) -> Result<(), ClientError> {
+        self.slot
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .check(&self.generation, self.selected.as_ref())
+    }
+}
 impl OrganizationSlot {
     fn deselect(&mut self) {
         if let Some(owner) = self.current.take() {
@@ -107,6 +127,25 @@ impl CompanyCommand {
     }
 }
 impl LocalOrganization {
+    #[cfg_attr(feature = "flutter", frb(ignore))]
+    #[cfg(target_os = "linux")]
+    pub(super) fn observe_for(
+        &self,
+        client: &NdsClient,
+    ) -> Result<OrganizationObservation, ClientError> {
+        if !Arc::ptr_eq(&self.publication, &client.publication)
+            || !Arc::ptr_eq(&self.slot, &client.organizations)
+        {
+            return Err(ClientError::RevalidationRequired);
+        }
+        self.publish(|| {
+            Ok(OrganizationObservation {
+                slot: self.slot.clone(),
+                generation: self.owner.generation.clone(),
+                selected: Some(self.owner.clone()),
+            })
+        })
+    }
     #[cfg_attr(feature = "flutter", frb(ignore))]
     fn publish<T>(&self, work: impl FnOnce() -> Result<T, ClientError>) -> Result<T, ClientError> {
         let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
@@ -203,6 +242,18 @@ impl Drop for LocalOrganization {
     }
 }
 impl NdsClient {
+    #[cfg_attr(feature = "flutter", frb(ignore))]
+    #[cfg(target_os = "linux")]
+    pub(super) fn observe_personal(&self) -> Result<OrganizationObservation, ClientError> {
+        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        let slot = self.organizations.lock().unwrap_or_else(|e| e.into_inner());
+        slot.check(&slot.generation, None)?;
+        Ok(OrganizationObservation {
+            slot: self.organizations.clone(),
+            generation: slot.generation.clone(),
+            selected: None,
+        })
+    }
     // The following locked helpers are called only under the existing identity
     // publication mutex. No organization/control mutex crosses any await.
     #[cfg_attr(feature = "flutter", frb(ignore))]
@@ -378,6 +429,24 @@ mod lifetime_tests {
         client.seal_organizations_if(&replacement);
         assert!(client.organizations.lock().unwrap().closed);
     }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn captured_personal_presentation_cannot_adopt_a_reopened_generation() {
+        let client = NdsClient::new("https://example.invalid".into()).unwrap();
+        let captured = client.observe_personal().unwrap();
+        let _publication = client.publication.lock().unwrap();
+        assert!(captured.check().is_ok());
+        client.organizations.lock().unwrap().deselect();
+        // Closing an unrelated selected context does not change a personal
+        // operation's origin, but an identity-generation replacement does.
+        assert!(captured.check().is_ok());
+        client.open_organizations_locked();
+        assert!(matches!(
+            captured.check(),
+            Err(ClientError::RevalidationRequired)
+        ));
+    }
 }
 
 #[cfg(all(test, target_os = "linux", feature = "development-http"))]
@@ -549,6 +618,7 @@ mod acceptance {
                         .select_organization(first[0].company_id.clone(), first[0].member.revision)
                         .await
                         .unwrap();
+                    let original_presentation = old.observe_for(&client).unwrap();
                     let stale_command = old
                         .invite(
                             "never-sent@example.invalid".into(),
@@ -576,6 +646,13 @@ mod acceptance {
                         replacement
                     };
                     let (late, replacement) = tokio::join!(held, replace);
+                    {
+                        let _publication = client.publication.lock().unwrap();
+                        assert!(matches!(
+                            original_presentation.check(),
+                            Err(ClientError::RevalidationRequired)
+                        ));
+                    }
                     assert!(matches!(late, Err(ClientError::RevalidationRequired)));
                     assert!(!old.is_current());
                     assert!(!stale_command.is_current());

@@ -7,7 +7,7 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `cancel_role`, `cancel_screen`, `classify_close`, `close_role`, `finish`, `join`, `reconcile_screen`, `screen_device`, `screen_publication`
+// These functions are ignored because they are not marked as `pub`: `cancel_role`, `cancel_screen`, `classify_close`, `close_role`, `finish`, `finish`, `is_drained`, `join`, `publish_frame`, `reconcile_screen`, `retain_unresolved`, `run`, `screen_device`, `screen_open_scoped`, `screen_publication`, `unresolved`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `DeviceCompletion`, `RoleLife`, `ScreenSlot`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `clone`, `drop`, `drop`, `eq`, `fmt`, `fmt`
 // These functions are ignored (category: IgnoreBecauseExplicitAttribute): `code`
@@ -20,7 +20,11 @@ abstract class ScreenFrame implements RustOpaqueInterface {
 
   ScreenLayout layout();
 
-  Uint8List readOnce();
+  Future<Uint8List> readOnce();
+
+  /// Revalidate the original protected guard after an external renderer wait.
+  /// check_live remains the final synchronous publication check.
+  Future<void> validateContext();
 }
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ScreenHost>>
@@ -55,6 +59,7 @@ enum ScreenFailure {
   timeout,
   unavailable,
   failed,
+  unresolved,
 }
 
 class ScreenLayout {

@@ -9,8 +9,8 @@ import '../third_party/nddev_device_sync_organizations/view.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `check`, `check`, `command`, `deselect`, `open_organizations_locked`, `open`, `organization_client`, `organization_generation`, `publish`, `read`, `seal_organizations_if`, `seal_organizations_locked`, `seal_organizations`, `seal`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `OrganizationSlot`, `Selected`
+// These functions are ignored because they are not marked as `pub`: `check`, `check`, `check`, `command`, `deselect`, `observe_for`, `observe_personal`, `open_organizations_locked`, `open`, `organization_client`, `organization_generation`, `publish`, `read`, `seal_organizations_if`, `seal_organizations_locked`, `seal_organizations`, `seal`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `OrganizationObservation`, `OrganizationSlot`, `Selected`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `drop`
 // These functions are ignored (category: IgnoreBecauseOwnerTyShouldIgnore): `default`
 

@@ -186,6 +186,14 @@ viewing are separate qualification scopes. The owned Linux X11 workflow below
 exercises actual frames and termination; other target roles and final product
 and release acceptance remain separate.
 
+Each retained frame keeps its original module and personal or organizational
+context. Reading pixels revalidates that guard; the viewer repeats validation
+after asynchronous rendering and checks it synchronously before presentation.
+An organizational view uses the original opaque selection, so a later selection
+cannot authorize its result. A known, fully joined cleanup failure stays an
+error. Missing native completion retains the device owner and blocks replacement;
+it does not establish a completed stop.
+
 `scripts/screen-acceptance.py` qualifies that Linux path against an explicitly
 owned, fresh 3600-second Server `--fixture-sync3` fixture. Supply `--fixture`,
 `--native-test` (the prepared `development-http`, no-default-features Rust lib

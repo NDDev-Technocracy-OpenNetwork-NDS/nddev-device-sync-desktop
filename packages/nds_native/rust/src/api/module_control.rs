@@ -3445,6 +3445,77 @@ pub(crate) mod native_ownership {
     }
 }
 
+fn control_view(policy: Option<&DevicePolicy>, source: &str) -> DeviceControlView {
+    match policy {
+        Some(policy) => DeviceControlView {
+            mode: policy.mode().as_str().into(),
+            purposes: policy
+                .purposes()
+                .iter()
+                .map(|value| value.as_str().to_owned())
+                .collect(),
+            revision: policy.revision(),
+            source: source.into(),
+        },
+        None => DeviceControlView {
+            mode: ControlMode::Manual.as_str().into(),
+            purposes: Vec::new(),
+            revision: 0,
+            source: "default".into(),
+        },
+    }
+}
+
+/// Unreachable or older servers keep the last observed policy; refusals,
+/// cancellation and malformed replies propagate unchanged.
+fn policy_unreachable(error: &ClientError) -> bool {
+    match error {
+        ClientError::Transport
+        | ClientError::Timeout
+        | ClientError::Busy
+        | ClientError::OnlineVerificationRequired => true,
+        ClientError::Server(code) => matches!(
+            code.as_str(),
+            "device_policy_unavailable" | "dependency_unavailable" | "server_busy" | "rate_limited"
+        ),
+        _ => false,
+    }
+}
+
+/// One correlated admission record: original principal, device, operation and
+/// the mode that decided it. No configuration or secret content is recorded.
+fn admission_event(
+    identity: &IdentityClient,
+    module: &str,
+    mode: ControlMode,
+    operation: &str,
+    refusal: Option<nddev_device_sync_domain::modules::control::Readiness>,
+) {
+    let view = identity.view();
+    // Records need the original identifiers; unauthenticated states emit none.
+    if view.current_device_id.is_empty() || view.user_id.is_empty() {
+        return;
+    }
+    let event = match mode {
+        ControlMode::Fullauto => "module.admission.fullauto",
+        ControlMode::Manual => "module.admission.manual",
+    };
+    match refusal {
+        None => tracing::event!(target: "nds_native", tracing::Level::INFO, {
+            event.name = event, module, device.id = %view.current_device_id,
+            user.id = %view.user_id, operation.id = %operation, outcome = "accepted"
+        }),
+        Some(reason) => {
+            let error = tag(reason).unwrap_or_default();
+            tracing::event!(target: "nds_native", tracing::Level::WARN, {
+                event.name = event, module, device.id = %view.current_device_id,
+                user.id = %view.user_id, operation.id = %operation,
+                error.type = %format!("module_{error}"), outcome = "denied"
+            })
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3584,76 +3655,5 @@ mod tests {
             ),
             ("fullauto", vec!["desktop".to_owned()], "cached")
         );
-    }
-}
-
-fn control_view(policy: Option<&DevicePolicy>, source: &str) -> DeviceControlView {
-    match policy {
-        Some(policy) => DeviceControlView {
-            mode: policy.mode().as_str().into(),
-            purposes: policy
-                .purposes()
-                .iter()
-                .map(|value| value.as_str().to_owned())
-                .collect(),
-            revision: policy.revision(),
-            source: source.into(),
-        },
-        None => DeviceControlView {
-            mode: ControlMode::Manual.as_str().into(),
-            purposes: Vec::new(),
-            revision: 0,
-            source: "default".into(),
-        },
-    }
-}
-
-/// Unreachable or older servers keep the last observed policy; refusals,
-/// cancellation and malformed replies propagate unchanged.
-fn policy_unreachable(error: &ClientError) -> bool {
-    match error {
-        ClientError::Transport
-        | ClientError::Timeout
-        | ClientError::Busy
-        | ClientError::OnlineVerificationRequired => true,
-        ClientError::Server(code) => matches!(
-            code.as_str(),
-            "device_policy_unavailable" | "dependency_unavailable" | "server_busy" | "rate_limited"
-        ),
-        _ => false,
-    }
-}
-
-/// One correlated admission record: original principal, device, operation and
-/// the mode that decided it. No configuration or secret content is recorded.
-fn admission_event(
-    identity: &IdentityClient,
-    module: &str,
-    mode: ControlMode,
-    operation: &str,
-    refusal: Option<nddev_device_sync_domain::modules::control::Readiness>,
-) {
-    let view = identity.view();
-    // Records need the original identifiers; unauthenticated states emit none.
-    if view.current_device_id.is_empty() || view.user_id.is_empty() {
-        return;
-    }
-    let event = match mode {
-        ControlMode::Fullauto => "module.admission.fullauto",
-        ControlMode::Manual => "module.admission.manual",
-    };
-    match refusal {
-        None => tracing::event!(target: "nds_native", tracing::Level::INFO, {
-            event.name = event, module, device.id = %view.current_device_id,
-            user.id = %view.user_id, operation.id = %operation, outcome = "accepted"
-        }),
-        Some(reason) => {
-            let error = tag(reason).unwrap_or_default();
-            tracing::event!(target: "nds_native", tracing::Level::WARN, {
-                event.name = event, module, device.id = %view.current_device_id,
-                user.id = %view.user_id, operation.id = %operation,
-                error.type = %format!("module_{error}"), outcome = "denied"
-            })
-        }
     }
 }

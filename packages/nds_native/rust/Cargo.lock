@@ -4039,7 +4039,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-agent"
 version = "0.0.1-alpha.9"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent?rev=08c09b9082fde854bf5cd080e9c74ee6337c126e#08c09b9082fde854bf5cd080e9c74ee6337c126e"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent?rev=5dfc50b768165211c5d4cc80768ffb07c727d93a#5dfc50b768165211c5d4cc80768ffb07c727d93a"
 dependencies = [
  "base16ct",
  "nddev-device-sync-adapter-io",
@@ -4154,7 +4154,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-gds"
 version = "0.0.1-alpha.7"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds?rev=218685c4bdeddf4c0586ddc8214030efafd383cd#218685c4bdeddf4c0586ddc8214030efafd383cd"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-gds?rev=b4ce1c271067ebd1aeb8948087465da978f8403c#b4ce1c271067ebd1aeb8948087465da978f8403c"
 dependencies = [
  "base64 0.23.1",
  "gix",
@@ -4215,7 +4215,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-rds"
 version = "0.0.1-alpha.2"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-rds?rev=bed667ef0685ed4a650756286053ad82e691df8b#bed667ef0685ed4a650756286053ad82e691df8b"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-rds?rev=10eb8d43cd43e3c73811b7be1fadff5ee962f720#10eb8d43cd43e3c73811b7be1fadff5ee962f720"
 dependencies = [
  "anyhow",
  "iroh",
@@ -4232,6 +4232,7 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "tokio-util",
+ "tracing",
 ]
 
 [[package]]

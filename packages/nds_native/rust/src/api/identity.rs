@@ -47,6 +47,7 @@ pub struct NdsClient {
     // Ephemeral per-host assembly input, never persisted or replicated by Vault.
     cache_base: Option<u16>,
     pub(crate) catalog: Mutex<Option<Arc<nddev_device_sync_gds::catalog_runtime::CatalogClient>>>,
+    pub(super) catalog_operations: super::catalog_operation::CatalogOperations,
     #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
     pub(crate) catalog_owner: nddev_device_sync_vault::replication::CatalogSlot,
     pub(crate) module_control: Arc<super::module_control::ModuleControl>,
@@ -107,6 +108,7 @@ impl NdsClient {
             inner: Arc::new(IdentityClient::new(&endpoint)?),
             cache_base,
             catalog: Mutex::default(),
+            catalog_operations: Default::default(),
             #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
             catalog_owner: Arc::default(),
             module_control: Arc::default(),
@@ -156,7 +158,7 @@ impl NdsClient {
     }
     pub async fn refresh(&self) -> Result<View, ClientError> {
         let generation = self.seal_identity_modules();
-        self.module_control.shutdown_generation(&generation).await?;
+        self.shutdown_owned_modules(&generation).await?;
         if let Some(task) = self.cancel_work(false) {
             task.join().await;
         }
@@ -219,14 +221,14 @@ impl NdsClient {
     }
     pub async fn request_email(&self, email: String, locale: String) -> Result<View, ClientError> {
         self.seal_organizations();
-        self.module_control.shutdown().await?;
+        self.shutdown_owned_modules_current().await?;
         self.cancel_screen();
         self.invalidate_catalog();
         self.inner.request_email(email, &locale).await
     }
     pub async fn verify_email(&self, code: String) -> Result<View, ClientError> {
         self.seal_organizations();
-        self.module_control.shutdown().await?;
+        self.shutdown_owned_modules_current().await?;
         let view = self.inner.verify_email(code).await?;
         // Verification is an owning Accounts fact even if later local cleanup
         // fails. Do not replace local resources until the old owners drained.
@@ -235,7 +237,7 @@ impl NdsClient {
     }
     pub async fn start_github(&self, locale: String) -> Result<View, ClientError> {
         self.seal_organizations();
-        self.module_control.shutdown().await?;
+        self.shutdown_owned_modules_current().await?;
         self.cancel_screen();
         self.invalidate_catalog();
         self.inner.start_github(&locale).await
@@ -250,7 +252,7 @@ impl NdsClient {
         // replace identity and poll does not create a new module generation.
         if !registration {
             self.seal_organizations();
-            self.module_control.shutdown().await?;
+            self.shutdown_owned_modules_current().await?;
         }
         self.invalidate_catalog();
         self.inner.start_passkey(registration, email, &locale).await
@@ -265,7 +267,7 @@ impl NdsClient {
         let view = self.inner.revoke_passkey(id).await?;
         if !view.authenticated {
             self.seal_organizations_if(&organization_generation);
-            if self.module_control.shutdown().await.is_err() {
+            if self.shutdown_owned_modules_current().await.is_err() {
                 // Preserve the verified revocation result; cleanup remains HOLD
                 // in ModuleControl and cannot grant a replacement capability.
                 return Ok(view);
@@ -288,7 +290,7 @@ impl NdsClient {
         let sign_in = self.inner.view().flow == "passkey";
         if sign_in {
             self.seal_organizations();
-            self.module_control.shutdown().await?;
+            self.shutdown_owned_modules_current().await?;
         }
         let view = self.inner.poll_passkey().await?;
         if sign_in && view.authenticated && view.flow.is_empty() {
@@ -300,7 +302,7 @@ impl NdsClient {
         let sign_in = self.inner.view().flow == "github";
         if sign_in {
             self.seal_organizations();
-            self.module_control.shutdown().await?;
+            self.shutdown_owned_modules_current().await?;
         }
         let view = self.inner.poll_github().await?;
         if sign_in && view.authenticated && view.flow.is_empty() {
@@ -311,7 +313,7 @@ impl NdsClient {
     pub async fn logout(&self) -> Result<View, ClientError> {
         let lifetime = self.inner.local_use_lifetime();
         let generation = self.seal_identity_modules();
-        self.module_control.shutdown_generation(&generation).await?;
+        self.shutdown_owned_modules(&generation).await?;
         self.retire_local_resources(&generation, &lifetime, false)
             .await?;
         self.inner.check_captured_local_use_lifetime(&lifetime)?;
@@ -371,7 +373,7 @@ impl NdsClient {
             .any(|device| device.is_current && device.revoked)
         {
             self.seal_organizations_if(&organization_generation);
-            if self.module_control.shutdown().await.is_err() {
+            if self.shutdown_owned_modules_current().await.is_err() {
                 return Ok(view);
             }
             #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
@@ -485,12 +487,33 @@ impl NdsClient {
     fn seal_identity_modules(&self) -> super::module_control::ControlGeneration {
         let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
         self.seal_organizations_locked();
+        self.invalidate_catalog();
         self.module_control.seal()
+    }
+    async fn shutdown_owned_modules(
+        &self,
+        generation: &super::module_control::ControlGeneration,
+    ) -> Result<(), ClientError> {
+        // Both exact owners are attempted, including when one drain fails.
+        // A dropped waiter leaves the registered work/join futures retained.
+        let (modules, catalog) = tokio::join!(
+            self.module_control.shutdown_generation(generation),
+            self.catalog_operations.drain(),
+        );
+        modules.and(catalog)
+    }
+    async fn shutdown_owned_modules_current(&self) -> Result<(), ClientError> {
+        let generation = {
+            let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+            self.invalidate_catalog();
+            self.module_control.seal()
+        };
+        self.shutdown_owned_modules(&generation).await
     }
     async fn reset_replica_session(&self) -> Result<(), ClientError> {
         let lifetime = self.inner.local_use_lifetime();
         let generation = self.seal_identity_modules();
-        self.module_control.shutdown_generation(&generation).await?;
+        self.shutdown_owned_modules(&generation).await?;
         self.retire_local_resources(&generation, &lifetime, true)
             .await?;
         let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
@@ -515,7 +538,7 @@ impl NdsClient {
         };
         // Neither Vault, publication nor any module/owner mutex crosses this
         // await. The old resources remain attached on unresolved cleanup.
-        self.module_control.shutdown_generation(&generation).await?;
+        self.shutdown_owned_modules(&generation).await?;
         self.retire_local_resources(&generation, lifetime, true)
             .await
     }
@@ -1206,7 +1229,7 @@ impl NdsClient {
     pub async fn shutdown(&self) -> Result<(), ClientError> {
         let lifetime = self.inner.local_use_lifetime();
         let generation = self.seal_identity_modules();
-        self.module_control.shutdown_generation(&generation).await?;
+        self.shutdown_owned_modules(&generation).await?;
         self.retire_local_resources(&generation, &lifetime, true)
             .await?;
         let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
@@ -1575,6 +1598,48 @@ mod activity_tests {
     use super::*;
     use nddev_device_sync_application::replica::CapacityProbeOutcome;
     use nddev_device_sync_vault::replication::recovered_policy;
+
+    #[tokio::test]
+    async fn native_shutdown_refusal_still_joins_exact_catalog_work() {
+        let client = NdsClient::new("https://example.invalid".into()).unwrap();
+        let (send, receive) = tokio::sync::oneshot::channel();
+        let waiter = client
+            .catalog_operations
+            .start(
+                &client.catalog_operations.generation(),
+                Arc::new(()),
+                async move {
+                    receive.await.unwrap();
+                    Err(super::super::catalog_types::GithubCatalogError::CredentialChanged)
+                },
+            )
+            .unwrap();
+        let stale = client.seal_identity_modules();
+        client
+            .module_control
+            .new_identity_generation(&stale)
+            .unwrap();
+        // Native drain refuses this old epoch immediately. Catalog work must
+        // still be attempted, and dropping this waiter must not detach it.
+        assert!(
+            runtime::timeout(
+                std::time::Duration::from_millis(5),
+                client.shutdown_owned_modules(&stale),
+            )
+            .await
+            .is_err()
+        );
+        send.send(()).unwrap();
+        assert!(matches!(
+            client.shutdown_owned_modules(&stale).await,
+            Err(ClientError::Cancelled)
+        ));
+        assert!(matches!(
+            waiter.result().await.unwrap().as_ref(),
+            Err(super::super::catalog_types::GithubCatalogError::CredentialChanged)
+        ));
+        client.catalog_operations.drain().await.unwrap();
+    }
 
     #[tokio::test]
     async fn module_publication_rejects_foreign_and_cancelled_agent_before_capacity_preflight() {

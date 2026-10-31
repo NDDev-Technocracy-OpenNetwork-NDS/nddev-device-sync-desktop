@@ -171,6 +171,14 @@ reconciliation remain incomplete. End-to-end provider/client acceptance remains 
 acceptance uses `identity-acceptance.py --vault --catalog-source` with a fresh
 `--fixture-sync3` fixture.
 
+An admitted foreground repository connection retains its exact GDS client,
+work and terminal result when the caller disappears. One connection runs at a
+time; identity replacement waits for both this work and native module shutdown.
+Final delivery validates the original caller and configuration. A refused
+delivery does not undo Git effects. Missing completion retains the owner and
+blocks replacement; a joined provider failure keeps its owning error. This
+in-process retention is not a durable Git-operation journal.
+
 Screen requests and viewing use the shared Rust owner, Accounts authorization
 and Core contracts. The current viewer backend is Linux X11; other targets
 report unsupported. Native subsystem checks and Accounts-authenticated Flutter

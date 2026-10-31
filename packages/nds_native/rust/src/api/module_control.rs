@@ -195,6 +195,7 @@ impl ModuleControl {
     }
     /// Every owner starts its retained drain before this caller can suspend.
     /// Cancellation of a shutdown waiter never owns or aborts those tasks.
+    #[cfg(test)]
     pub(crate) async fn shutdown(&self) -> Result<(), ClientError> {
         let generation = self.seal();
         self.shutdown_generation(&generation).await
@@ -359,6 +360,27 @@ pub(crate) struct ModuleUseGuard {
     publication: Arc<Mutex<()>>,
 }
 impl ModuleUseGuard {
+    /// The caller holds NdsClient publication after validating this original
+    /// guard. Configuration replacement and delivery share this short boundary.
+    #[cfg_attr(feature = "flutter", frb(ignore))]
+    pub(crate) fn publish<T, E: From<ClientError>>(
+        &self,
+        publish: impl FnOnce() -> Result<T, E>,
+    ) -> Result<T, E> {
+        let slots = self.control.slots.lock().unwrap_or_else(|e| e.into_inner());
+        if self.lifetime.is_cancelled()
+            || slots.get(&self.module).is_none_or(|slot| {
+                !Arc::ptr_eq(&slot.lifetime, &self.lifetime)
+                    || slot.conflicted
+                    || slot.configuration != self.configuration
+                    || slot.operation_id != self.operation_id
+            })
+        {
+            return Err(ClientError::Cancelled.into());
+        }
+        self.identity.check_local_use_lifetime(&self.fence)?;
+        publish()
+    }
     /// Only an actual adapter result in this still-current lifetime can refresh
     /// readiness. Consent and successful settings persistence are not probes.
     pub(crate) fn observe<T>(&self, result: &Result<T, ModuleError>) {

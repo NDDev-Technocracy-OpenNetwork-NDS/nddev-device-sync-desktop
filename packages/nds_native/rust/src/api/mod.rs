@@ -1,5 +1,6 @@
 pub mod app_update;
 pub mod catalog;
+mod catalog_operation;
 pub mod catalog_types;
 pub mod identity;
 pub mod module_control;

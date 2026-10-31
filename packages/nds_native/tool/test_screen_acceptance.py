@@ -1,8 +1,11 @@
 """Existing native screen harness wire/owner checks; no native authority proof."""
 import importlib.util
+import contextlib
+import io
 from pathlib import Path
+import sys
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -71,3 +74,13 @@ class ScreenOrganizationContext(unittest.TestCase):
         reply['context'] = personal | {'principal_id': 'another-user'}
         with self.assertRaises(AssertionError):
             self.authority.current_organization(self.actor)
+
+    def test_cleanup_failure_case_refuses_flutter_before_any_fixture_access(self):
+        for case in ['role-cleanup-failure', 'device-cleanup-failure']:
+            args = ['screen-acceptance.py', '--fixture', '/missing-fixture',
+                    '--native-test', '/missing-native', '--output', '/missing-output',
+                    '--source', '0' * 40, '--case', case, '--viewer', 'flutter']
+            with self.subTest(case=case), patch.object(sys, 'argv', args), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as result:
+                    SCREEN.main()
+                self.assertEqual(result.exception.code, 2)

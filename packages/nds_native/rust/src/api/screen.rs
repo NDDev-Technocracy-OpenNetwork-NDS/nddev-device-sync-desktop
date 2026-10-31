@@ -392,6 +392,35 @@ pub struct ScreenHost {
     life: Arc<RoleLife>,
 }
 impl ScreenHost {
+    // Fixture-only failure after the real native host has actually joined.
+    // No production wire or recovery/authorization API is added.
+    #[cfg(all(test, target_os = "linux"))]
+    pub(crate) async fn fail_after_join_for_fixture(&self) -> Arc<std::sync::atomic::AtomicBool> {
+        let marker = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        self.state
+            .device
+            .lock()
+            .await
+            .as_mut()
+            .expect("owned fixture device")
+            .fail_after_join_for_fixture(&self.life, marker.clone());
+        marker
+    }
+    #[cfg(all(test, target_os = "linux"))]
+    pub(crate) fn device_joined_for_fixture(&self) -> bool {
+        self.state.is_drained()
+            && self
+                .state
+                .hold
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .is_none()
+            && self
+                .state
+                .device
+                .try_lock()
+                .is_ok_and(|device| device.is_none())
+    }
     #[cfg_attr(feature = "flutter", frb(sync))]
     pub fn cancel(&self) {
         self.life.stop.cancel();
@@ -429,6 +458,36 @@ pub struct ScreenTargetView {
 }
 
 impl NdsClient {
+    // Dispose only a positively joined fixture terminal record so that the
+    // test can join the remaining NdsClient resources after asserting refusal.
+    // An unresolved/running owner can never pass this predicate.
+    #[cfg(all(test, target_os = "linux"))]
+    pub(crate) fn acknowledge_joined_screen_for_fixture(&self) -> bool {
+        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        let mut slot = self.screen.lock().unwrap_or_else(|e| e.into_inner());
+        let known = slot.as_ref().is_some_and(|slot| {
+            slot.0.is_drained()
+                && matches!(
+                    *slot.0.completion.borrow(),
+                    Some(Err(ScreenFailure::Failed))
+                )
+                && slot
+                    .0
+                    .device
+                    .try_lock()
+                    .is_ok_and(|device| device.is_none())
+                && slot
+                    .0
+                    .hold
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .is_none()
+        });
+        if known {
+            slot.take();
+        }
+        known
+    }
     /// Metadata read only. Opening a view still rechecks current server authority
     /// and the target endpoint; registration is never capture consent or presence.
     pub async fn screen_targets(
@@ -1026,6 +1085,8 @@ mod native {
             id: String,
             life: Arc<RoleLife>,
             task: HostCompletion,
+            #[cfg(test)]
+            fail_after_join: Option<Arc<std::sync::atomic::AtomicBool>>,
         },
         Viewer {
             id: String,
@@ -1095,6 +1156,24 @@ mod native {
         }
     }
     impl DeviceScreen {
+        #[cfg(test)]
+        pub(super) fn fail_after_join_for_fixture(
+            &mut self,
+            original: &Arc<RoleLife>,
+            marker: Arc<std::sync::atomic::AtomicBool>,
+        ) {
+            match self.child.as_mut() {
+                Some(Child::Host {
+                    life,
+                    fail_after_join,
+                    ..
+                }) if Arc::ptr_eq(original, life) => {
+                    assert!(fail_after_join.is_none());
+                    *fail_after_join = Some(marker);
+                }
+                _ => panic!("fixture must retain its exact actual host"),
+            }
+        }
         async fn prepare(
             identity: Arc<IdentityClient>,
             lifetime: &nddev_device_sync_accounts::LocalUseLifetime,
@@ -1214,8 +1293,15 @@ mod native {
             let Some(child) = self.child.as_mut() else {
                 return self.drain_error.map_or(Ok(()), Err);
             };
+            #[cfg(test)]
+            let fail_after_join = match child {
+                Child::Host {
+                    fail_after_join, ..
+                } => fail_after_join.clone(),
+                Child::Viewer { .. } => None,
+            };
             let (id, life, result) = match child {
-                Child::Host { id, life, task } => {
+                Child::Host { id, life, task, .. } => {
                     life.stop.cancel();
                     let result = super::super::identity::observe_cleanup(
                         "rds",
@@ -1231,6 +1317,15 @@ mod native {
                     let result = match result {
                         Ok(()) | Err(ScreenFailure::Closed | ScreenFailure::Expired) => Ok(()),
                         error => error,
+                    };
+                    #[cfg(test)]
+                    let result = if result.is_ok()
+                        && let Some(marker) = fail_after_join
+                    {
+                        marker.store(true, std::sync::atomic::Ordering::Release);
+                        Err(ScreenFailure::Failed)
+                    } else {
+                        result
                     };
                     (id.clone(), life.clone(), result)
                 }
@@ -1611,6 +1706,8 @@ mod native {
                     id: id.into(),
                     life: life.clone(),
                     task: HostCompletion::Running(task),
+                    #[cfg(test)]
+                    fail_after_join: None,
                 });
                 *life.validation.lock().unwrap_or_else(|e| e.into_inner()) = Some(control_view);
                 // NdsClient guards the final handle publication after this result.

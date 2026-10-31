@@ -136,6 +136,18 @@ fn actual_expiry_closes_native_stream() {
     screen_case("expiry");
 }
 
+#[test]
+#[ignore = "requires owned PG/SMTP, separate native stores and an owned X11 display"]
+fn actual_role_cleanup_error_survives_device_and_identity_shutdown() {
+    screen_case("role-cleanup-failure");
+}
+
+#[test]
+#[ignore = "requires owned PG/SMTP, separate native stores and an owned X11 display"]
+fn actual_device_cleanup_error_survives_concurrent_close_waiters() {
+    screen_case("device-cleanup-failure");
+}
+
 async fn logout(client: &NdsClient) {
     for attempt in 0..8 {
         match client.logout().await {
@@ -154,6 +166,7 @@ fn screen_case(expected_case: &str) {
         let config: Value = serde_json::from_slice(&std::fs::read(config).unwrap()).unwrap();
         let case = config["case"].as_str().unwrap_or("role");
         assert_eq!(case, expected_case);
+        let cleanup_failure = matches!(case, "role-cleanup-failure" | "device-cleanup-failure");
         let endpoint = config["endpoint"].as_str().unwrap();
         assert!(endpoint.starts_with("http://127.0.0.1:") || endpoint.starts_with("http://localhost:"));
         let email = config["email"].as_str().unwrap();
@@ -211,6 +224,10 @@ fn screen_case(expected_case: &str) {
                 }
             }
             let host = accepted.expect("actual host consent was not obtained");
+            let injected = if cleanup_failure { Some(host.fail_after_join_for_fixture().await) } else { None };
+            let purpose_busy_before = if cleanup_failure {
+                matches!(client.shared_identity().rds_endpoint_key().await, Err(ClientError::Busy))
+            } else { false };
             // Xvfb resets its root when its last client leaves. Paint only after
             // the production capturer owns a live connection, then observe the change.
             wait_file(&root.join("viewer-capture.json")).await;
@@ -220,7 +237,7 @@ fn screen_case(expected_case: &str) {
             publish(root,"host-streaming.json",json!({"streaming":true}));
             wait_file(&root.join("end-trigger.json")).await;
             let at=std::time::Instant::now();
-            if case == "cancel" { host.cancel(); }
+            if case == "cancel" || cleanup_failure { host.cancel(); }
             if case == "logout" { logout(&client).await; }
             if case == "local-disable" {
                 for attempt in 0..8 {
@@ -242,8 +259,38 @@ fn screen_case(expected_case: &str) {
                 assert!(ended >= u128::from(expires_at_ms / 1000 * 1000),"stream ended before the actual native expiry boundary");
                 assert!(ended <= u128::from(expires_at_ms) + 10_000,"stream outlived the original request deadline");
             }
-            host.close().await.unwrap();
-            publish(root,"host-proof.json",json!({"stopped":true,"observed_stop_ms":at.elapsed().as_millis()}));
+            if cleanup_failure {
+                use super::screen::ScreenFailure;
+                let first = if case == "role-cleanup-failure" {
+                    host.close().await
+                } else {
+                    client.screen_close().await
+                };
+                let (second, third) = tokio::join!(client.screen_close(), client.screen_close());
+                let repeated_role = host.close().await;
+                let joined = host.device_joined_for_fixture();
+                let purpose_released = client.shared_identity().rds_endpoint_key().await.is_ok();
+                let shutdown = client.shutdown().await;
+                let refused = matches!(shutdown, Err(ClientError::Server(ref code)) if code == "screen_failed");
+                let acknowledged = client.acknowledge_joined_screen_for_fixture();
+                // Only this fixture's positively drained terminal record is
+                // acknowledged for teardown; no production retry/recovery API.
+                if acknowledged { logout(&client).await; } else { client.cancel(); }
+                let injected_after_real_join = injected.unwrap().load(std::sync::atomic::Ordering::Acquire);
+                assert!(injected_after_real_join && joined && purpose_busy_before && purpose_released);
+                for result in [first, second, third, repeated_role] {
+                    assert_eq!(result, Err(ScreenFailure::Failed));
+                }
+                assert!(refused && acknowledged);
+                publish(root,"host-proof.json",json!({"stopped":true,"observed_stop_ms":at.elapsed().as_millis(),
+                    "known_cleanup_error":"screen_failed","injected_after_actual_native_join":true,
+                    "all_original_close_waiters_retained_error":true,"device_joined":true,
+                    "purpose_busy_before_and_released_after_join":true,"identity_shutdown_refused_positive":true,
+                    "fixture_acknowledged_only_joined_terminal_for_teardown":true}));
+            } else {
+                host.close().await.unwrap();
+                publish(root,"host-proof.json",json!({"stopped":true,"observed_stop_ms":at.elapsed().as_millis()}));
+            }
         } else {
             let host = wait_file(&root.join("host-device.json")).await;
             let viewer = client.screen_open(host["device"].as_str().unwrap().into()).await.expect("actual native viewer failed");
@@ -290,8 +337,10 @@ fn screen_case(expected_case: &str) {
             viewer.close().await.unwrap();
             publish(root,"viewer-proof.json",json!({"stopped":true,"retained_frame_unusable_after_stop":true,"observed_stop_ms":at.elapsed().as_millis()}));
         }
-        client.screen_close().await.unwrap();
-        logout(&client).await;
+        if !(cleanup_failure && role == "host") {
+            client.screen_close().await.unwrap();
+            logout(&client).await;
+        }
         telemetry::shutdown_telemetry().await.unwrap();
     });
 }

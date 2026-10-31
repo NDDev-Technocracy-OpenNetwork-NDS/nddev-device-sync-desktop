@@ -148,6 +148,12 @@ fn actual_device_cleanup_error_survives_concurrent_close_waiters() {
     screen_case("device-cleanup-failure");
 }
 
+#[test]
+#[ignore = "requires owned PG/SMTP, separate stores and an owned paused/resumed X11 display"]
+fn actual_lost_host_completion_retains_original_owner() {
+    screen_case("host-completion-loss");
+}
+
 async fn logout(client: &NdsClient) {
     for attempt in 0..8 {
         match client.logout().await {
@@ -167,6 +173,7 @@ fn screen_case(expected_case: &str) {
         let case = config["case"].as_str().unwrap_or("role");
         assert_eq!(case, expected_case);
         let cleanup_failure = matches!(case, "role-cleanup-failure" | "device-cleanup-failure");
+        let completion_loss = case == "host-completion-loss";
         let endpoint = config["endpoint"].as_str().unwrap();
         assert!(endpoint.starts_with("http://127.0.0.1:") || endpoint.starts_with("http://localhost:"));
         let email = config["email"].as_str().unwrap();
@@ -237,6 +244,41 @@ fn screen_case(expected_case: &str) {
             publish(root,"host-streaming.json",json!({"streaming":true}));
             wait_file(&root.join("end-trigger.json")).await;
             let at=std::time::Instant::now();
+            if completion_loss {
+                use super::screen::ScreenFailure;
+                assert!(wait_file(&root.join("capture-paused.json")).await["paused"].as_bool().unwrap());
+                let busy_before = matches!(client.shared_identity().rds_endpoint_key().await, Err(ClientError::Busy));
+                // Abort only this registered outer task while it is still
+                // running. Its handle is consumed by the production join.
+                host.abort_running_host_for_fixture().await;
+                let first = client.screen_close().await;
+                let held_before = host.retains_unresolved_owner_for_fixture();
+                let purpose_held = matches!(client.shared_identity().rds_endpoint_key().await, Err(ClientError::Busy));
+                tokio::time::timeout(Duration::from_secs(1), host.closed()).await.expect("lost host admission stayed open");
+                assert!(matches!(first, Err(ScreenFailure::Unresolved | ScreenFailure::Timeout)));
+                if first == Err(ScreenFailure::Unresolved) { assert!(held_before); }
+                publish(root,"host-unresolved.json",json!({"join_not_confirmed":true,"admission_closed":true,
+                    "first_close_code":first.unwrap_err().code(),"purpose_still_busy":purpose_held}));
+                wait_file(&root.join("source-resumed.json")).await;
+                let (second, third) = tokio::join!(client.screen_close(), host.close());
+                let replacement_refused = client.screen_prepare().await.is_err();
+                let shutdown = client.shutdown().await;
+                let refused = matches!(shutdown, Err(ClientError::Server(ref code)) if code == "screen_cleanup_unresolved");
+                let held_after = host.retains_unresolved_owner_for_fixture();
+                let not_acknowledged = !client.acknowledge_joined_screen_for_fixture();
+                client.cancel();
+                assert!(host.retains_unresolved_owner_for_fixture());
+                for result in [second, third] { assert_eq!(result, Err(ScreenFailure::Unresolved)); }
+                assert!(busy_before && purpose_held && held_after && replacement_refused && refused && not_acknowledged);
+                publish(root,"host-proof.json",json!({"stopped":false,"positive_module_shutdown":false,
+                    "completion_unresolved":true,"original_owner_retained_after_source_resume":true,
+                    "first_close_code":first.unwrap_err().code(),
+                    "purpose_busy_before_shutdown":true,"replacement_refused":true,"identity_shutdown_refused_positive":true,
+                    "fixture_acknowledgement_refused":true,"observed_hold_ms":at.elapsed().as_millis()}));
+                // The disposable process ends with an unresolved product owner.
+                // No successful product drain or recovery is manufactured.
+                return;
+            }
             if case == "cancel" || cleanup_failure { host.cancel(); }
             if case == "logout" { logout(&client).await; }
             if case == "local-disable" {

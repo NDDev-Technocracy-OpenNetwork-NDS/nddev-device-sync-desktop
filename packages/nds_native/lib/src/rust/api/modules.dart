@@ -7,8 +7,8 @@ import '../frb_generated.dart';
 import '../third_party/nddev_device_sync_accounts/view.dart';
 import '../third_party/nddev_device_sync_cleaner/view.dart';
 import '../third_party/nddev_device_sync_clipboard/view.dart';
-import '../third_party/nddev_device_sync_gds/view.dart';
-import '../third_party/nddev_device_sync_rds/view.dart';
+import '../third_party/nddev_device_sync_github/view.dart';
+import '../third_party/nddev_device_sync_remote/view.dart';
 import '../third_party/nddev_device_sync_sysinfo/view.dart';
 import '../third_party/nddev_device_sync_updater/view.dart';
 import 'identity.dart';
@@ -76,7 +76,7 @@ abstract class LocalAgent implements RustOpaqueInterface {
   Future<CacheStatus> cacheBind({required NdsClient client});
 
   /// Reads the supplied base and managed markers. This neither binds/unbinds
-  /// nor authenticates the RDS route; ready=false remains an honest status.
+  /// nor authenticates the remote-module route; ready=false remains an honest status.
   Future<CacheStatus> cacheStatus({required NdsClient client});
 
   /// Only this explicit action removes managed bindings. Revoke/logout and

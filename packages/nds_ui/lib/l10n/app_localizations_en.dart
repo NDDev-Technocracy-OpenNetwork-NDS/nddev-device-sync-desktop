@@ -325,10 +325,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aheadBehind => 'Ahead / behind';
 
   @override
-  String get gdsUnavailable => 'Not available';
+  String get githubUnavailable => 'Not available';
 
   @override
-  String get gdsComparisonNotApplicable => 'Not applicable';
+  String get githubComparisonNotApplicable => 'Not applicable';
 
   @override
   String get staged => 'Staged changes';
@@ -1277,7 +1277,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get catalogSourceHelp =>
-      'This choice is saved and synchronized across your account. Enable GDS permissions separately on each device.';
+      'This choice is saved and synchronized across your account. Enable GitHub module permissions separately on each device.';
 
   @override
   String get catalogClearSource => 'Clear GitHub choice';
@@ -1450,6 +1450,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get networkCache => 'Network cache';
+
+  @override
+  String get remoteScreen => 'Remote screen';
 
   @override
   String get browserOwnerSwitch => 'Browser owner switch';

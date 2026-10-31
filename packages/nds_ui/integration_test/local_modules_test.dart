@@ -122,7 +122,7 @@ void main() {
     await waitFor(tester, find.textContaining('Channel:'));
     expect(find.byKey(const Key('module-error')), findsNothing);
 
-    await choose(tester, 'GDS');
+    await choose(tester, 'GitHub');
     await configure(
       tester,
       enabled: true,
@@ -140,7 +140,7 @@ void main() {
     expect(find.byKey(const Key('module-error')), findsNothing);
 
     if (const bool.fromEnvironment('NDS_TEST_RDS_UNAVAILABLE')) {
-      await choose(tester, 'RDS');
+      await choose(tester, 'Remote screen');
       expect(
         tester
             .widget<FilledButton>(find.widgetWithText(FilledButton, 'Refresh'))

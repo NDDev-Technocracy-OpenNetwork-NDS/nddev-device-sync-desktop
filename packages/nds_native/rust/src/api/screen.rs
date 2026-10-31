@@ -72,7 +72,7 @@ pub struct ScreenLayout {
 #[cfg_attr(feature = "flutter", frb(opaque))]
 pub struct ScreenFrame {
     #[cfg(target_os = "linux")]
-    frame: Mutex<nddev_device_sync_rds::owned::runtime::FrameTicket>,
+    frame: Mutex<nddev_device_sync_remote::owned::runtime::FrameTicket>,
     #[cfg(target_os = "linux")]
     state: Arc<State>,
     #[cfg(target_os = "linux")]
@@ -281,8 +281,8 @@ impl State {
     async fn join(&self) -> Result<(), ScreenFailure> {
         self.stop.cancel();
         super::identity::observe_cleanup(
-            "rds",
-            "rds.device.join",
+            "remote",
+            "remote.device.join",
             async {
                 {
                     // Borrow the registered handle: cancellation of this waiter
@@ -337,7 +337,7 @@ pub struct ScreenView {
     state: Arc<State>,
     life: Arc<RoleLife>,
     #[cfg(target_os = "linux")]
-    viewer: Arc<tokio::sync::Mutex<Option<nddev_device_sync_rds::owned::runtime::NativeViewer>>>,
+    viewer: Arc<tokio::sync::Mutex<Option<nddev_device_sync_remote::owned::runtime::NativeViewer>>>,
 }
 impl ScreenView {
     pub async fn frame(&self) -> Result<ScreenFrame, ScreenFailure> {
@@ -529,7 +529,7 @@ impl NdsClient {
         let user = UserId::new(user).map_err(|_| ClientError::InvalidInput)?;
         let identity = self.shared_identity();
         let _module = self
-            .module_access("rds", super::module_control::Adapter::Shared)
+            .module_access("remote", super::module_control::Adapter::Shared)
             .await?;
         let lifetime = identity.local_use_lifetime();
         let fence = identity.local_use_fence_from(&lifetime).await?;
@@ -621,8 +621,8 @@ impl NdsClient {
             .map(|slot| slot.0.clone());
         if let Some(state) = state {
             let result = super::identity::observe_cleanup(
-                "rds",
-                "rds.device.close_request",
+                "remote",
+                "remote.device.close_request",
                 async {
                     tokio::time::timeout(std::time::Duration::from_secs(3), state.join())
                         .await
@@ -884,7 +884,7 @@ impl NdsClient {
             None
         };
         let module = Arc::new(
-            self.module_access("rds", super::module_control::Adapter::Shared)
+            self.module_access("remote", super::module_control::Adapter::Shared)
                 .await
                 .map_err(native::account)?,
         );
@@ -1023,7 +1023,7 @@ mod native {
     use super::*;
     use nddev_device_sync_accounts::{
         ClientError, IdentityClient, LocalUseFence,
-        screen::{RdsEndpointKey, ScreenArtifact, ScreenCreate},
+        screen::{RemoteEndpointKey, ScreenArtifact, ScreenCreate},
         screen_wire,
     };
     use nddev_device_sync_application::{lifecycle::ClientLifecycle, screen::HostAccess};
@@ -1034,7 +1034,7 @@ mod native {
             EndpointBinding, MAX_DISPLAYS, MAX_VIEW_MS, ScreenError, ViewProjection, ViewState,
         },
     };
-    use nddev_device_sync_rds::owned::{HostAdmission, OwnedEndpoint, runtime::NativeViewer};
+    use nddev_device_sync_remote::owned::{HostAdmission, OwnedEndpoint, runtime::NativeViewer};
     use rds_net::{EndpointAddr, EndpointConfig, EndpointId, SecretKey};
     use std::time::Duration;
     pub(super) fn failure(error: ScreenError) -> ScreenFailure {
@@ -1100,7 +1100,7 @@ mod native {
     pub(super) struct DeviceScreen {
         pub(super) identity: Arc<IdentityClient>,
         stop: CancellationToken,
-        owner: Option<RdsEndpointKey>,
+        owner: Option<RemoteEndpointKey>,
         pub(super) fence: Arc<LocalUseFence>,
         endpoint: Option<OwnedEndpoint>,
         binding: EndpointBinding,
@@ -1241,13 +1241,16 @@ mod native {
                     .await
                     .map_err(account)?,
             );
-            let owner = identity.rds_endpoint_key().await.map_err(account)?;
+            let owner = identity.remote_endpoint_key().await.map_err(account)?;
             let base = identity
                 .screen_binding(&fence, owner.device())
                 .await
                 .map_err(account)?
                 .map_or(0, |binding| binding.revision);
-            let material = identity.rds_key_material(&owner).await.map_err(account)?;
+            let material = identity
+                .remote_key_material(&owner)
+                .await
+                .map_err(account)?;
             // Never abort this bind: keep owner until its exact endpoint can close.
             let mut endpoint = OwnedEndpoint::bind(
                 owner.device().clone(),
@@ -1328,8 +1331,8 @@ mod native {
         }
         pub(super) async fn close_active(&mut self) -> Result<(), ScreenFailure> {
             let result = super::super::identity::observe_cleanup(
-                "rds",
-                "rds.role.close",
+                "remote",
+                "remote.role.close",
                 async {
                     tokio::time::timeout(Duration::from_secs(3), self.drain_active())
                         .await
@@ -1358,8 +1361,8 @@ mod native {
                 Child::Host { id, life, task, .. } => {
                     life.stop.cancel();
                     let result = super::super::identity::observe_cleanup(
-                        "rds",
-                        "rds.host.join",
+                        "remote",
+                        "remote.host.join",
                         task.join(),
                         classify_close,
                     )
@@ -1388,8 +1391,8 @@ mod native {
                     let mut slot = viewer.lock().await;
                     let result = if let Some(viewer) = slot.as_mut() {
                         let result = super::super::identity::observe_cleanup(
-                            "rds",
-                            "rds.viewer.close",
+                            "remote",
+                            "remote.viewer.close",
                             async { viewer.close().await.map_err(failure) },
                             classify_close,
                         )
@@ -1452,8 +1455,8 @@ mod native {
                 result
             };
             super::super::identity::observe_cleanup(
-                "rds",
-                "rds.device.close",
+                "remote",
+                "remote.device.close",
                 closing,
                 classify_close,
             )
@@ -1564,8 +1567,8 @@ mod native {
                 Ok(viewer)
             };
             let result = super::super::identity::observe_operation(
-                "rds",
-                "rds.viewer.open",
+                "remote",
+                "remote.viewer.open",
                 opening,
                 ScreenFailure::Unavailable,
                 classify,
@@ -1713,7 +1716,7 @@ mod native {
                         Err(error @ (ClientError::Transport | ClientError::Timeout)) => {
                             let error = account(error);
                             tracing::event!(target:"nds_native",tracing::Level::WARN,{
-                                event.name="rds.host.ready.unconfirmed",module="rds",scope="process",
+                                event.name="remote.host.ready.unconfirmed",module="remote",scope="process",
                                 error.type=error.code(),outcome="pending"
                             });
                             return Err(error);
@@ -1744,8 +1747,8 @@ mod native {
                 let task = tokio::spawn(
                     async move {
                         let result = super::super::identity::observe_cleanup(
-                            "rds",
-                            "rds.host.stop",
+                            "remote",
+                            "remote.host.stop",
                             async { host.serve(owned.stop.clone()).await.map_err(failure) },
                             classify_close,
                         )
@@ -1768,8 +1771,8 @@ mod native {
                 Ok(())
             };
             let result = super::super::identity::observe_operation(
-                "rds",
-                "rds.host.accept",
+                "remote",
+                "remote.host.accept",
                 accepting,
                 ScreenFailure::Unavailable,
                 classify,
@@ -1794,8 +1797,8 @@ mod native {
         ready: tokio::sync::oneshot::Sender<Result<(), ScreenFailure>>,
     ) -> Result<(), ScreenFailure> {
         let result = super::super::identity::observe_operation(
-            "rds",
-            "rds.device.prepare",
+            "remote",
+            "remote.device.prepare",
             DeviceScreen::prepare(identity, &lifetime, &state),
             ScreenFailure::Unavailable,
             classify,
@@ -1880,7 +1883,7 @@ mod native {
                     _ = state.stop.cancelled() => break,
                     _ = role.stop.cancelled() => Err(ScreenFailure::Closed),
                     result = super::super::identity::observe_operation(
-                        "rds", "rds.view.revalidate",
+                        "remote", "remote.view.revalidate",
                         async { tokio::time::timeout(Duration::from_secs(3), revalidate)
                             .await.unwrap_or(Err(ScreenFailure::Timeout)) },
                         ScreenFailure::Unavailable, classify,
@@ -1932,8 +1935,8 @@ mod native {
             let mut task =
                 HostCompletion::Running(tokio::spawn(async { Err(ScreenFailure::Failed) }));
             let result = super::super::super::identity::observe_cleanup(
-                "rds",
-                "rds.host.join",
+                "remote",
+                "remote.host.join",
                 task.join(),
                 classify_close,
             )

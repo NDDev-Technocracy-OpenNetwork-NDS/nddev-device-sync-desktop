@@ -111,9 +111,9 @@ worker_staging = None
 try:
     worker_digest = None
     if arguments[0] == 'linux':
-        worker_staging = tempfile.TemporaryDirectory(prefix='nds-gds-worker-build-')
+        worker_staging = tempfile.TemporaryDirectory(prefix='nds-github-worker-build-')
         worker_digest = package_linux_worker(source, Path(worker_staging.name))
-    worker_define = '' if worker_digest is None else f'      gds_worker_sha256: "{worker_digest}"\n'
+    worker_define = '' if worker_digest is None else f'      github_worker_sha256: "{worker_digest}"\n'
     cache_define = '      native_build_cache: ' + json.dumps(os.environ['NDS_NATIVE_BUILD_HOME']) + '\n'
     directory_define = '      native_build_directory: ' + json.dumps(native_build_directory) + '\n'
     python_define = '      native_build_python: ' + json.dumps(sys.executable) + '\n'

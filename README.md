@@ -22,14 +22,14 @@ Core owns admission and readiness. The composition reports actual supported
 adapters, discovered local dependencies and last query results separately;
 consent alone is not readiness and never grants OS/browser permissions. A
 configuration change cancels affected owned work and stale results. Existing
-replica/RDS lifetimes perform revalidation; no second scheduler or plugin
+replica/remote-module lifetimes perform revalidation; no second scheduler or plugin
 installer is introduced. Source delivery and platform acceptance remain separate.
 
 Device control (ADR 0018) is the device's authenticated `fullauto`/`manual`
 policy from Accounts, read under the same local-use fence as the admission.
 In fullauto a supported, installed system tool (sysinfo, clipboard, cleaner,
 updater) is admitted without the module checklist; manual keeps the checklist.
-GDS, RDS and integrations keep their explicit configuration. The policy is
+the GitHub and remote modules and integrations keep their explicit configuration. The policy is
 read before the module lifetime is captured and again before a result is
 published: a changed mode or revision closes system-tool admissions, so a late
 result cannot borrow the replacement's authority. An unreachable or older
@@ -93,7 +93,7 @@ cover dependencies, static checks, generated-source drift and the Linux build.
 Run the same native build on each other supported host before claiming support.
 
 Native preparation is shared by the Flutter hook, build wrapper, generator and
-`just check`. It locates the immutable RDS SDK through Cargo, verifies its clean
+`just check`. It locates the immutable remote-module SDK through Cargo, verifies its clean
 Git source, and calls that module's checked provider preparer. Generated inputs
 and a dedicated Cargo home stay in build caches; user Cargo/Git configuration is
 not changed. Public source fetching is non-interactive and needs no SSH agent.
@@ -186,7 +186,7 @@ reconciliation remain incomplete. End-to-end provider/client acceptance remains 
 acceptance uses `identity-acceptance.py --vault --catalog-source` with a fresh
 `--fixture-sync3` fixture.
 
-An admitted foreground repository connection retains its exact GDS client,
+An admitted foreground repository connection retains its exact GitHub module client,
 work and terminal result when the caller disappears. One connection runs at a
 time; identity replacement waits for both this work and native module shutdown.
 Final delivery validates the original caller and configuration. A refused
@@ -242,7 +242,7 @@ qualifies only its selected case. Receipts and cleanup remain outside
 the repository; other targets and release qualification remain separate.
 
 `python scripts/build.py linux --release` builds the committed Linux AOT bundle
-and its existing GDS worker with a tracked native source SHA. An explicitly
+and its existing GitHub module worker with a tracked native source SHA. An explicitly
 approved assembly policy may be passed before the target with
 `--app-update-policy /path/to/approved-policy.json`; its exact bounded JSON
 string becomes the tracked NativeAssets input. An unset policy stays empty and
@@ -257,7 +257,7 @@ There is no default or port discovery. The main workflow's optional
 ordinary pushes and other targets leave it unset. Build provenance records the
 port (or `null`) and the digest of Flutter's generated Linux configuration,
 without exporting other Dart defines. This records assembly intent, not cache
-readiness, profile binding or RDS identity. Android builds must leave it unset.
+readiness, profile binding or remote endpoint identity. Android builds must leave it unset.
 
 Linux application updates provide verified discovery, bounded staging,
 cancellation and authenticated local restore in a separate owned namespace.

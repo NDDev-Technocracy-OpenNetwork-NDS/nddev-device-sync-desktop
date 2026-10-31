@@ -202,9 +202,9 @@ jobs:
           metadata = json.loads(subprocess.check_output(
               ['cargo', 'metadata', '--locked', '--format-version', '1', '--manifest-path', manifest],
               env=env, text=True, timeout=120))
-          workers = [p for p in metadata['packages'] if p['name'] == 'nddev-device-sync-gds']
+          workers = [p for p in metadata['packages'] if p['name'] == 'nddev-device-sync-github']
           if len(workers) != 1:
-              raise SystemExit('One locked GDS worker source is required')
+              raise SystemExit('One locked GitHub module worker source is required')
           provenance = json.loads(Path('build/nds-build-provenance.json').read_text())
           worker = provenance['worker']
           if (provenance['app_source']['commit'] != os.environ['NDS_SOURCE_COMMIT'] or
@@ -214,7 +214,7 @@ jobs:
               not isinstance(worker['sha256'], str) or
               not re.fullmatch('[a-f0-9]{64}', worker['sha256'])):
               raise SystemExit('Metadata worker input differs from the verified native bundle')
-          env['NDS_GDS_WORKER_SHA256'] = worker['sha256']
+          env['NDS_GITHUB_WORKER_SHA256'] = worker['sha256']
           env['CARGO_BUILD_BUILD_DIR'] = metadata.get('build_directory', metadata['target_directory'])
           result = subprocess.check_output(
               ['cargo', 'run', '--locked', '--release', '--manifest-path', manifest,

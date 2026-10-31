@@ -1,4 +1,4 @@
-//! The actual foreground Git connection, retained past caller loss. The GDS
+//! The actual foreground Git connection, retained past caller loss. The GitHub module
 //! client still owns Git/provider effects and its original authorization checks.
 //! This slot owns task/result/drain only; it is not a durable Git-effect journal.
 use super::catalog_types::{GithubCatalogError, GithubConnectionView};
@@ -162,7 +162,7 @@ impl CatalogOperations {
     }
 }
 fn unresolved() -> ClientError {
-    ClientError::Server("gds_cleanup_unresolved".into())
+    ClientError::Server("github_cleanup_unresolved".into())
 }
 impl Row {
     fn launch(self: &Arc<Self>, work: impl Future<Output = ConnectionResult> + Send + 'static) {

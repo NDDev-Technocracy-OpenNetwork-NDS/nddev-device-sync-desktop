@@ -46,7 +46,8 @@ pub struct NdsClient {
     inner: Arc<IdentityClient>,
     // Ephemeral per-host assembly input, never persisted or replicated by Vault.
     cache_base: Option<u16>,
-    pub(crate) catalog: Mutex<Option<Arc<nddev_device_sync_gds::catalog_runtime::CatalogClient>>>,
+    pub(crate) catalog:
+        Mutex<Option<Arc<nddev_device_sync_github::catalog_runtime::CatalogClient>>>,
     pub(super) catalog_operations: super::catalog_operation::CatalogOperations,
     #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
     pub(crate) catalog_owner: nddev_device_sync_vault::replication::CatalogSlot,
@@ -91,7 +92,7 @@ impl NdsClient {
     pub fn new(endpoint: String) -> Result<Self, ClientError> {
         Self::new_with_cache_base(endpoint, None)
     }
-    /// The host assembly may supply its existing RDS-owned cache forward base.
+    /// The host assembly may supply its existing remote-module-owned cache forward base.
     /// This neither discovers a port nor binds a scope or starts a forward.
     pub fn new_with_cache_base(
         endpoint: String,
@@ -584,7 +585,7 @@ impl NdsClient {
             .map_err(replica_start_error)?;
             self.inner.validate_local_use(fence).await?;
             owner
-                .catalog(nddev_device_sync_gds::catalog_runtime::CatalogRuntime::new)
+                .catalog(nddev_device_sync_github::catalog_runtime::CatalogRuntime::new)
                 .map_err(replica_start_error)?;
             {
                 let _publication = self

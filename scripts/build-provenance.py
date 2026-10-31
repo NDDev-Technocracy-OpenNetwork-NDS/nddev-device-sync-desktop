@@ -81,7 +81,7 @@ def linux_bundle(artifact, paths):
     for path in elfs:
         linux_elf(path)
     runners = [path for path in elfs if path.parent == artifact and
-               path.name != 'nds-gds-readonly-worker']
+               path.name != 'nds-github-readonly-worker']
     if len(runners) != 1 or not runners[0].stat().st_mode & 0o111:
         raise SystemExit('Expected one executable Linux application runner')
     kernels = list(artifact.rglob('kernel_blob.bin'))
@@ -96,8 +96,8 @@ def linux_bundle(artifact, paths):
 
     # Consume the existing native_worker.py receipt contract, without rebuilding,
     # copying or changing its independently owned worker graph.
-    worker = artifact / 'nds-gds-readonly-worker'
-    receipt_path = artifact / 'nds-gds-worker.build.json'
+    worker = artifact / 'nds-github-readonly-worker'
+    receipt_path = artifact / 'nds-github-worker.build.json'
     if (worker.is_symlink() or not worker.is_file() or
             not 0 < worker.stat().st_size <= 128 * 1024 * 1024 or
             not worker.stat().st_mode & 0o111 or receipt_path.is_symlink() or
@@ -106,13 +106,13 @@ def linux_bundle(artifact, paths):
     try:
         receipt = json.loads(receipt_path.read_bytes())
         lock = tomllib.loads((args.native_root / 'packages/nds_native/rust/Cargo.lock').read_text())
-        gds = [package for package in lock['package'] if package['name'] == 'nddev-device-sync-gds']
+        github = [package for package in lock['package'] if package['name'] == 'nddev-device-sync-github']
         digest = receipt['sha256']
-        if (len(gds) != 1 or receipt['schema_version'] != 1 or
+        if (len(github) != 1 or receipt['schema_version'] != 1 or
                 receipt['worker'] != worker.name or
                 receipt['target'] != 'x86_64-unknown-linux-gnu' or
-                receipt['source'] != gds[0]['source'] or
-                receipt['host_build_environment'] != {'NDS_GDS_WORKER_SHA256': digest} or
+                receipt['source'] != github[0]['source'] or
+                receipt['host_build_environment'] != {'NDS_GITHUB_WORKER_SHA256': digest} or
                 not isinstance(digest, str) or not re.fullmatch('[a-f0-9]{64}', digest) or
                 sha(worker) != digest):
             raise ValueError('Worker differs from the locked source or bytes')
@@ -134,7 +134,7 @@ elif artifact.is_dir():
         raise SystemExit('Provenance output must remain outside the Linux bundle')
     files = {str(path.relative_to(artifact)):sha(path) for path in paths}
     if linux is not None and (files.get(linux[2]['path']) != linux[2]['sha256'] or
-                              files.get('nds-gds-worker.build.json') != linux[2]['receipt_sha256']):
+                              files.get('nds-github-worker.build.json') != linux[2]['receipt_sha256']):
         raise SystemExit('Linux worker changed while recording the bundle')
 else: raise SystemExit('Built artifact does not exist')
 app_source = identity(args.app_root)

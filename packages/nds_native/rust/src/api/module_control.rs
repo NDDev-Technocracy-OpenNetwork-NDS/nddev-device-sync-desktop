@@ -419,13 +419,13 @@ pub(super) fn shared_permissions(module: &str) -> Option<BTreeSet<Permission>> {
     use Permission::*;
     match module {
         "clipboard" => Some(BTreeSet::from([Clipboard, LocalNetwork])),
-        "gds" => Some(nddev_device_sync_gds::catalog_runtime::required_permissions()),
-        "rds" if cfg!(target_os = "linux") => Some(BTreeSet::from([ReadOnly, LocalNetwork])),
+        "github" => Some(nddev_device_sync_github::catalog_runtime::required_permissions()),
+        "remote" if cfg!(target_os = "linux") => Some(BTreeSet::from([ReadOnly, LocalNetwork])),
         _ => None,
     }
 }
 fn optional_permissions(module: &str) -> BTreeSet<Permission> {
-    if module == "gds" && nddev_device_sync_gds::catalog_runtime::workspace_supported() {
+    if module == "github" && nddev_device_sync_github::catalog_runtime::workspace_supported() {
         BTreeSet::from([Permission::GitWrite])
     } else {
         BTreeSet::new()
@@ -720,10 +720,10 @@ impl NdsClient {
         Ok(guard)
     }
     async fn module_changed(&self, module: &str) {
-        if module == "gds" {
+        if module == "github" {
             self.cancel_github_catalog();
         }
-        if module == "rds" {
+        if module == "remote" {
             self.cancel_screen();
         }
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
@@ -896,7 +896,7 @@ impl NdsClient {
             let (native_supported, supported, required) = capabilities(descriptor);
             let shared = shared_permissions(id);
             let native_observation = native.iter().find(|v| v.id == id);
-            let shared_observation = if id == "gds" {
+            let shared_observation = if id == "github" {
                 self.catalog_observation().await
             } else {
                 self.module_control
@@ -2328,10 +2328,10 @@ pub(crate) mod native_ownership {
                         let waiter = start(&owner, Arc::default(), async move {
                             match kind {
                                 0 => Err(CacheFailure::Provider(CacheError::Uncertain)),
-                                // Existing RDS re-exports the SAME singleton F0
+                                // The remote module re-exports the SAME singleton F0
                                 // IoError. No new dep/provider is introduced.
                                 1 => Err(CacheFailure::Provider(CacheError::Io(
-                                    nddev_device_sync_rds::IoError::Transport,
+                                    nddev_device_sync_remote::IoError::Transport,
                                 ))),
                                 3 => Err(CacheFailure::Invalidated {
                                     effect: Box::new(Err(CacheFailure::Provider(
@@ -3547,25 +3547,25 @@ mod tests {
             permissions: BTreeSet::from([Permission::ReadOnly]),
         };
         let (original, _) =
-            control.observe_configuration("gds", &configuration, false, Some("original"), 10);
+            control.observe_configuration("github", &configuration, false, Some("original"), 10);
         let (acknowledged, changed) =
-            control.observe_configuration("gds", &configuration, false, Some("original"), 10);
+            control.observe_configuration("github", &configuration, false, Some("original"), 10);
         assert!(!changed && Arc::ptr_eq(&original, &acknowledged) && !original.is_cancelled());
         // Withdrawal and reapproval may both occur between local observations.
         let (fresh, changed) =
-            control.observe_configuration("gds", &configuration, false, Some("new-choice"), 12);
+            control.observe_configuration("github", &configuration, false, Some("new-choice"), 12);
         assert!(changed && original.is_cancelled() && !fresh.is_cancelled());
         assert!(!Arc::ptr_eq(&original, &fresh));
         let (stale, changed) =
-            control.observe_configuration("gds", &configuration, false, Some("original"), 10);
+            control.observe_configuration("github", &configuration, false, Some("original"), 10);
         assert!(stale.is_cancelled() && !changed && !fresh.is_cancelled());
         let (retained, changed) =
-            control.observe_configuration("gds", &configuration, false, Some("new-choice"), 13);
+            control.observe_configuration("github", &configuration, false, Some("new-choice"), 13);
         assert!(!changed && Arc::ptr_eq(&retained, &fresh));
         control.stop();
         assert!(fresh.is_cancelled());
         let (new_context, _) =
-            control.observe_configuration("gds", &configuration, false, Some("other-store"), 0);
+            control.observe_configuration("github", &configuration, false, Some("other-store"), 0);
         assert!(!new_context.is_cancelled());
     }
     #[test]
@@ -3573,7 +3573,7 @@ mod tests {
         let control = ModuleControl::default();
         let configuration = Configuration::default();
         let (tool, _) = control.observe_configuration("sysinfo", &configuration, false, None, 1);
-        let (gds, _) = control.observe_configuration("gds", &configuration, false, None, 1);
+        let (github, _) = control.observe_configuration("github", &configuration, false, None, 1);
         assert_eq!(
             control.cached_basis(),
             ControlBasis {
@@ -3588,7 +3588,7 @@ mod tests {
             "admission under the unverified default survived"
         );
         assert!(
-            !gds.is_cancelled(),
+            !github.is_cancelled(),
             "explicit-consent modules keep their lifetime"
         );
         assert_eq!(
@@ -3610,7 +3610,7 @@ mod tests {
         )
         .unwrap();
         control.observe_policy(&narrowed);
-        assert!(current.is_cancelled() && !gds.is_cancelled());
+        assert!(current.is_cancelled() && !github.is_cancelled());
         // A replacement identity never inherits the previous policy.
         control.stop();
         assert_eq!(control.cached_basis().revision, 0);

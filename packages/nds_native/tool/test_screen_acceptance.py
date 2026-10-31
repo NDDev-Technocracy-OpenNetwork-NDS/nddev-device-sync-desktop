@@ -76,7 +76,7 @@ class ScreenOrganizationContext(unittest.TestCase):
             self.authority.current_organization(self.actor)
 
     def test_cleanup_failure_case_refuses_flutter_before_any_fixture_access(self):
-        for case in ['role-cleanup-failure', 'device-cleanup-failure']:
+        for case in ['role-cleanup-failure', 'device-cleanup-failure', 'host-completion-loss']:
             args = ['screen-acceptance.py', '--fixture', '/missing-fixture',
                     '--native-test', '/missing-native', '--output', '/missing-output',
                     '--source', '0' * 40, '--case', case, '--viewer', 'flutter']

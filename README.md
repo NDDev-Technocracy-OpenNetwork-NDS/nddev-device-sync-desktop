@@ -215,6 +215,12 @@ role/device/identity close path and concurrent close waiters, retain the error
 and verify purpose ownership before and after completion. Their fixture-only
 terminal acknowledgement requires a positively drained device and cannot
 acknowledge an unresolved owner; it adds no production recovery operation.
+The native-only `host-completion-loss` case pauses its owned capture display,
+aborts the still-running registered outer host task, then resumes that display.
+The original endpoint and purpose owner remain retained with an unresolved
+result and refused replacement/shutdown. Its disposable process teardown is
+separate from positive product resource drain; the fixture cannot acknowledge
+that unresolved owner.
 Each Flutter case checks removal of the actual displayed image; expiry also rejects
 an early disconnect against the native host's expiry proof. Each invocation
 qualifies only its selected case. Receipts and cleanup remain outside

@@ -34,6 +34,7 @@ TESTS = {
     "expiry": "actual_expiry_closes_native_stream",
     "role-cleanup-failure": "actual_role_cleanup_error_survives_device_and_identity_shutdown",
     "device-cleanup-failure": "actual_device_cleanup_error_survives_concurrent_close_waiters",
+    "host-completion-loss": "actual_lost_host_completion_retains_original_owner",
 }
 HTTP = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
@@ -246,7 +247,7 @@ def operation():
 
 
 def qualify(args, fixture):
-    processes, displays, handles, role_displays = [], [], [], {}
+    processes, displays, handles, role_displays, paused_displays = [], [], [], {}, []
     args.output.mkdir(mode=0o700, parents=True, exist_ok=False)
     root = Path(tempfile.mkdtemp(prefix="nds-native-screen-", dir=Path.home() / ".local/state"))
     try:
@@ -362,7 +363,23 @@ def qualify(args, fixture):
                   "stage": "actual_role_changed", "actual_frame": pixels, "acceptance_complete": False})
         elif args.case == "source-loss":
             stop(role_displays["host"])
+        elif args.case == "host-completion-loss":
+            display = role_displays["host"]
+            assert display.poll() is None
+            os.kill(display.pid, signal.SIGSTOP)
+            paused_displays.append(display)
+            write(root / "capture-paused.json", {"paused": True})
         write(root / "end-trigger.json", {"case": args.case})
+        if args.case == "host-completion-loss":
+            unknown = fact("host-unresolved.json", 15)
+            for key in ["join_not_confirmed", "admission_closed", "purpose_still_busy"]:
+                assert unknown[key] is True
+            assert unknown["first_close_code"] in ["screen_cleanup_unresolved", "screen_timeout"]
+            display = paused_displays[0]
+            assert display.poll() is None
+            os.kill(display.pid, signal.SIGCONT)
+            paused_displays.remove(display)
+            write(root / "source-resumed.json", {"resumed": True})
         host_proof = fact("host-proof.json", 340 if args.case == "expiry" else 15)
         viewer_proof = fact("viewer-proof.json", 15)
         for child in processes:
@@ -374,8 +391,13 @@ def qualify(args, fixture):
         write(args.output / "receipt.json", {"source": args.source, "viewer": args.viewer,
             "case": args.case, "actual_smtp_otp": True, "actual_signed_role_change": args.case == "role", "actual_frame": pixels,
             "host": host_proof, "viewer_proof": viewer_proof,
-            "scope": "Owned Linux X11 view-only stream and the named actual termination case; other cases, platforms and update acceptance remain separate."})
+            "scope": ("Owned Linux X11 stream with unresolved product completion and retained original owner through disposable process teardown."
+                      if args.case == "host-completion-loss" else
+                      "Owned Linux X11 view-only stream and the named actual termination case; other cases, platforms and update acceptance remain separate.")})
     finally:
+        for display in paused_displays:
+            if display.poll() is None:
+                os.kill(display.pid, signal.SIGCONT)
         for child in processes:
             try:
                 os.killpg(child.pid, signal.SIGTERM)
@@ -407,7 +429,7 @@ def main():
     parser.add_argument("--viewer", choices=["native", "flutter"], default="flutter")
     parser.add_argument("--case", choices=TESTS, default="role")
     args = parser.parse_args()
-    if args.case in ["role-cleanup-failure", "device-cleanup-failure"] and args.viewer != "native":
+    if args.case in ["role-cleanup-failure", "device-cleanup-failure", "host-completion-loss"] and args.viewer != "native":
         parser.error("cleanup failure cases require the native viewer")
     assert sys.platform == "linux" and re.fullmatch("[a-f0-9]{40}", args.source)
     for p in [args.fixture, args.native_test, args.output]:

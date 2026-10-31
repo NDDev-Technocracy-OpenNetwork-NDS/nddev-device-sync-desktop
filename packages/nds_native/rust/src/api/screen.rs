@@ -392,6 +392,36 @@ pub struct ScreenHost {
     life: Arc<RoleLife>,
 }
 impl ScreenHost {
+    #[cfg(all(test, target_os = "linux"))]
+    pub(crate) async fn abort_running_host_for_fixture(&self) {
+        self.state
+            .device
+            .lock()
+            .await
+            .as_mut()
+            .expect("owned fixture device")
+            .abort_running_host_for_fixture(&self.life);
+    }
+    #[cfg(all(test, target_os = "linux"))]
+    pub(crate) fn retains_unresolved_owner_for_fixture(&self) -> bool {
+        let held = self
+            .state
+            .hold
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .as_ref()
+            .is_some_and(|owner| Arc::ptr_eq(owner, &self.state));
+        held && !self.state.is_drained()
+            && matches!(
+                *self.state.completion.borrow(),
+                Some(Err(ScreenFailure::Unresolved))
+            )
+            && self.state.device.try_lock().is_ok_and(|device| {
+                device
+                    .as_ref()
+                    .is_some_and(|device| device.retains_unresolved_host_for_fixture(&self.life))
+            })
+    }
     // Fixture-only failure after the real native host has actually joined.
     // No production wire or recovery/authorization API is added.
     #[cfg(all(test, target_os = "linux"))]
@@ -1156,6 +1186,30 @@ mod native {
         }
     }
     impl DeviceScreen {
+        #[cfg(test)]
+        pub(super) fn abort_running_host_for_fixture(&mut self, original: &Arc<RoleLife>) {
+            match self.child.as_mut() {
+                Some(Child::Host {
+                    life,
+                    task: HostCompletion::Running(task),
+                    ..
+                }) if Arc::ptr_eq(original, life) => {
+                    assert!(!task.is_finished() && !life.stop.is_cancelled());
+                    task.abort(); // Keep the exact handle registered for the production join.
+                }
+                _ => panic!("fixture must retain its exact running host"),
+            }
+        }
+        #[cfg(test)]
+        pub(super) fn retains_unresolved_host_for_fixture(&self, original: &Arc<RoleLife>) -> bool {
+            self.owner.is_some()
+                && self.endpoint.is_some()
+                && !self.drained
+                && self.child.as_ref().is_some_and(|child| {
+                    matches!(child, Child::Host { life, task: HostCompletion::Unresolved, .. }
+                        if Arc::ptr_eq(original, life))
+                })
+        }
         #[cfg(test)]
         pub(super) fn fail_after_join_for_fixture(
             &mut self,

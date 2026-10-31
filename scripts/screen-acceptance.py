@@ -32,6 +32,8 @@ TESTS = {
     "local-disable": "actual_local_disable_closes_native_stream",
     "logout": "actual_logout_closes_native_stream",
     "expiry": "actual_expiry_closes_native_stream",
+    "role-cleanup-failure": "actual_role_cleanup_error_survives_device_and_identity_shutdown",
+    "device-cleanup-failure": "actual_device_cleanup_error_survives_concurrent_close_waiters",
 }
 HTTP = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
@@ -405,6 +407,8 @@ def main():
     parser.add_argument("--viewer", choices=["native", "flutter"], default="flutter")
     parser.add_argument("--case", choices=TESTS, default="role")
     args = parser.parse_args()
+    if args.case in ["role-cleanup-failure", "device-cleanup-failure"] and args.viewer != "native":
+        parser.error("cleanup failure cases require the native viewer")
     assert sys.platform == "linux" and re.fullmatch("[a-f0-9]{40}", args.source)
     for p in [args.fixture, args.native_test, args.output]:
         assert p.is_absolute() and not p.resolve().is_relative_to(ROOT)

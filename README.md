@@ -208,8 +208,14 @@ signed production routes. With either viewer, `--case source-loss`, `cancel`,
 and `local-disable` terminate the owned capture
 display, cancel the actual host handle, or disable its local module consent.
 `logout` uses the actual host logout path; `expiry` waits for the real
-five-minute view lifetime, without changing clocks or production limits. Each
-Flutter case checks removal of the actual displayed image; expiry also rejects
+five-minute view lifetime, without changing clocks or production limits.
+Native-only `role-cleanup-failure` and `device-cleanup-failure` cases inject a
+known failure only after the real native host joins. They exercise the original
+role/device/identity close path and concurrent close waiters, retain the error
+and verify purpose ownership before and after completion. Their fixture-only
+terminal acknowledgement requires a positively drained device and cannot
+acknowledge an unresolved owner; it adds no production recovery operation.
+Each Flutter case checks removal of the actual displayed image; expiry also rejects
 an early disconnect against the native host's expiry proof. Each invocation
 qualifies only its selected case. Receipts and cleanup remain outside
 the repository; other targets and release qualification remain separate.

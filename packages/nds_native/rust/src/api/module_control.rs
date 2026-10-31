@@ -5,7 +5,8 @@ use super::identity::NdsClient;
 use flutter_rust_bridge::frb;
 use nddev_device_sync_accounts::{ClientError, IdentityClient, LocalUseFence};
 use nddev_device_sync_domain::{
-    ModuleDescriptor, ModuleId, Permission, Platform,
+    ModuleDescriptor, ModuleId, ModuleKind, Permission, Platform,
+    devices::{ControlMode, DevicePolicy, DevicePurpose},
     modules::{ModuleError, ModuleObservation, control::Configuration},
     state::Reachability,
 };
@@ -45,10 +46,41 @@ pub struct DeviceModuleView {
     pub conflicted: bool,
 }
 
+/// Authenticated device control as observed by this client (ADR 0018).
+/// Presentation only: Rust admission decides with the same values.
+#[derive(Clone)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
+pub struct DeviceControlView {
+    /// `fullauto` or `manual`.
+    pub mode: String,
+    pub purposes: Vec<String>,
+    /// Zero means no authenticated policy was observed; manual applies.
+    pub revision: u64,
+    /// `server`, `cached` (server unreachable) or `default` (never observed).
+    pub source: String,
+}
+
+/// The policy an admission decision used. Revision zero is the unverified
+/// manual default; it never widens beyond the existing module checklist.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct ControlBasis {
+    pub(crate) mode: ControlMode,
+    pub(crate) revision: u64,
+}
+
 #[derive(Default)]
 #[cfg_attr(feature = "flutter", frb(ignore))]
 pub(crate) struct ModuleControl {
     slots: Mutex<BTreeMap<String, Slot>>,
+    /// Last authenticated policy of this identity generation. Cleared on seal.
+    policy: Mutex<Option<DevicePolicy>>,
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     pub(crate) discovery: tokio::sync::Mutex<()>,
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
@@ -123,6 +155,99 @@ impl ModuleControl {
         }
         (slot.lifetime.clone(), changed)
     }
+    /// A changed authenticated policy closes every system-tool admission
+    /// lifetime, so a late result cannot acquire the replacement's authority.
+    fn observe_policy(&self, policy: &DevicePolicy) {
+        let mut current = self.policy.lock().unwrap_or_else(|e| e.into_inner());
+        if current.as_ref() == Some(policy) {
+            return;
+        }
+        let previous = current.replace(policy.clone());
+        drop(current);
+        let basis = |value: Option<&DevicePolicy>| {
+            value.map_or((ControlMode::Manual, 0), |value| {
+                (value.mode(), value.revision())
+            })
+        };
+        if basis(previous.as_ref()) == basis(Some(policy)) {
+            return;
+        }
+        let tools: Vec<String> = nddev_device_sync_agent::module_graph()
+            .map(|graph| {
+                graph
+                    .iter()
+                    .filter(|descriptor| descriptor.kind == ModuleKind::Tool)
+                    .map(|descriptor| descriptor.id.as_str().to_owned())
+                    .collect()
+            })
+            .unwrap_or_default();
+        let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
+        for module in &tools {
+            if let Some(slot) = slots.get_mut(module) {
+                slot.lifetime.cancel();
+                slot.lifetime = Arc::new(CancellationToken::new());
+                slot.observation = None;
+            }
+        }
+        drop(slots);
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        for agent in self
+            .native
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .owners
+            .iter()
+        {
+            for module in &tools {
+                agent.invalidate_module(module);
+            }
+        }
+    }
+    fn cached_basis(&self) -> ControlBasis {
+        self.policy
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .as_ref()
+            .map_or(
+                ControlBasis {
+                    mode: ControlMode::Manual,
+                    revision: 0,
+                },
+                |value| ControlBasis {
+                    mode: value.mode(),
+                    revision: value.revision(),
+                },
+            )
+    }
+    /// Read the authenticated policy under the caller's original fence. An
+    /// unreachable or older server keeps the last observed policy, or manual
+    /// when none was observed; it never widens authority.
+    async fn effective_policy(
+        &self,
+        identity: &IdentityClient,
+        fence: &LocalUseFence,
+    ) -> Result<(Option<DevicePolicy>, &'static str), ClientError> {
+        match identity.device_policy(fence).await {
+            Ok(policy) => {
+                self.observe_policy(&policy);
+                Ok((Some(policy), "server"))
+            }
+            Err(error) if policy_unreachable(&error) => {
+                let cached = self
+                    .policy
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .clone();
+                let source = if cached.is_some() {
+                    "cached"
+                } else {
+                    "default"
+                };
+                Ok((cached, source))
+            }
+            Err(error) => Err(error),
+        }
+    }
     pub(crate) fn stop(&self) {
         let _ = self.seal();
     }
@@ -132,6 +257,8 @@ impl ModuleControl {
             slot.lifetime.cancel();
         }
         slots.clear();
+        // A replacement identity never inherits the old device control policy.
+        *self.policy.lock().unwrap_or_else(|e| e.into_inner()) = None;
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         {
             let owners = self.native.lock().unwrap_or_else(|e| e.into_inner());
@@ -359,6 +486,11 @@ pub(crate) struct ModuleUseGuard {
     operation_id: Option<String>,
     pub(crate) lifetime: Arc<CancellationToken>,
     fence: Arc<LocalUseFence>,
+    /// Device control used for a system-tool admission; None for modules that
+    /// keep their explicit configuration.
+    basis: Option<ControlBasis>,
+    /// Correlates admission, action and result diagnostics; never a grant.
+    pub(crate) operation: String,
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     publication: Arc<Mutex<()>>,
 }
@@ -378,6 +510,9 @@ impl ModuleUseGuard {
                     || slot.configuration != self.configuration
                     || slot.operation_id != self.operation_id
             })
+            || self
+                .basis
+                .is_some_and(|basis| basis != self.control.cached_basis())
         {
             return Err(ClientError::Cancelled.into());
         }
@@ -387,6 +522,23 @@ impl ModuleUseGuard {
     /// Only an actual adapter result in this still-current lifetime can refresh
     /// readiness. Consent and successful settings persistence are not probes.
     pub(crate) fn observe<T>(&self, result: &Result<T, ModuleError>) {
+        let view = self.identity.view();
+        if self.basis.is_some() && !view.current_device_id.is_empty() && !view.user_id.is_empty() {
+            // The action result carries the same operation as its admission.
+            let module = self.module.as_str();
+            match result {
+                Ok(_) => tracing::event!(target: "nds_native", tracing::Level::INFO, {
+                    event.name = "module.action.completed", module,
+                    device.id = %view.current_device_id, user.id = %view.user_id,
+                    operation.id = %self.operation, outcome = "ok"
+                }),
+                Err(error) => tracing::event!(target: "nds_native", tracing::Level::WARN, {
+                    event.name = "module.action.failed", module,
+                    device.id = %view.current_device_id, user.id = %view.user_id,
+                    operation.id = %self.operation, error.type = %error, outcome = "error"
+                }),
+            }
+        }
         let at = (time::OffsetDateTime::now_utc().unix_timestamp_nanos() / 1_000_000)
             .try_into()
             .ok();
@@ -407,10 +559,31 @@ impl ModuleUseGuard {
         }
     }
     pub(crate) async fn validate(&self) -> Result<(), ClientError> {
+        self.validate_with(true).await
+    }
+    async fn validate_with(&self, reread_policy: bool) -> Result<(), ClientError> {
         if self.lifetime.is_cancelled() {
             return Err(ClientError::Cancelled);
         }
         self.identity.validate_local_use(&self.fence).await?;
+        if let Some(basis) = self.basis
+            && !reread_policy
+            && basis != self.control.cached_basis()
+        {
+            return Err(ClientError::Cancelled);
+        }
+        if let Some(basis) = self.basis.filter(|_| reread_policy) {
+            // A policy replaced during the work closes this admission.
+            let (policy, _) = self
+                .control
+                .effective_policy(&self.identity, &self.fence)
+                .await?;
+            if policy.map_or(basis.revision != 0, |value| {
+                value.mode() != basis.mode || value.revision() != basis.revision
+            }) {
+                return Err(ClientError::Cancelled);
+            }
+        }
         let current = self
             .vault
             .module_configuration(&self.module)
@@ -460,6 +633,26 @@ impl NdsClient {
         let vault = self.vault().await.map_err(vault_error)?;
         let identity = self.shared_identity().clone();
         let fence = Arc::new(identity.local_use_fence().await?);
+        // Read the device policy before capturing the module lifetime, so an
+        // observed replacement closes earlier work rather than this admission.
+        let basis = if descriptor.kind == ModuleKind::Tool {
+            let (policy, _) = self
+                .module_control
+                .effective_policy(&identity, &fence)
+                .await?;
+            Some(policy.map_or(
+                ControlBasis {
+                    mode: ControlMode::Manual,
+                    revision: 0,
+                },
+                |value| ControlBasis {
+                    mode: value.mode(),
+                    revision: value.revision(),
+                },
+            ))
+        } else {
+            None
+        };
         let setting = vault
             .module_configuration(module)
             .await
@@ -496,7 +689,16 @@ impl NdsClient {
                 None => (false, false, BTreeSet::new()),
             },
         };
-        if let Err(reason) = setting.configuration.admit(supported, installed, &required) {
+        let mode = basis.map_or(ControlMode::Manual, |basis| basis.mode);
+        let admission =
+            setting
+                .configuration
+                .admit_in(mode, descriptor.kind, supported, installed, &required);
+        let operation = uuid::Uuid::now_v7().to_string();
+        if basis.is_some() {
+            admission_event(&identity, module, mode, &operation, admission.err());
+        }
+        if let Err(reason) = admission {
             return Err(ClientError::Server(format!("module_{}", tag(reason)?)));
         }
         let guard = ModuleUseGuard {
@@ -509,10 +711,12 @@ impl NdsClient {
             operation_id: setting.operation_id,
             lifetime,
             fence,
+            basis,
+            operation,
             #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
             publication: self.publication.clone(),
         };
-        guard.validate().await?;
+        guard.validate_with(false).await?;
         Ok(guard)
     }
     async fn module_changed(&self, module: &str) {
@@ -607,6 +811,50 @@ impl NdsClient {
             Ok(Vec::new())
         }
     }
+    /// Current device control (ADR 0018) under a fresh local-use fence.
+    pub async fn device_control(&self) -> Result<DeviceControlView, ClientError> {
+        observe("agent", "device.control.read", async {
+            let identity = self.shared_identity().clone();
+            let fence = identity.local_use_fence().await?;
+            let (policy, source) = self
+                .module_control
+                .effective_policy(&identity, &fence)
+                .await?;
+            identity.validate_local_use(&fence).await?;
+            Ok(control_view(policy.as_ref(), source))
+        })
+        .await
+    }
+    /// Owner compare-and-set replacement. Widening manual into fullauto needs
+    /// a recent sign-in (`recent_authentication_required`); a stale revision
+    /// returns `operation_conflict`. Success closes system-tool admissions.
+    pub async fn set_device_control(
+        &self,
+        expected_revision: u64,
+        mode: String,
+        purposes: Vec<String>,
+    ) -> Result<DeviceControlView, ClientError> {
+        let mode = ControlMode::parse(&mode).map_err(|_| ClientError::InvalidInput)?;
+        let count = purposes.len();
+        let purposes = purposes
+            .iter()
+            .map(|value| DevicePurpose::parse(value).map_err(|_| ClientError::InvalidInput))
+            .collect::<Result<BTreeSet<_>, _>>()?;
+        if purposes.is_empty() || purposes.len() != count {
+            return Err(ClientError::InvalidInput);
+        }
+        observe("agent", "device.control.changed", async {
+            let identity = self.shared_identity().clone();
+            let fence = identity.local_use_fence().await?;
+            let policy = identity
+                .replace_device_policy(&fence, expected_revision, mode, purposes)
+                .await?;
+            self.module_control.observe_policy(&policy);
+            identity.validate_local_use(&fence).await?;
+            Ok(control_view(Some(&policy), "server"))
+        })
+        .await
+    }
     pub async fn device_modules(&self) -> Result<Vec<DeviceModuleView>, ClientError> {
         observe("agent", "module.readiness.read", self.read_device_modules()).await
     }
@@ -625,6 +873,8 @@ impl NdsClient {
         let native = self.native_module_observations().await?;
         let graph =
             nddev_device_sync_agent::module_graph().map_err(|_| ClientError::InvalidResponse)?;
+        // Presentation uses the last authenticated policy; admission rereads it.
+        let mode = self.module_control.cached_basis().mode;
         let mut result = Vec::new();
         let mut observations = Vec::new();
         for descriptor in graph.iter() {
@@ -687,7 +937,7 @@ impl NdsClient {
             .filter(|(supported, installed, required, _)| {
                 setting
                     .configuration
-                    .admit(*supported, *installed, required)
+                    .admit_in(mode, descriptor.kind, *supported, *installed, required)
                     .is_ok()
             })
             .max_by_key(|(_, _, _, value)| value.and_then(|v| v.observed_at_ms));
@@ -706,8 +956,10 @@ impl NdsClient {
                 tag(match admitted {
                     Some((supported, installed, required, value)) => setting
                         .configuration
-                        .readiness(supported, installed, required, value),
-                    None => setting.configuration.readiness(
+                        .readiness_in(mode, descriptor.kind, supported, installed, required, value),
+                    None => setting.configuration.readiness_in(
+                        mode,
+                        descriptor.kind,
                         supported,
                         installed.unwrap_or(true),
                         &required,
@@ -3193,6 +3445,77 @@ pub(crate) mod native_ownership {
     }
 }
 
+fn control_view(policy: Option<&DevicePolicy>, source: &str) -> DeviceControlView {
+    match policy {
+        Some(policy) => DeviceControlView {
+            mode: policy.mode().as_str().into(),
+            purposes: policy
+                .purposes()
+                .iter()
+                .map(|value| value.as_str().to_owned())
+                .collect(),
+            revision: policy.revision(),
+            source: source.into(),
+        },
+        None => DeviceControlView {
+            mode: ControlMode::Manual.as_str().into(),
+            purposes: Vec::new(),
+            revision: 0,
+            source: "default".into(),
+        },
+    }
+}
+
+/// Unreachable or older servers keep the last observed policy; refusals,
+/// cancellation and malformed replies propagate unchanged.
+fn policy_unreachable(error: &ClientError) -> bool {
+    match error {
+        ClientError::Transport
+        | ClientError::Timeout
+        | ClientError::Busy
+        | ClientError::OnlineVerificationRequired => true,
+        ClientError::Server(code) => matches!(
+            code.as_str(),
+            "device_policy_unavailable" | "dependency_unavailable" | "server_busy" | "rate_limited"
+        ),
+        _ => false,
+    }
+}
+
+/// One correlated admission record: original principal, device, operation and
+/// the mode that decided it. No configuration or secret content is recorded.
+fn admission_event(
+    identity: &IdentityClient,
+    module: &str,
+    mode: ControlMode,
+    operation: &str,
+    refusal: Option<nddev_device_sync_domain::modules::control::Readiness>,
+) {
+    let view = identity.view();
+    // Records need the original identifiers; unauthenticated states emit none.
+    if view.current_device_id.is_empty() || view.user_id.is_empty() {
+        return;
+    }
+    let event = match mode {
+        ControlMode::Fullauto => "module.admission.fullauto",
+        ControlMode::Manual => "module.admission.manual",
+    };
+    match refusal {
+        None => tracing::event!(target: "nds_native", tracing::Level::INFO, {
+            event.name = event, module, device.id = %view.current_device_id,
+            user.id = %view.user_id, operation.id = %operation, outcome = "accepted"
+        }),
+        Some(reason) => {
+            let error = tag(reason).unwrap_or_default();
+            tracing::event!(target: "nds_native", tracing::Level::WARN, {
+                event.name = event, module, device.id = %view.current_device_id,
+                user.id = %view.user_id, operation.id = %operation,
+                error.type = %format!("module_{error}"), outcome = "denied"
+            })
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3244,5 +3567,93 @@ mod tests {
         let (new_context, _) =
             control.observe_configuration("gds", &configuration, false, Some("other-store"), 0);
         assert!(!new_context.is_cancelled());
+    }
+    #[test]
+    fn device_policy_replacement_closes_only_system_tool_admissions() {
+        let control = ModuleControl::default();
+        let configuration = Configuration::default();
+        let (tool, _) = control.observe_configuration("sysinfo", &configuration, false, None, 1);
+        let (gds, _) = control.observe_configuration("gds", &configuration, false, None, 1);
+        assert_eq!(
+            control.cached_basis(),
+            ControlBasis {
+                mode: ControlMode::Manual,
+                revision: 0
+            }
+        );
+        let enrolled = DevicePolicy::enrolled();
+        control.observe_policy(&enrolled);
+        assert!(
+            tool.is_cancelled(),
+            "admission under the unverified default survived"
+        );
+        assert!(
+            !gds.is_cancelled(),
+            "explicit-consent modules keep their lifetime"
+        );
+        assert_eq!(
+            control.cached_basis(),
+            ControlBasis {
+                mode: ControlMode::Fullauto,
+                revision: 1
+            }
+        );
+        let (current, _) = control.observe_configuration("sysinfo", &configuration, false, None, 1);
+        assert!(!current.is_cancelled());
+        // Observing the same authenticated policy again keeps useful work.
+        control.observe_policy(&enrolled);
+        assert!(!current.is_cancelled());
+        let narrowed = DevicePolicy::new(
+            ControlMode::Manual,
+            BTreeSet::from([DevicePurpose::Desktop]),
+            2,
+        )
+        .unwrap();
+        control.observe_policy(&narrowed);
+        assert!(current.is_cancelled() && !gds.is_cancelled());
+        // A replacement identity never inherits the previous policy.
+        control.stop();
+        assert_eq!(control.cached_basis().revision, 0);
+    }
+    #[test]
+    fn only_unreachable_policy_reads_fall_back_and_none_widens() {
+        for error in [
+            ClientError::Transport,
+            ClientError::Timeout,
+            ClientError::Busy,
+            ClientError::OnlineVerificationRequired,
+            ClientError::Server("device_policy_unavailable".into()),
+            ClientError::Server("dependency_unavailable".into()),
+        ] {
+            assert!(policy_unreachable(&error), "{error}");
+        }
+        for error in [
+            ClientError::Cancelled,
+            ClientError::InvalidResponse,
+            ClientError::RevalidationRequired,
+            ClientError::DeviceRevoked,
+            ClientError::Server("operation_conflict".into()),
+            ClientError::Server("invalid_request".into()),
+        ] {
+            assert!(!policy_unreachable(&error), "{error}");
+        }
+        let default = control_view(None, "default");
+        assert_eq!(
+            (
+                default.mode.as_str(),
+                default.revision,
+                default.source.as_str()
+            ),
+            ("manual", 0, "default")
+        );
+        let observed = control_view(Some(&DevicePolicy::enrolled()), "cached");
+        assert_eq!(
+            (
+                observed.mode.as_str(),
+                observed.purposes,
+                observed.source.as_str()
+            ),
+            ("fullauto", vec!["desktop".to_owned()], "cached")
+        );
     }
 }

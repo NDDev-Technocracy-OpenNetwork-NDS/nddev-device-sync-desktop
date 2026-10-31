@@ -12,6 +12,7 @@ import 'package:nds_native/gds.dart' as gds;
 import 'package:nds_native/rds.dart' as rds;
 
 import 'l10n/app_localizations.dart';
+import 'device_control.dart';
 import 'diagnostics.dart';
 import 'module_settings.dart';
 
@@ -756,6 +757,15 @@ class _ModulesScreenState extends State<ModulesScreen> {
                     if (_published) Text(l.moduleStateQueued),
                   ],
                   const SizedBox(height: OpenNetworkSpacing.four),
+                  if (widget.client?.snapshot().currentDeviceId.isNotEmpty ==
+                      true) ...[
+                    DeviceControlCard(
+                      key: ValueKey('device-control:$_scope'),
+                      client: widget.client!,
+                      onChanged: _refreshModules,
+                    ),
+                    const SizedBox(height: OpenNetworkSpacing.four),
+                  ],
                   if (_modules.isNotEmpty)
                     DropdownButtonFormField<String>(
                       key: const Key('module-selector'),

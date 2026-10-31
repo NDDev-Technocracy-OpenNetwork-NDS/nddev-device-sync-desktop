@@ -534,6 +534,15 @@ class _Client implements native.NdsClient {
   }
 
   @override
+  Future<native.DeviceControlView> deviceControl() async =>
+      native.DeviceControlView(
+        mode: 'manual',
+        purposes: const ['desktop'],
+        revision: BigInt.one,
+        source: 'server',
+      );
+
+  @override
   Future<List<native.DeviceModuleView>> deviceModules() async {
     metadataCalls++;
     // Presentation data only, not a permission/admission grant. Rust/Core are

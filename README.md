@@ -25,6 +25,21 @@ configuration change cancels affected owned work and stale results. Existing
 replica/RDS lifetimes perform revalidation; no second scheduler or plugin
 installer is introduced. Source delivery and platform acceptance remain separate.
 
+Device control (ADR 0018) is the device's authenticated `fullauto`/`manual`
+policy from Accounts, read under the same local-use fence as the admission.
+In fullauto a supported, installed system tool (sysinfo, clipboard, cleaner,
+updater) is admitted without the module checklist; manual keeps the checklist.
+GDS, RDS and integrations keep their explicit configuration. The policy is
+read before the module lifetime is captured and again before a result is
+published: a changed mode or revision closes system-tool admissions, so a late
+result cannot borrow the replacement's authority. An unreachable or older
+server keeps the last policy observed by this identity generation, or manual
+when none was observed; it never widens. Admission and action results emit
+`module.admission.*` / `module.action.*` with the original device, principal
+and a per-admission operation ID. `device_control`/`set_device_control` expose
+the policy; replacement is the server's compare-and-set and widening into
+fullauto needs a recent sign-in.
+
 Module presentation uses FRB's compile-checked mirrors of the three required
 core types. The bridge exports their fields and enums; domain helper methods
 remain Rust-only.

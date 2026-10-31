@@ -1534,4 +1534,68 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get browserSwitchDisabled => 'Выключен';
+
+  @override
+  String get deviceControl => 'Управление устройством';
+
+  @override
+  String get controlFullauto => 'Полный автомат';
+
+  @override
+  String get controlManual => 'Вручную';
+
+  @override
+  String get controlFullautoHint =>
+      'Доверенные агенты запускают поддерживаемые системные инструменты на этом устройстве без отдельного разрешения. Запись в Git, удалённый экран и интеграции сохраняют свои настройки.';
+
+  @override
+  String get controlManualHint =>
+      'Каждый инструмент работает, только если он включён с разрешениями ниже.';
+
+  @override
+  String controlFromServer(String revision) {
+    return 'Политика сервера, ревизия $revision';
+  }
+
+  @override
+  String controlCached(String revision) {
+    return 'Сервер недоступен; используется политика ревизии $revision';
+  }
+
+  @override
+  String get controlDefaultManual =>
+      'Политика сервера не получена; действуют ручные настройки.';
+
+  @override
+  String get controlSave => 'Сохранить управление устройством';
+
+  @override
+  String get controlRecentSignIn =>
+      'Войдите снова, чтобы включить полный автомат на этом устройстве.';
+
+  @override
+  String get controlChangedElsewhere =>
+      'Политика изменена в другом месте. Обновите и проверьте её.';
+
+  @override
+  String get controlUnavailable =>
+      'Этот сервер пока не поддерживает управление устройством.';
+
+  @override
+  String get purposeServerHosting => 'Хостинг сервисов';
+
+  @override
+  String get purposeServerDevDesktop => 'Серверная разработка';
+
+  @override
+  String get purposeServerDesktop => 'Серверный рабочий стол';
+
+  @override
+  String get purposeBuildDevDesktop => 'Сборка и разработка';
+
+  @override
+  String get purposeDevDesktop => 'Разработка';
+
+  @override
+  String get purposeDesktop => 'Рабочий стол';
 }

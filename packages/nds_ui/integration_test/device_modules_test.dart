@@ -69,6 +69,21 @@ void main() {
         .widget<ModuleSettings>(find.byType(ModuleSettings))
         .client;
     if (phase == 'persist') {
+      // ADR 0018: a new enrollment is fullauto. This retained-data journey
+      // exercises the explicit checklist, so the owner narrows to manual first.
+      final control = await settled(client.deviceControl);
+      expect(
+        (control.mode, control.revision, control.source),
+        ('fullauto', BigInt.one, 'server'),
+      );
+      final manual = await settled(
+        () => client.setDeviceControl(
+          expectedRevision: control.revision,
+          mode: 'manual',
+          purposes: control.purposes,
+        ),
+      );
+      expect((manual.mode, manual.revision), ('manual', BigInt.two));
       await denied(client, 'module_disabled');
       await controls.configure(tester, enabled: true, permissions: []);
       await denied(client, 'module_permission_required');

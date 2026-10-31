@@ -2735,6 +2735,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Disabled'**
   String get browserSwitchDisabled;
+
+  /// No description provided for @deviceControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Device control'**
+  String get deviceControl;
+
+  /// No description provided for @controlFullauto.
+  ///
+  /// In en, this message translates to:
+  /// **'Full auto'**
+  String get controlFullauto;
+
+  /// No description provided for @controlManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get controlManual;
+
+  /// No description provided for @controlFullautoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Trusted agents run supported system tools on this device without per-tool approval. Git writes, remote display and integrations keep their own settings.'**
+  String get controlFullautoHint;
+
+  /// No description provided for @controlManualHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each tool runs only when enabled with its permissions below.'**
+  String get controlManualHint;
+
+  /// No description provided for @controlFromServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Server policy, revision {revision}'**
+  String controlFromServer(String revision);
+
+  /// No description provided for @controlCached.
+  ///
+  /// In en, this message translates to:
+  /// **'Server unreachable; using policy revision {revision}'**
+  String controlCached(String revision);
+
+  /// No description provided for @controlDefaultManual.
+  ///
+  /// In en, this message translates to:
+  /// **'No server policy observed; manual settings apply.'**
+  String get controlDefaultManual;
+
+  /// No description provided for @controlSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save device control'**
+  String get controlSave;
+
+  /// No description provided for @controlRecentSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to switch this device to full auto.'**
+  String get controlRecentSignIn;
+
+  /// No description provided for @controlChangedElsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'The policy changed elsewhere. Refresh and review it.'**
+  String get controlChangedElsewhere;
+
+  /// No description provided for @controlUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This server does not support device control yet.'**
+  String get controlUnavailable;
+
+  /// No description provided for @purposeServerHosting.
+  ///
+  /// In en, this message translates to:
+  /// **'Server hosting'**
+  String get purposeServerHosting;
+
+  /// No description provided for @purposeServerDevDesktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Server development'**
+  String get purposeServerDevDesktop;
+
+  /// No description provided for @purposeServerDesktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Server desktop'**
+  String get purposeServerDesktop;
+
+  /// No description provided for @purposeBuildDevDesktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Build and development'**
+  String get purposeBuildDevDesktop;
+
+  /// No description provided for @purposeDevDesktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Development'**
+  String get purposeDevDesktop;
+
+  /// No description provided for @purposeDesktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop'**
+  String get purposeDesktop;
 }
 
 class _AppLocalizationsDelegate

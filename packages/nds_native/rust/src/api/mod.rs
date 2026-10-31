@@ -15,3 +15,6 @@ mod screen_acceptance;
 
 #[cfg(all(test, target_os = "linux", feature = "development-http"))]
 mod replica_acceptance;
+
+#[cfg(all(test, target_os = "linux", feature = "development-http"))]
+mod control_acceptance;

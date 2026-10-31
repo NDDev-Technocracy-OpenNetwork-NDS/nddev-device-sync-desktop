@@ -20,6 +20,7 @@ pub enum ScreenFailure {
     Timeout,
     Unavailable,
     Failed,
+    Unresolved,
 }
 impl std::fmt::Display for ScreenFailure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -42,6 +43,7 @@ impl ScreenFailure {
             Self::Timeout => "screen_timeout",
             Self::Unavailable => "screen_unavailable",
             Self::Failed => "screen_failed",
+            Self::Unresolved => "screen_cleanup_unresolved",
         }
     }
 }
@@ -50,7 +52,9 @@ fn classify_close(error: &ScreenFailure) -> (String, &'static str, bool) {
     let code = error.code().into();
     match error {
         ScreenFailure::Expired | ScreenFailure::Closed => (code, "stopped", false),
-        ScreenFailure::Timeout | ScreenFailure::Unavailable => (code, "pending", true),
+        ScreenFailure::Timeout | ScreenFailure::Unavailable | ScreenFailure::Unresolved => {
+            (code, "pending", true)
+        }
         _ => (code, "error", matches!(error, ScreenFailure::Failed)),
     }
 }
@@ -69,22 +73,28 @@ pub struct ScreenLayout {
 pub struct ScreenFrame {
     #[cfg(target_os = "linux")]
     frame: Mutex<nddev_device_sync_rds::owned::runtime::FrameTicket>,
+    #[cfg(target_os = "linux")]
+    state: Arc<State>,
+    #[cfg(target_os = "linux")]
+    life: Arc<RoleLife>,
 }
 impl ScreenFrame {
     #[cfg_attr(feature = "flutter", frb(sync))]
     pub fn layout(&self) -> Result<ScreenLayout, ScreenFailure> {
         #[cfg(target_os = "linux")]
         {
-            let (width, height, stride) = self
-                .frame
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .dimensions()
-                .map_err(native::failure)?;
-            Ok(ScreenLayout {
-                width,
-                height,
-                stride,
+            self.state.publish_frame(&self.life, || {
+                let (width, height, stride) = self
+                    .frame
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .dimensions()
+                    .map_err(native::failure)?;
+                Ok(ScreenLayout {
+                    width,
+                    height,
+                    stride,
+                })
             })
         }
         #[cfg(not(target_os = "linux"))]
@@ -96,26 +106,46 @@ impl ScreenFrame {
     pub fn check_live(&self) -> Result<(), ScreenFailure> {
         #[cfg(target_os = "linux")]
         {
-            self.frame
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .check_live()
-                .map_err(native::failure)
+            self.state.publish_frame(&self.life, || {
+                self.frame
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .check_live()
+                    .map_err(native::failure)
+            })
         }
         #[cfg(not(target_os = "linux"))]
         {
             Err(ScreenFailure::Unsupported)
         }
     }
-    #[cfg_attr(feature = "flutter", frb(sync))]
-    pub fn read_once(&self) -> Result<Vec<u8>, ScreenFailure> {
+    /// Revalidate the original protected guard after an external renderer wait.
+    /// check_live remains the final synchronous publication check.
+    pub async fn validate_context(&self) -> Result<(), ScreenFailure> {
         #[cfg(target_os = "linux")]
         {
-            self.frame
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .read_once()
-                .map_err(native::failure)
+            if let Err(error) = self.state.module.validate().await {
+                self.life.stop.cancel();
+                return Err(native::account(error));
+            }
+            self.check_live()
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            Err(ScreenFailure::Unsupported)
+        }
+    }
+    pub async fn read_once(&self) -> Result<Vec<u8>, ScreenFailure> {
+        #[cfg(target_os = "linux")]
+        {
+            self.validate_context().await?;
+            self.state.publish_frame(&self.life, || {
+                self.frame
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .read_once()
+                    .map_err(native::failure)
+            })
         }
         #[cfg(not(target_os = "linux"))]
         {
@@ -127,7 +157,12 @@ impl ScreenFrame {
 struct State {
     stop: CancellationToken,
     completion: tokio::sync::watch::Sender<Option<Result<(), ScreenFailure>>>,
-    task: Mutex<Option<tokio::task::JoinHandle<()>>>,
+    task: tokio::sync::Mutex<Option<tokio::task::JoinHandle<()>>>,
+    joined: std::sync::atomic::AtomicBool,
+    #[cfg(target_os = "linux")]
+    drained: Arc<std::sync::atomic::AtomicBool>,
+    #[cfg(target_os = "linux")]
+    hold: Mutex<Option<Arc<State>>>,
     role: Mutex<Option<Arc<RoleLife>>>,
     #[cfg(target_os = "linux")]
     device: tokio::sync::Mutex<Option<native::DeviceScreen>>,
@@ -135,6 +170,8 @@ struct State {
     fence: Mutex<Option<Arc<nddev_device_sync_accounts::LocalUseFence>>>,
     #[cfg(target_os = "linux")]
     module: Arc<super::module_control::ModuleUseGuard>,
+    #[cfg(target_os = "linux")]
+    publication: Arc<Mutex<()>>,
 }
 // Captured before spawn: even an unpolled/aborted/panicking future publishes a
 // truthful terminal outcome. This is task completion, never authorization.
@@ -142,26 +179,40 @@ struct State {
 struct DeviceCompletion {
     stop: CancellationToken,
     result: tokio::sync::watch::Sender<Option<Result<(), ScreenFailure>>>,
+    drained: Arc<std::sync::atomic::AtomicBool>,
+    retain: Option<Box<dyn FnOnce() + Send>>,
+    finished: bool,
 }
 #[cfg(any(target_os = "linux", test))]
 impl DeviceCompletion {
-    fn finish(self, result: Result<(), ScreenFailure>) {
+    async fn run(self, work: impl std::future::Future<Output = Result<(), ScreenFailure>>) {
+        self.finish(work.await);
+    }
+    fn finish(mut self, result: Result<(), ScreenFailure>) {
         self.stop.cancel();
-        self.result.send_replace(Some(result));
+        if self.drained.load(std::sync::atomic::Ordering::Acquire) {
+            self.retain.take();
+            self.result.send_replace(Some(result));
+        } else {
+            self.unresolved();
+        }
+        self.finished = true;
+    }
+    fn unresolved(&mut self) {
+        self.stop.cancel();
+        if let Some(retain) = self.retain.take() {
+            retain();
+        }
+        self.result
+            .send_replace(Some(Err(ScreenFailure::Unresolved)));
     }
 }
 #[cfg(any(target_os = "linux", test))]
 impl Drop for DeviceCompletion {
     fn drop(&mut self) {
-        self.stop.cancel();
-        self.result.send_if_modified(|result| {
-            if result.is_none() {
-                *result = Some(Err(ScreenFailure::Unavailable));
-                true
-            } else {
-                false
-            }
-        });
+        if !self.finished {
+            self.unresolved();
+        }
     }
 }
 struct RoleLife {
@@ -170,8 +221,58 @@ struct RoleLife {
     validation: Mutex<Option<nddev_device_sync_domain::screen::ViewProjection>>,
     #[cfg(target_os = "linux")]
     done: CancellationToken,
+    #[cfg(target_os = "linux")]
+    terminal: Mutex<Option<Result<(), ScreenFailure>>>,
+    #[cfg(target_os = "linux")]
+    context: super::organizations::OrganizationObservation,
+}
+#[cfg(target_os = "linux")]
+impl RoleLife {
+    fn finish(&self, result: Result<(), ScreenFailure>) {
+        self.terminal
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get_or_insert(result);
+        self.done.cancel();
+    }
 }
 impl State {
+    #[cfg(target_os = "linux")]
+    fn publish_frame<T>(
+        &self,
+        role: &Arc<RoleLife>,
+        work: impl FnOnce() -> Result<T, ScreenFailure>,
+    ) -> Result<T, ScreenFailure> {
+        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        self.module
+            .publish::<_, nddev_device_sync_accounts::ClientError>(|| {
+                role.context.check()?;
+                if self.stop.is_cancelled()
+                    || role.stop.is_cancelled()
+                    || self
+                        .role
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner())
+                        .as_ref()
+                        .is_none_or(|current| !Arc::ptr_eq(current, role))
+                {
+                    return Err(nddev_device_sync_accounts::ClientError::Cancelled);
+                }
+                Ok(work())
+            })
+            .map_err(native::account)?
+    }
+    #[cfg(target_os = "linux")]
+    fn retain_unresolved(self: &Arc<Self>) {
+        self.stop.cancel();
+        self.cancel_role();
+        *self.hold.lock().unwrap_or_else(|e| e.into_inner()) = Some(self.clone());
+    }
+    #[cfg(target_os = "linux")]
+    fn is_drained(&self) -> bool {
+        self.joined.load(std::sync::atomic::Ordering::Acquire)
+            && self.drained.load(std::sync::atomic::Ordering::Acquire)
+    }
     fn cancel_role(&self) {
         if let Some(role) = self.role.lock().unwrap_or_else(|e| e.into_inner()).as_ref() {
             role.stop.cancel();
@@ -179,15 +280,20 @@ impl State {
     }
     async fn join(&self) -> Result<(), ScreenFailure> {
         self.stop.cancel();
-        let task = self.task.lock().unwrap_or_else(|e| e.into_inner()).take();
         super::identity::observe_cleanup(
             "rds",
             "rds.device.join",
             async {
-                if let Some(task) = task {
-                    // DeviceCompletion is authoritative for every waiter, including
-                    // when the JoinHandle waiter itself is canceled.
-                    let _ = task.await;
+                {
+                    // Borrow the registered handle: cancellation of this waiter
+                    // cannot detach work or cause a completed handle to be polled twice.
+                    let mut task = self.task.lock().await;
+                    if let Some(work) = task.as_mut() {
+                        let _ = work.await;
+                        task.take();
+                        self.joined
+                            .store(true, std::sync::atomic::Ordering::Release);
+                    }
                 }
                 let mut completion = self.completion.subscribe();
                 loop {
@@ -208,11 +314,14 @@ impl State {
     #[cfg(target_os = "linux")]
     async fn close_role(&self, role: &Arc<RoleLife>) -> Result<(), ScreenFailure> {
         role.stop.cancel();
+        if let Some(result) = *role.terminal.lock().unwrap_or_else(|e| e.into_inner()) {
+            return result;
+        }
         let mut slot = self.device.lock().await;
         if let Some(device) = slot.as_mut() {
             return device.close_child_if(role).await;
         }
-        Ok(())
+        (*self.completion.borrow()).unwrap_or(Err(ScreenFailure::Busy))
     }
 }
 pub(crate) struct ScreenSlot(Arc<State>);
@@ -244,9 +353,13 @@ impl ScreenView {
                 .pull_frame()
                 .await
                 .map_err(native::failure)?;
-            Ok(ScreenFrame {
+            let frame = ScreenFrame {
                 frame: Mutex::new(ticket),
-            })
+                state: self.state.clone(),
+                life: self.life.clone(),
+            };
+            frame.check_live()?;
+            Ok(frame)
         }
         #[cfg(not(target_os = "linux"))]
         {
@@ -279,6 +392,35 @@ pub struct ScreenHost {
     life: Arc<RoleLife>,
 }
 impl ScreenHost {
+    // Fixture-only failure after the real native host has actually joined.
+    // No production wire or recovery/authorization API is added.
+    #[cfg(all(test, target_os = "linux"))]
+    pub(crate) async fn fail_after_join_for_fixture(&self) -> Arc<std::sync::atomic::AtomicBool> {
+        let marker = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        self.state
+            .device
+            .lock()
+            .await
+            .as_mut()
+            .expect("owned fixture device")
+            .fail_after_join_for_fixture(&self.life, marker.clone());
+        marker
+    }
+    #[cfg(all(test, target_os = "linux"))]
+    pub(crate) fn device_joined_for_fixture(&self) -> bool {
+        self.state.is_drained()
+            && self
+                .state
+                .hold
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .is_none()
+            && self
+                .state
+                .device
+                .try_lock()
+                .is_ok_and(|device| device.is_none())
+    }
     #[cfg_attr(feature = "flutter", frb(sync))]
     pub fn cancel(&self) {
         self.life.stop.cancel();
@@ -316,6 +458,36 @@ pub struct ScreenTargetView {
 }
 
 impl NdsClient {
+    // Dispose only a positively joined fixture terminal record so that the
+    // test can join the remaining NdsClient resources after asserting refusal.
+    // An unresolved/running owner can never pass this predicate.
+    #[cfg(all(test, target_os = "linux"))]
+    pub(crate) fn acknowledge_joined_screen_for_fixture(&self) -> bool {
+        let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
+        let mut slot = self.screen.lock().unwrap_or_else(|e| e.into_inner());
+        let known = slot.as_ref().is_some_and(|slot| {
+            slot.0.is_drained()
+                && matches!(
+                    *slot.0.completion.borrow(),
+                    Some(Err(ScreenFailure::Failed))
+                )
+                && slot
+                    .0
+                    .device
+                    .try_lock()
+                    .is_ok_and(|device| device.is_none())
+                && slot
+                    .0
+                    .hold
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .is_none()
+        });
+        if known {
+            slot.take();
+        }
+        known
+    }
     /// Metadata read only. Opening a view still rechecks current server authority
     /// and the target endpoint; registration is never capture consent or presence.
     pub async fn screen_targets(
@@ -418,7 +590,7 @@ impl NdsClient {
             .as_ref()
             .map(|slot| slot.0.clone());
         if let Some(state) = state {
-            super::identity::observe_cleanup(
+            let result = super::identity::observe_cleanup(
                 "rds",
                 "rds.device.close_request",
                 async {
@@ -428,14 +600,10 @@ impl NdsClient {
                 },
                 classify_close,
             )
-            .await?;
-            let mut slot = self.screen.lock().unwrap_or_else(|e| e.into_inner());
-            if slot
-                .as_ref()
-                .is_some_and(|slot| Arc::ptr_eq(&slot.0, &state))
-            {
-                slot.take();
-            }
+            .await;
+            // Keep one exact terminal record until a later explicit admission.
+            // Repeated closers must not reinterpret a known failure as success.
+            return result;
         }
         Ok(())
     }
@@ -453,10 +621,8 @@ impl NdsClient {
                 if state.stop.is_cancelled() {
                     let finished = state
                         .task
-                        .lock()
-                        .unwrap_or_else(|e| e.into_inner())
-                        .as_ref()
-                        .is_some_and(|task| task.is_finished());
+                        .try_lock()
+                        .is_ok_and(|task| task.as_ref().is_none_or(|task| task.is_finished()));
                     if finished {
                         let _ = state.join().await;
                     }
@@ -480,7 +646,7 @@ impl NdsClient {
     pub async fn screen_prepare(&self) -> Result<(), ScreenFailure> {
         #[cfg(target_os = "linux")]
         {
-            self.screen_device(false).await.map(|_| ())
+            self.screen_device(false, None).await.map(|_| ())
         }
         #[cfg(not(target_os = "linux"))]
         {
@@ -490,7 +656,7 @@ impl NdsClient {
     pub async fn screen_incoming(&self) -> Result<Option<ScreenRequest>, ScreenFailure> {
         #[cfg(target_os = "linux")]
         {
-            let (state, _) = self.screen_device(false).await?;
+            let (state, _) = self.screen_device(false, None).await?;
             let slot = state.device.lock().await;
             let device = slot.as_ref().ok_or(ScreenFailure::Closed)?;
             let request = device
@@ -516,7 +682,7 @@ impl NdsClient {
     pub async fn screen_accept(&self, id: String) -> Result<ScreenHost, ScreenFailure> {
         #[cfg(target_os = "linux")]
         {
-            let (state, life) = self.screen_device(true).await?;
+            let (state, life) = self.screen_device(true, None).await?;
             let life = life.ok_or(ScreenFailure::Closed)?;
             let lifecycle = *self
                 .screen_lifecycle
@@ -567,39 +733,66 @@ impl NdsClient {
     pub async fn screen_open(&self, target: String) -> Result<ScreenView, ScreenFailure> {
         #[cfg(target_os = "linux")]
         {
-            let (state, life) = self.screen_device(true).await?;
-            let life = life.ok_or(ScreenFailure::Closed)?;
-            // This is a role switch only: stop/join old child, keep endpoint/owner.
-            let mut slot = state.device.lock().await;
-            if life.stop.is_cancelled() {
-                return Err(ScreenFailure::Closed);
-            }
-            let device = slot.as_mut().ok_or(ScreenFailure::Closed)?;
-            device
-                .close_child()
-                .await
-                .inspect_err(|_| life.stop.cancel())?;
-            let (life, viewer) = device.open(&state, life, target).await?;
-            let error = {
-                match self.screen_publication(&state, Some(&life)) {
-                    Ok(_publication) => {
-                        return Ok(ScreenView {
-                            state: state.clone(),
-                            life,
-                            viewer,
-                        });
-                    }
-                    Err(error) => error,
-                }
-            };
-            device.close_child_if(&life).await?;
-            Err(error)
+            self.screen_open_scoped(target, None).await
         }
         #[cfg(not(target_os = "linux"))]
         {
             let _ = target;
             Err(ScreenFailure::Unsupported)
         }
+    }
+    /// The original organization handle supplies only its captured context;
+    /// Accounts and the target still own remote screen authorization.
+    pub async fn screen_open_for_organization(
+        &self,
+        organization: &super::organizations::LocalOrganization,
+        target: String,
+    ) -> Result<ScreenView, ScreenFailure> {
+        #[cfg(target_os = "linux")]
+        {
+            let original = organization.observe_for(self).map_err(native::account)?;
+            self.screen_open_scoped(target, Some(original)).await
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = (organization, target);
+            Err(ScreenFailure::Unsupported)
+        }
+    }
+    #[cfg_attr(feature = "flutter", frb(ignore))]
+    #[cfg(target_os = "linux")]
+    async fn screen_open_scoped(
+        &self,
+        target: String,
+        context: Option<super::organizations::OrganizationObservation>,
+    ) -> Result<ScreenView, ScreenFailure> {
+        let (state, life) = self.screen_device(true, context).await?;
+        let life = life.ok_or(ScreenFailure::Closed)?;
+        // This is a role switch only: stop/join old child, keep endpoint/owner.
+        let mut slot = state.device.lock().await;
+        if life.stop.is_cancelled() {
+            return Err(ScreenFailure::Closed);
+        }
+        let device = slot.as_mut().ok_or(ScreenFailure::Closed)?;
+        device
+            .close_child()
+            .await
+            .inspect_err(|_| life.stop.cancel())?;
+        let (life, viewer) = device.open(&state, life, target).await?;
+        let error = {
+            match self.screen_publication(&state, Some(&life)) {
+                Ok(_publication) => {
+                    return Ok(ScreenView {
+                        state: state.clone(),
+                        life,
+                        viewer,
+                    });
+                }
+                Err(error) => error,
+            }
+        };
+        device.close_child_if(&life).await?;
+        Err(error)
     }
     #[cfg_attr(feature = "flutter", frb(ignore))]
     #[cfg(target_os = "linux")]
@@ -618,6 +811,9 @@ impl NdsClient {
         self.shared_identity()
             .check_local_use_lifetime(&fence)
             .map_err(native::account)?;
+        if let Some(role) = role {
+            role.context.check().map_err(native::account)?;
+        }
         if state.stop.is_cancelled()
             || !self.catalog_active()
             || !self
@@ -645,14 +841,40 @@ impl NdsClient {
     async fn screen_device(
         &self,
         reserve_role: bool,
+        context: Option<super::organizations::OrganizationObservation>,
     ) -> Result<(Arc<State>, Option<Arc<RoleLife>>), ScreenFailure> {
+        let identity = self.shared_identity().clone();
+        let lifetime = identity.local_use_lifetime();
+        let context = if reserve_role {
+            Some(match context {
+                Some(original) => original,
+                None => self.observe_personal().map_err(native::account)?,
+            })
+        } else {
+            None
+        };
         let module = Arc::new(
             self.module_access("rds", super::module_control::Adapter::Shared)
                 .await
                 .map_err(native::account)?,
         );
-        let identity = self.shared_identity().clone();
-        let lifetime = identity.local_use_lifetime();
+        // Reap only an already finished original task. New admission never
+        // queues behind a running or unresolved previous device.
+        let prior = self
+            .screen
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .as_ref()
+            .map(|slot| slot.0.clone());
+        if let Some(prior) = prior.filter(|state| state.stop.is_cancelled()) {
+            let finished = prior
+                .task
+                .try_lock()
+                .is_ok_and(|task| task.as_ref().is_none_or(|task| task.is_finished()));
+            if finished {
+                let _ = prior.join().await;
+            }
+        }
         let (state, opening, role) = {
             let _publication = self.publication.lock().unwrap_or_else(|e| e.into_inner());
             identity
@@ -665,8 +887,9 @@ impl NdsClient {
             if let Some(current) = slot.as_ref().filter(|slot| slot.0.stop.is_cancelled()) {
                 match *current.0.completion.borrow() {
                     None => return Err(ScreenFailure::Busy),
-                    Some(Err(error)) => return Err(error),
-                    Some(Ok(())) => {}
+                    Some(Err(error)) if !current.0.is_drained() => return Err(error),
+                    Some(_) if !current.0.is_drained() => return Err(ScreenFailure::Busy),
+                    Some(_) => {}
                 }
             }
             let (state, opening) =
@@ -686,8 +909,12 @@ impl NdsClient {
                     let state = Arc::new(State {
                         stop: module.lifetime.child_token(),
                         module: module.clone(),
+                        publication: self.publication.clone(),
                         completion: tokio::sync::watch::channel(None).0,
-                        task: Mutex::default(),
+                        task: tokio::sync::Mutex::default(),
+                        joined: std::sync::atomic::AtomicBool::new(false),
+                        drained: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+                        hold: Mutex::default(),
                         role: Mutex::default(),
                         device: tokio::sync::Mutex::default(),
                         fence: Mutex::default(),
@@ -695,23 +922,25 @@ impl NdsClient {
                     let (ready, opening) = tokio::sync::oneshot::channel();
                     let owned = state.clone();
                     let identity = identity.clone();
+                    let retained = state.clone();
                     let completion = DeviceCompletion {
                         stop: state.stop.clone(),
                         result: state.completion.clone(),
+                        drained: state.drained.clone(),
+                        retain: Some(Box::new(move || retained.retain_unresolved())),
+                        finished: false,
                     };
                     let task = tokio::spawn(
-                        async move {
-                            native::own_device(identity, lifetime, owned, ready).await;
-                            completion.finish(Ok(()));
-                        }
-                        .in_current_span()
-                        .with_current_subscriber(),
+                        completion
+                            .run(native::own_device(identity, lifetime, owned, ready))
+                            .in_current_span()
+                            .with_current_subscriber(),
                     );
-                    *state.task.lock().unwrap_or_else(|e| e.into_inner()) = Some(task);
+                    *state.task.try_lock().expect("new screen task slot") = Some(task);
                     *slot = Some(ScreenSlot(state.clone()));
                     (state, Some(opening))
                 };
-            let role = reserve_role.then(|| native::role(&state));
+            let role = context.map(|context| native::role(&state, context));
             (state, opening, role)
         };
         let result = async {
@@ -841,11 +1070,13 @@ mod native {
     pub(super) struct DeviceScreen {
         pub(super) identity: Arc<IdentityClient>,
         stop: CancellationToken,
-        owner: RdsEndpointKey,
+        owner: Option<RdsEndpointKey>,
         pub(super) fence: Arc<LocalUseFence>,
-        endpoint: OwnedEndpoint,
+        endpoint: Option<OwnedEndpoint>,
         binding: EndpointBinding,
         child: Option<Child>,
+        drain_error: Option<ScreenFailure>,
+        drained: bool,
         pub(super) pending_host: Option<PendingHost>,
         pending_view: Option<ViewProjection>,
     }
@@ -853,13 +1084,39 @@ mod native {
         Host {
             id: String,
             life: Arc<RoleLife>,
-            task: tokio::task::JoinHandle<Result<(), ScreenFailure>>,
+            task: HostCompletion,
+            #[cfg(test)]
+            fail_after_join: Option<Arc<std::sync::atomic::AtomicBool>>,
         },
         Viewer {
             id: String,
             life: Arc<RoleLife>,
             viewer: Arc<tokio::sync::Mutex<Option<NativeViewer>>>,
         },
+    }
+    enum HostCompletion {
+        Running(tokio::task::JoinHandle<Result<(), ScreenFailure>>),
+        Known(Result<(), ScreenFailure>),
+        Unresolved,
+    }
+    impl HostCompletion {
+        async fn join(&mut self) -> Result<(), ScreenFailure> {
+            if let Self::Running(task) = self {
+                // Replace a consumed handle before the next await. A later
+                // closer observes this exact terminal state, never polls it twice.
+                *self = match (&mut *task).await {
+                    Ok(result) => Self::Known(result),
+                    Err(_) => Self::Unresolved,
+                };
+            }
+            match self {
+                Self::Known(result) => *result,
+                Self::Unresolved | Self::Running(_) => Err(ScreenFailure::Unresolved),
+            }
+        }
+        fn unresolved(&self) -> bool {
+            matches!(self, Self::Unresolved)
+        }
     }
     impl Child {
         fn life(&self) -> &Arc<RoleLife> {
@@ -875,17 +1132,23 @@ mod native {
         access: HostAccess,
         caps: rds_core::DesktopCaps,
     }
-    pub(super) fn role(state: &State) -> Arc<RoleLife> {
+    pub(super) fn role(
+        state: &State,
+        context: super::super::organizations::OrganizationObservation,
+    ) -> Arc<RoleLife> {
         state.cancel_role();
         let life = Arc::new(RoleLife {
             stop: state.stop.child_token(),
             validation: Mutex::default(),
             done: CancellationToken::new(),
+            terminal: Mutex::default(),
+            context,
         });
         *state.role.lock().unwrap_or_else(|e| e.into_inner()) = Some(life.clone());
         life
     }
     fn permitted(role: &RoleLife) -> Result<(), ScreenFailure> {
+        role.context.check().map_err(account)?;
         if role.stop.is_cancelled() {
             Err(ScreenFailure::Closed)
         } else {
@@ -893,6 +1156,24 @@ mod native {
         }
     }
     impl DeviceScreen {
+        #[cfg(test)]
+        pub(super) fn fail_after_join_for_fixture(
+            &mut self,
+            original: &Arc<RoleLife>,
+            marker: Arc<std::sync::atomic::AtomicBool>,
+        ) {
+            match self.child.as_mut() {
+                Some(Child::Host {
+                    life,
+                    fail_after_join,
+                    ..
+                }) if Arc::ptr_eq(original, life) => {
+                    assert!(fail_after_join.is_none());
+                    *fail_after_join = Some(marker);
+                }
+                _ => panic!("fixture must retain its exact actual host"),
+            }
+        }
         async fn prepare(
             identity: Arc<IdentityClient>,
             lifetime: &nddev_device_sync_accounts::LocalUseLifetime,
@@ -957,11 +1238,13 @@ mod native {
             Ok(Self {
                 identity,
                 stop: state.stop.clone(),
-                owner,
+                owner: Some(owner),
                 fence,
-                endpoint,
+                endpoint: Some(endpoint),
                 binding,
                 child: None,
+                drain_error: None,
+                drained: false,
                 pending_host: None,
                 pending_view: None,
             })
@@ -970,6 +1253,9 @@ mod native {
             &mut self,
             role: &Arc<RoleLife>,
         ) -> Result<(), ScreenFailure> {
+            if let Some(result) = *role.terminal.lock().unwrap_or_else(|e| e.into_inner()) {
+                return result;
+            }
             if self
                 .child
                 .as_ref()
@@ -1005,21 +1291,41 @@ mod native {
         }
         async fn drain_active(&mut self) -> Result<(), ScreenFailure> {
             let Some(child) = self.child.as_mut() else {
-                return Ok(());
+                return self.drain_error.map_or(Ok(()), Err);
+            };
+            #[cfg(test)]
+            let fail_after_join = match child {
+                Child::Host {
+                    fail_after_join, ..
+                } => fail_after_join.clone(),
+                Child::Viewer { .. } => None,
             };
             let (id, life, result) = match child {
-                Child::Host { id, life, task } => {
+                Child::Host { id, life, task, .. } => {
                     life.stop.cancel();
                     let result = super::super::identity::observe_cleanup(
                         "rds",
                         "rds.host.join",
-                        async { (&mut *task).await.map_err(|_| ScreenFailure::Unavailable)? },
+                        task.join(),
                         classify_close,
                     )
                     .await;
+                    if task.unresolved() {
+                        self.stop.cancel();
+                        return Err(ScreenFailure::Unresolved);
+                    }
                     let result = match result {
                         Ok(()) | Err(ScreenFailure::Closed | ScreenFailure::Expired) => Ok(()),
                         error => error,
+                    };
+                    #[cfg(test)]
+                    let result = if result.is_ok()
+                        && let Some(marker) = fail_after_join
+                    {
+                        marker.store(true, std::sync::atomic::Ordering::Release);
+                        Err(ScreenFailure::Failed)
+                    } else {
+                        result
                     };
                     (id.clone(), life.clone(), result)
                 }
@@ -1035,7 +1341,7 @@ mod native {
                         )
                         .await;
                         if !viewer.is_drained() {
-                            return Err(result.err().unwrap_or(ScreenFailure::Unavailable));
+                            return Err(ScreenFailure::Unresolved);
                         }
                         result
                     } else {
@@ -1045,9 +1351,16 @@ mod native {
                     (id.clone(), life.clone(), result)
                 }
             };
+            // A later empty drain must not erase an already observed failure.
+            if self.drain_error.is_none() {
+                self.drain_error = result.err();
+            }
             self.child.take();
+            let result = self.drain_error.map_or(Ok(()), Err);
+            // Native completion and its exact result are retained before the
+            // remote best-effort end await can be cancelled by a closer.
+            life.finish(result);
             self.end(&id).await;
-            life.done.cancel();
             result
         }
         pub(super) async fn close_child(&mut self) -> Result<(), ScreenFailure> {
@@ -1061,27 +1374,36 @@ mod native {
             // Endpoint/key/UUID/binding remain unchanged for the next admitted role.
             Ok(())
         }
-        async fn close(mut self) {
-            // Keep cleanup unconditional; its terminal event preserves child errors.
+        async fn close(&mut self) -> Result<(), ScreenFailure> {
+            // Keep cleanup unconditional and return its exact terminal result.
             let closing = async {
                 let result = self.drain_active().await;
+                // A native host/viewer without a positive drain witness keeps
+                // its endpoint, original purpose owner and role in this device.
+                if self.child.is_some() {
+                    return Err(ScreenFailure::Unresolved);
+                }
                 if let Some(pending) = self.pending_host.take() {
                     self.end(pending.request.id()).await;
                 }
                 if let Some(pending) = self.pending_view.take() {
                     self.end(pending.id()).await;
                 }
-                self.endpoint.close().await;
-                drop(self.owner);
+                if !self.drained {
+                    let endpoint = self.endpoint.take().ok_or(ScreenFailure::Unresolved)?;
+                    endpoint.close().await;
+                    self.owner.take();
+                    self.drained = true;
+                }
                 result
             };
-            let _ = super::super::identity::observe_cleanup(
+            super::super::identity::observe_cleanup(
                 "rds",
                 "rds.device.close",
                 closing,
                 classify_close,
             )
-            .await;
+            .await
         }
         pub(super) async fn open(
             &mut self,
@@ -1165,6 +1487,8 @@ mod native {
                 );
                 let live = self
                     .endpoint
+                    .as_ref()
+                    .ok_or(ScreenFailure::Closed)?
                     .open_view(&mut view, target, artifact.bytes(), life.stop.clone())
                     .await
                     .map_err(failure)?;
@@ -1197,8 +1521,15 @@ mod native {
                 Ok(viewer) => Ok((life, viewer)),
                 Err(error) => {
                     life.stop.cancel();
-                    let _ = self.close_child().await;
-                    life.done.cancel();
+                    let cleanup = self.close_child().await;
+                    if self
+                        .child
+                        .as_ref()
+                        .is_some_and(|child| Arc::ptr_eq(child.life(), &life))
+                    {
+                        return Err(ScreenFailure::Unresolved);
+                    }
+                    life.finish(cleanup);
                     Err(error)
                 }
             }
@@ -1275,8 +1606,17 @@ mod native {
                     check(state, deadline)?;
                     permitted(&life)?;
                     let access = HostAccess {
-                        local_device: self.owner.device().clone(),
-                        local_endpoint: self.endpoint.public_key(),
+                        local_device: self
+                            .owner
+                            .as_ref()
+                            .ok_or(ScreenFailure::Closed)?
+                            .device()
+                            .clone(),
+                        local_endpoint: self
+                            .endpoint
+                            .as_ref()
+                            .ok_or(ScreenFailure::Closed)?
+                            .public_key(),
                         local_binding_revision: self.binding.revision,
                         local_opt_in: true, // This exact explicit accept action, not discovery metadata.
                         source_ready: true, // Actual bounded capabilities above; capture can still fail closed.
@@ -1287,6 +1627,8 @@ mod native {
                     };
                     let admission = self
                         .endpoint
+                        .as_ref()
+                        .ok_or(ScreenFailure::Closed)?
                         .admit_host(&mut request, &access, wall_now().map_err(failure)?)
                         .map_err(failure)?;
                     let artifact =
@@ -1363,7 +1705,9 @@ mod native {
                 self.child = Some(Child::Host {
                     id: id.into(),
                     life: life.clone(),
-                    task,
+                    task: HostCompletion::Running(task),
+                    #[cfg(test)]
+                    fail_after_join: None,
                 });
                 *life.validation.lock().unwrap_or_else(|e| e.into_inner()) = Some(control_view);
                 // NdsClient guards the final handle publication after this result.
@@ -1383,7 +1727,7 @@ mod native {
                     life.stop.cancel();
                     // Uncertain ready retains the same pending request/artifact for
                     // explicit retry. No source task is started before a Ready ACK.
-                    life.done.cancel();
+                    life.finish(Ok(()));
                     Err(error)
                 }
             }
@@ -1394,7 +1738,7 @@ mod native {
         lifetime: nddev_device_sync_accounts::LocalUseLifetime,
         state: Arc<State>,
         ready: tokio::sync::oneshot::Sender<Result<(), ScreenFailure>>,
-    ) {
+    ) -> Result<(), ScreenFailure> {
         let result = super::super::identity::observe_operation(
             "rds",
             "rds.device.prepare",
@@ -1412,8 +1756,11 @@ mod native {
             }
             Err(error) => {
                 state.stop.cancel();
+                state
+                    .drained
+                    .store(true, std::sync::atomic::Ordering::Release);
                 let _ = ready.send(Err(error));
-                return;
+                return Err(error);
             }
         };
         // The existing device owner also owns remote permission checks: no
@@ -1449,6 +1796,9 @@ mod native {
             let Some(role) = role else { continue };
             if role.done.is_cancelled() {
                 continue;
+            }
+            if role.context.check().is_err() {
+                role.stop.cancel();
             }
             let original = role
                 .validation
@@ -1496,8 +1846,90 @@ mod native {
                 }
             }
         }
-        if let Some(device) = state.device.lock().await.take() {
-            device.close().await;
+        // The device stays in its registered owner across every close await.
+        // Host tasks own only their host/life and never lock this slot.
+        let mut slot = state.device.lock().await;
+        let result = match slot.as_mut() {
+            Some(device) => device.close().await,
+            None => Ok(()),
+        };
+        if slot.as_ref().is_none_or(|device| device.drained) {
+            slot.take();
+            state
+                .drained
+                .store(true, std::sync::atomic::Ordering::Release);
+        }
+        result
+    }
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[tokio::test]
+        async fn known_host_failure_survives_role_close_and_device_completion() {
+            let client = NdsClient::new("https://example.invalid".into()).unwrap();
+            let life = RoleLife {
+                stop: CancellationToken::new(),
+                validation: Mutex::default(),
+                done: CancellationToken::new(),
+                terminal: Mutex::default(),
+                context: client.observe_personal().unwrap(),
+            };
+            let mut task =
+                HostCompletion::Running(tokio::spawn(async { Err(ScreenFailure::Failed) }));
+            let result = super::super::super::identity::observe_cleanup(
+                "rds",
+                "rds.host.join",
+                task.join(),
+                classify_close,
+            )
+            .await;
+            life.finish(result);
+            life.finish(Ok(()));
+            let (sender, first) = tokio::sync::watch::channel(None);
+            let second = first.clone();
+            let completed = *life.terminal.lock().unwrap();
+            super::super::completion_tests::guard(&life.stop, sender.clone(), true)
+                .run(async { completed.unwrap() })
+                .await;
+            let repeated_join = task.join().await;
+            assert_eq!(result, Err(ScreenFailure::Failed));
+            assert_eq!(repeated_join, result);
+            assert!(!task.unresolved());
+            assert!(life.done.is_cancelled());
+            assert_eq!(*first.borrow(), Some(result));
+            assert_eq!(*second.borrow(), Some(result));
+            assert_eq!(*sender.subscribe().borrow(), Some(result));
+        }
+
+        #[tokio::test]
+        async fn a_cancelled_join_borrows_the_original_host_handle() {
+            let (release, held) = tokio::sync::oneshot::channel();
+            let mut task = HostCompletion::Running(tokio::spawn(async move {
+                let _ = held.await;
+                Err(ScreenFailure::Failed)
+            }));
+            let interrupted = tokio::time::timeout(Duration::from_millis(5), task.join()).await;
+            let still_owned = matches!(task, HostCompletion::Running(_));
+            let _ = release.send(());
+            let joined = task.join().await;
+            let repeated = task.join().await;
+            assert!(interrupted.is_err());
+            assert!(still_owned);
+            assert_eq!(joined, Err(ScreenFailure::Failed));
+            assert_eq!(repeated, joined);
+        }
+
+        #[tokio::test]
+        async fn a_lost_host_result_is_sticky_unresolved_not_a_second_handle_poll() {
+            let mut task = HostCompletion::Running(tokio::spawn(async {
+                panic!("inert host result lost");
+            }));
+            let first = task.join().await;
+            let second = task.join().await;
+            assert_eq!(first, Err(ScreenFailure::Unresolved));
+            assert_eq!(second, first);
+            assert!(task.unresolved());
         }
     }
 }
@@ -1505,28 +1937,33 @@ mod native {
 #[cfg(test)]
 mod completion_tests {
     use super::*;
+    pub(super) fn guard(
+        stop: &CancellationToken,
+        result: tokio::sync::watch::Sender<Option<Result<(), ScreenFailure>>>,
+        drained: bool,
+    ) -> DeviceCompletion {
+        DeviceCompletion {
+            stop: stop.clone(),
+            result,
+            drained: Arc::new(std::sync::atomic::AtomicBool::new(drained)),
+            retain: None,
+            finished: false,
+        }
+    }
     #[test]
     fn completion_is_shared_and_drop_never_claims_success() {
         let stop = CancellationToken::new();
         let (sender, first) = tokio::sync::watch::channel(None);
         let second = first.clone();
-        let guard = DeviceCompletion {
-            stop: stop.clone(),
-            result: sender,
-        };
-        drop(guard);
+        drop(guard(&stop, sender, false));
         assert!(stop.is_cancelled());
-        assert_eq!(*first.borrow(), Some(Err(ScreenFailure::Unavailable)));
-        assert_eq!(*second.borrow(), Some(Err(ScreenFailure::Unavailable)));
+        assert_eq!(*first.borrow(), Some(Err(ScreenFailure::Unresolved)));
+        assert_eq!(*second.borrow(), Some(Err(ScreenFailure::Unresolved)));
 
         let stop = CancellationToken::new();
         let (sender, first) = tokio::sync::watch::channel(None);
         let second = first.clone();
-        DeviceCompletion {
-            stop: stop.clone(),
-            result: sender,
-        }
-        .finish(Ok(()));
+        guard(&stop, sender, true).finish(Ok(()));
         assert!(stop.is_cancelled());
         assert_eq!(*first.borrow(), Some(Ok(())));
         assert_eq!(*second.borrow(), Some(Ok(())));
@@ -1538,10 +1975,7 @@ mod completion_tests {
             let (sender, initial) = tokio::sync::watch::channel(None);
             let retained = sender.clone();
             drop(initial);
-            let guard = DeviceCompletion {
-                stop: stop.clone(),
-                result: sender,
-            };
+            let guard = guard(&stop, sender, success);
             if success {
                 guard.finish(Ok(()));
             } else {
@@ -1553,10 +1987,39 @@ mod completion_tests {
                 Some(if success {
                     Ok(())
                 } else {
-                    Err(ScreenFailure::Unavailable)
+                    Err(ScreenFailure::Unresolved)
                 })
             );
             assert!(stop.is_cancelled());
+        }
+    }
+
+    #[tokio::test]
+    async fn lost_outer_completion_retains_its_owner_and_never_publishes_a_drain() {
+        for polled in [false, true] {
+            let stop = CancellationToken::new();
+            let (sender, result) = tokio::sync::watch::channel(None);
+            let retained = Arc::new(Mutex::new(None));
+            let purpose = Arc::new(());
+            let weak = Arc::downgrade(&purpose);
+            let target = retained.clone();
+            let mut completion = guard(&stop, sender, false);
+            completion.retain = Some(Box::new(move || *target.lock().unwrap() = Some(purpose)));
+            let work = completion.run(async move {
+                panic!("owned inert outer task");
+            });
+            if polled {
+                assert!(tokio::spawn(work).await.is_err());
+            } else {
+                drop(work);
+            }
+            assert!(stop.is_cancelled());
+            assert_eq!(*result.borrow(), Some(Err(ScreenFailure::Unresolved)));
+            assert!(weak.upgrade().is_some());
+            // Only this inert test's marker is disposed; no native owner is
+            // declared drained or reclaimed by production code.
+            retained.lock().unwrap().take();
+            assert!(weak.upgrade().is_none());
         }
     }
 }

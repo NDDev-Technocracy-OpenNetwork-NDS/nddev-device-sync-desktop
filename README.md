@@ -186,6 +186,14 @@ viewing are separate qualification scopes. The owned Linux X11 workflow below
 exercises actual frames and termination; other target roles and final product
 and release acceptance remain separate.
 
+Each retained frame keeps its original module and personal or organizational
+context. Reading pixels revalidates that guard; the viewer repeats validation
+after asynchronous rendering and checks it synchronously before presentation.
+An organizational view uses the original opaque selection, so a later selection
+cannot authorize its result. A known, fully joined cleanup failure stays an
+error. Missing native completion retains the device owner and blocks replacement;
+it does not establish a completed stop.
+
 `scripts/screen-acceptance.py` qualifies that Linux path against an explicitly
 owned, fresh 3600-second Server `--fixture-sync3` fixture. Supply `--fixture`,
 `--native-test` (the prepared `development-http`, no-default-features Rust lib
@@ -200,8 +208,14 @@ signed production routes. With either viewer, `--case source-loss`, `cancel`,
 and `local-disable` terminate the owned capture
 display, cancel the actual host handle, or disable its local module consent.
 `logout` uses the actual host logout path; `expiry` waits for the real
-five-minute view lifetime, without changing clocks or production limits. Each
-Flutter case checks removal of the actual displayed image; expiry also rejects
+five-minute view lifetime, without changing clocks or production limits.
+Native-only `role-cleanup-failure` and `device-cleanup-failure` cases inject a
+known failure only after the real native host joins. They exercise the original
+role/device/identity close path and concurrent close waiters, retain the error
+and verify purpose ownership before and after completion. Their fixture-only
+terminal acknowledgement requires a positively drained device and cannot
+acknowledge an unresolved owner; it adds no production recovery operation.
+Each Flutter case checks removal of the actual displayed image; expiry also rejects
 an early disconnect against the native host's expiry proof. Each invocation
 qualifies only its selected case. Receipts and cleanup remain outside
 the repository; other targets and release qualification remain separate.

@@ -494,13 +494,23 @@ impl NdsClient {
         &self,
         generation: &super::module_control::ControlGeneration,
     ) -> Result<(), ClientError> {
-        // Both exact owners are attempted, including when one drain fails.
+        // All exact owners are attempted, including when one drain fails.
         // A dropped waiter leaves the registered work/join futures retained.
-        let (modules, catalog) = tokio::join!(
+        let (modules, catalog, screen) = tokio::join!(
             self.module_control.shutdown_generation(generation),
             self.catalog_operations.drain(),
+            self.screen_close(),
         );
-        modules.and(catalog)
+        modules.and(catalog).and(screen.map_err(|error| {
+            use super::screen::ScreenFailure;
+            match error {
+                ScreenFailure::Busy => ClientError::Busy,
+                ScreenFailure::Timeout => ClientError::Timeout,
+                ScreenFailure::Expired => ClientError::Expired,
+                ScreenFailure::Closed => ClientError::Cancelled,
+                other => ClientError::Server(other.code().into()),
+            }
+        }))
     }
     async fn shutdown_owned_modules_current(&self) -> Result<(), ClientError> {
         let generation = {
@@ -1225,7 +1235,7 @@ impl NdsClient {
             .map_or_else(Default::default, |delivery| delivery.snapshot())
     }
     /// Application teardown, preserving the Accounts/native-store identity.
-    /// A browser HOLD prevents releasing/replacing the old local resources.
+    /// An unresolved module or screen owner prevents resource replacement.
     pub async fn shutdown(&self) -> Result<(), ClientError> {
         let lifetime = self.inner.local_use_lifetime();
         let generation = self.seal_identity_modules();

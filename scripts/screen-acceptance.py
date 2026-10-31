@@ -32,6 +32,8 @@ TESTS = {
     "local-disable": "actual_local_disable_closes_native_stream",
     "logout": "actual_logout_closes_native_stream",
     "expiry": "actual_expiry_closes_native_stream",
+    "role-cleanup-failure": "actual_role_cleanup_error_survives_device_and_identity_shutdown",
+    "device-cleanup-failure": "actual_device_cleanup_error_survives_concurrent_close_waiters",
 }
 HTTP = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
@@ -177,7 +179,12 @@ class Authority:
         proof = self.sign(key, b"NDS-ENROLLMENT-V2\0" + base64.urlsafe_b64decode(challenge["challenge"] + "="))
         status, device = self.request("/v2/devices/enrollments", {"challenge_id": challenge["challenge_id"], "signature": enc(proof)}, token)
         assert status == 201
-        return {"token": token, "user": user, "key": key, "device": device["device_id"]}
+        actor = {"token": token, "user": user, "key": key, "device": device["device_id"]}
+        # A personal storage tenant is not an organization. Capture this fresh
+        # fixture's exact organization and membership once for its commands.
+        company = self.current_organization(actor)
+        return actor | {"company": company["company"]["company_id"],
+                        "membership_revision": company["member"]["revision"]}
 
     def signed(self, actor, path, body=None):
         raw = b"" if body is None else json.dumps(body, separators=(",", ":")).encode()
@@ -190,11 +197,43 @@ class Authority:
         return self.request(path, raw if body is not None else None, actor["token"],
                             {"Signature-Input": "nds=" + params, "Signature": "nds=:" + base64.b64encode(proof).decode() + ":", "Content-Digest": digest}, method)
 
+    def current_organization(self, actor):
+        status, reply = self.signed(actor, "/v3/organizations")
+        assert status == 200, ("organization_list", status)
+        assert reply["context"] == {"principal_id": actor["user"],
+            "space": {"kind": "personal", "id": actor["user"]}}
+        rows = reply["organizations"]
+        if "company" in actor:
+            rows = [row for row in rows if row["company"]["company_id"] == actor["company"]]
+        assert len(rows) == 1, "owned fixture requires one exact organization"
+        row = rows[0]
+        assert row["member"]["user_id"] == actor["user"] and row["member"]["active"]
+        assert type(row["member"]["revision"]) is int and row["member"]["revision"] > 0
+        return row
+
+    def scoped(self, actor, suffix, payload=None, expected=200):
+        path = "/v3/organizations/" + actor["company"] + suffix
+        if payload is None:
+            path += "?membership_revision=" + str(actor["membership_revision"])
+            request = None
+        else:
+            request = {"membership_revision": actor["membership_revision"], "payload": payload}
+        status, reply = self.signed(actor, path, request)
+        assert status == expected, ("organization_scoped", status,
+                                      reply.get("error") if isinstance(reply, dict) else None)
+        assert reply["context"] == {"principal_id": actor["user"],
+            "space": {"kind": "organization", "id": actor["company"]},
+            "membership_revision": actor["membership_revision"]}
+        return reply
+
+    def members(self, actor):
+        return self.scoped(actor, "/members")["page"]
+
     def invite(self, actor, role):
         email = uuid.uuid4().hex + "@example.invalid"
         prior = {row["ID"] for row in get(self.mailbox + "/api/v1/messages")["messages"]}
-        status, invitation = self.signed(actor, "/v2/company/invitations", {"operation_id": operation(), "email": email, "role": role})
-        assert status == 201
+        invitation = self.scoped(actor, "/invitations",
+            {"operation_id": operation(), "email": email, "role": role}, expected=201)["invitation"]
         match = self.message(email, prior, r"#invite/([A-Za-z0-9_-]{43})/([A-Za-z0-9_-]{43})")
         assert match[1] == invitation["invitation_id"]
         session = self.authenticate(email, {"invitation_id": match[1], "invitation_token": match[2]})
@@ -311,14 +350,16 @@ def qualify(args, fixture):
             start("viewer")
         fact("host-streaming.json", 180)
         pixels = fact("viewer-frame.json")
+        write(args.output / "progress.json", {"source": args.source, "case": args.case,
+              "stage": "actual_frame", "actual_frame": pixels, "acceptance_complete": False})
         if args.case == "role":
-            status, page = authority.signed(controller, "/v2/company/members")
-            assert status == 200
+            page = authority.members(controller)
             member = next(row for row in page["members"] if row["user_id"] == owner["user"])
-            status, _ = authority.signed(controller, "/v2/company/members/" + owner["user"],
+            authority.scoped(controller, "/members/" + owner["user"],
                 {"operation_id": operation(), "expected_revision": member["revision"], "action": "set_role", "role": "user"})
-            assert status == 200
             write(root / "demoted.json", {"demoted": True})
+            write(args.output / "progress.json", {"source": args.source, "case": args.case,
+                  "stage": "actual_role_changed", "actual_frame": pixels, "acceptance_complete": False})
         elif args.case == "source-loss":
             stop(role_displays["host"])
         write(root / "end-trigger.json", {"case": args.case})
@@ -326,8 +367,9 @@ def qualify(args, fixture):
         viewer_proof = fact("viewer-proof.json", 15)
         for child in processes:
             assert child.wait(timeout=30) == 0
-        status, company = authority.signed(owner, "/v2/company")
-        assert status == 200
+        # This new diagnostic read observes the demotion; it cannot refresh the
+        # revision of an earlier command or authorize the ended screen stream.
+        company = authority.current_organization(owner)
         assert company["member"]["role"] == ("user" if args.case == "role" else "admin")
         write(args.output / "receipt.json", {"source": args.source, "viewer": args.viewer,
             "case": args.case, "actual_smtp_otp": True, "actual_signed_role_change": args.case == "role", "actual_frame": pixels,
@@ -365,6 +407,8 @@ def main():
     parser.add_argument("--viewer", choices=["native", "flutter"], default="flutter")
     parser.add_argument("--case", choices=TESTS, default="role")
     args = parser.parse_args()
+    if args.case in ["role-cleanup-failure", "device-cleanup-failure"] and args.viewer != "native":
+        parser.error("cleanup failure cases require the native viewer")
     assert sys.platform == "linux" and re.fullmatch("[a-f0-9]{40}", args.source)
     for p in [args.fixture, args.native_test, args.output]:
         assert p.is_absolute() and not p.resolve().is_relative_to(ROOT)

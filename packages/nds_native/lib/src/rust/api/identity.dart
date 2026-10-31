@@ -166,6 +166,13 @@ abstract class NdsClient implements RustOpaqueInterface {
 
   Future<ScreenView> screenOpen({required String target});
 
+  /// The original organization handle supplies only its captured context;
+  /// Accounts and the target still own remote screen authorization.
+  Future<ScreenView> screenOpenForOrganization({
+    required LocalOrganization organization,
+    required String target,
+  });
+
   Future<void> screenPrepare();
 
   Future<void> screenStop();
@@ -190,7 +197,7 @@ abstract class NdsClient implements RustOpaqueInterface {
   void setLifecycle({required ClientLifecycle state});
 
   /// Application teardown, preserving the Accounts/native-store identity.
-  /// A browser HOLD prevents releasing/replacing the old local resources.
+  /// An unresolved module or screen owner prevents resource replacement.
   Future<void> shutdown();
 
   View snapshot();

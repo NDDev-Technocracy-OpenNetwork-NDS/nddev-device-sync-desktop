@@ -7031,12 +7031,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 3)
-      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
     return GithubSavedRepositoryGroupView(
       ownerId: dco_decode_String(arr[0]),
       owner: dco_decode_opt_box_autoadd_github_saved_owner_view(arr[1]),
       repositories: dco_decode_list_github_saved_repository_view(arr[2]),
+      ignored: dco_decode_bool(arr[3]),
     );
   }
 
@@ -9246,10 +9247,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_repositories = sse_decode_list_github_saved_repository_view(
       deserializer,
     );
+    var var_ignored = sse_decode_bool(deserializer);
     return GithubSavedRepositoryGroupView(
       ownerId: var_ownerId,
       owner: var_owner,
       repositories: var_repositories,
+      ignored: var_ignored,
     );
   }
 
@@ -11662,6 +11665,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.ownerId, serializer);
     sse_encode_opt_box_autoadd_github_saved_owner_view(self.owner, serializer);
     sse_encode_list_github_saved_repository_view(self.repositories, serializer);
+    sse_encode_bool(self.ignored, serializer);
   }
 
   @protected

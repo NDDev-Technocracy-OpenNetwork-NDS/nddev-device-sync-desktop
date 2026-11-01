@@ -1692,6 +1692,24 @@ abstract class AppLocalizations {
   /// **'No repositories on this page.'**
   String get catalogEmptyPage;
 
+  /// No description provided for @catalogOwnerIgnored.
+  ///
+  /// In en, this message translates to:
+  /// **'Ignored on this device by the owner\'s list. Saved data is kept; it is not discovered, connected or synchronized.'**
+  String get catalogOwnerIgnored;
+
+  /// No description provided for @catalogAccountIgnored.
+  ///
+  /// In en, this message translates to:
+  /// **'This GitHub account is on this device\'s ignored-account list.'**
+  String get catalogAccountIgnored;
+
+  /// No description provided for @catalogIgnoreListInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The ignored-account list on this device cannot be read. Nothing is included until it is fixed.'**
+  String get catalogIgnoreListInvalid;
+
   /// No description provided for @catalogOrganization.
   ///
   /// In en, this message translates to:

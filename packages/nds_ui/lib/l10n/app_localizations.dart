@@ -827,7 +827,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Local diagnostics are unavailable. Sign-in can continue.'**
+  /// **'Diagnostics search is unavailable.'**
   String get diagnosticsUnavailable;
 
   /// No description provided for @localDiagnosticsOnly.
@@ -1709,6 +1709,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The ignored-account list on this device cannot be read. Nothing is included until it is fixed.'**
   String get catalogIgnoreListInvalid;
+
+  /// No description provided for @catalogRepositoryIgnored.
+  ///
+  /// In en, this message translates to:
+  /// **'This repository is on this device\'s ignored-repository list.'**
+  String get catalogRepositoryIgnored;
+
+  /// No description provided for @catalogRepositoryIgnoredLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ignored on this device'**
+  String get catalogRepositoryIgnoredLabel;
 
   /// No description provided for @catalogOrganization.
   ///
@@ -2867,6 +2879,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Desktop'**
   String get purposeDesktop;
+
+  /// No description provided for @collectionUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics collection policy has not been confirmed.'**
+  String get collectionUnknown;
+
+  /// No description provided for @collectionStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics collection: standard.'**
+  String get collectionStandard;
+
+  /// No description provided for @collectionDebug.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics collection: debug until {until}.'**
+  String collectionDebug(String until);
+
+  /// No description provided for @collectionOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics collection is off: nothing new is collected or sent.'**
+  String get collectionOff;
+
+  /// No description provided for @ownDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Show my diagnostics (last hour)'**
+  String get ownDiagnostics;
+
+  /// No description provided for @diagnosticsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No diagnostics in the last hour.'**
+  String get diagnosticsEmpty;
+
+  /// No description provided for @diagnosticsTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the newest records are shown.'**
+  String get diagnosticsTruncated;
 }
 
 class _AppLocalizationsDelegate

@@ -46,7 +46,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -970833024;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -230699517;
 
 // Section: executor
 
@@ -3476,6 +3476,72 @@ fn wire__crate__api__identity__NdsClient_device_modules_impl(
                         let output_ok =
                             crate::api::identity::NdsClient::device_modules(&*api_that_guard)
                                 .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__identity__NdsClient_diagnostic_search_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NdsClient_diagnostic_search",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NdsClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_organization_id = <String>::sse_decode(&mut deserializer);
+            let api_traces = <bool>::sse_decode(&mut deserializer);
+            let api_minutes = <u32>::sse_decode(&mut deserializer);
+            let api_limit = <u16>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ClientError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::identity::NdsClient::diagnostic_search(
+                            &*api_that_guard,
+                            api_organization_id,
+                            api_traces,
+                            api_minutes,
+                            api_limit,
+                        )
+                        .await?;
                         std::result::Result::Ok(output_ok)
                     })()
                     .await,
@@ -7423,6 +7489,36 @@ fn wire__crate__api__telemetry__configure_debug_impl(
         },
     )
 }
+fn wire__nddev_device_sync_accounts__view__delivery_collection_default_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "delivery_collection_default",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let output_ok =
+                    Ok::<_, ()>(nddev_device_sync_accounts::view::DeliveryCollection::default())?;
+                std::result::Result::Ok(output_ok)
+            })())
+        },
+    )
+}
 fn wire__nddev_device_sync_accounts__view__delivery_view_default_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -8064,6 +8160,8 @@ const _: fn() = || {
         let _: bool = DeliveryView.initialized;
         let _: Option<bool> = DeliveryView.local_persistence_ready;
         let _: nddev_device_sync_accounts::view::ExportPolicy = DeliveryView.policy;
+        let _: nddev_device_sync_accounts::view::DeliveryCollection = DeliveryView.collection;
+        let _: u64 = DeliveryView.debug_expires_at;
         let _: bool = DeliveryView.paused;
         let _: u32 = DeliveryView.pending;
         let _: u64 = DeliveryView.delivered;
@@ -8249,6 +8347,7 @@ const _: fn() = || {
             GithubSavedRepositoryView.observation;
         let _: Option<nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView> =
             GithubSavedRepositoryView.synchronization;
+        let _: bool = GithubSavedRepositoryView.ignored;
     }
     {
         let GithubSourceView =
@@ -9121,6 +9220,20 @@ impl SseDecode for nddev_device_sync_telemetry::view::DebugScope {
     }
 }
 
+impl SseDecode for nddev_device_sync_accounts::view::DeliveryCollection {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => nddev_device_sync_accounts::view::DeliveryCollection::Unknown,
+            1 => nddev_device_sync_accounts::view::DeliveryCollection::Standard,
+            2 => nddev_device_sync_accounts::view::DeliveryCollection::Debug,
+            3 => nddev_device_sync_accounts::view::DeliveryCollection::Off,
+            _ => unreachable!("Invalid variant for DeliveryCollection: {}", inner),
+        };
+    }
+}
+
 impl SseDecode for nddev_device_sync_accounts::view::DeliveryView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -9128,6 +9241,9 @@ impl SseDecode for nddev_device_sync_accounts::view::DeliveryView {
         let mut var_localPersistenceReady = <Option<bool>>::sse_decode(deserializer);
         let mut var_policy =
             <nddev_device_sync_accounts::view::ExportPolicy>::sse_decode(deserializer);
+        let mut var_collection =
+            <nddev_device_sync_accounts::view::DeliveryCollection>::sse_decode(deserializer);
+        let mut var_debugExpiresAt = <u64>::sse_decode(deserializer);
         let mut var_paused = <bool>::sse_decode(deserializer);
         let mut var_pending = <u32>::sse_decode(deserializer);
         let mut var_delivered = <u64>::sse_decode(deserializer);
@@ -9142,6 +9258,8 @@ impl SseDecode for nddev_device_sync_accounts::view::DeliveryView {
             initialized: var_initialized,
             local_persistence_ready: var_localPersistenceReady,
             policy: var_policy,
+            collection: var_collection,
+            debug_expires_at: var_debugExpiresAt,
             paused: var_paused,
             pending: var_pending,
             delivered: var_delivered,
@@ -9228,6 +9346,47 @@ impl SseDecode for nddev_device_sync_accounts::view::DeviceView {
             revoked: var_revoked,
             is_current: var_isCurrent,
             created_at: var_createdAt,
+        };
+    }
+}
+
+impl SseDecode for crate::api::identity::DiagnosticPage {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_records =
+            <Vec<crate::api::identity::DiagnosticRecordView>>::sse_decode(deserializer);
+        let mut var_truncated = <bool>::sse_decode(deserializer);
+        return crate::api::identity::DiagnosticPage {
+            records: var_records,
+            truncated: var_truncated,
+        };
+    }
+}
+
+impl SseDecode for crate::api::identity::DiagnosticRecordView {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_timestamp = <String>::sse_decode(deserializer);
+        let mut var_serviceName = <String>::sse_decode(deserializer);
+        let mut var_eventName = <String>::sse_decode(deserializer);
+        let mut var_name = <String>::sse_decode(deserializer);
+        let mut var_module = <String>::sse_decode(deserializer);
+        let mut var_outcome = <String>::sse_decode(deserializer);
+        let mut var_errorType = <String>::sse_decode(deserializer);
+        let mut var_operationId = <String>::sse_decode(deserializer);
+        let mut var_deviceId = <String>::sse_decode(deserializer);
+        let mut var_durationMs = <Option<f64>>::sse_decode(deserializer);
+        return crate::api::identity::DiagnosticRecordView {
+            timestamp: var_timestamp,
+            service_name: var_serviceName,
+            event_name: var_eventName,
+            name: var_name,
+            module: var_module,
+            outcome: var_outcome,
+            error_type: var_errorType,
+            operation_id: var_operationId,
+            device_id: var_deviceId,
+            duration_ms: var_durationMs,
         };
     }
 }
@@ -9406,7 +9565,8 @@ impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubCatalo
 11 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired,
 12 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict,
 13 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::AccountIgnored,
-14 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::IgnoreListInvalid,
+14 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::RepositoryIgnored,
+15 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::IgnoreListInvalid,
             _ => unreachable!("Invalid variant for GithubCatalogError: {}", inner),
         };
     }
@@ -9659,10 +9819,12 @@ impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubSavedR
         let mut var_synchronization = <Option<
             nddev_device_sync_github::catalog_runtime::view::GithubCommitSyncView,
         >>::sse_decode(deserializer);
+        let mut var_ignored = <bool>::sse_decode(deserializer);
         return nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView {
             repository: var_repository,
             observation: var_observation,
             synchronization: var_synchronization,
+            ignored: var_ignored,
         };
     }
 }
@@ -9870,6 +10032,20 @@ impl SseDecode for Vec<nddev_device_sync_accounts::view::DeviceView> {
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
             ans_.push(<nddev_device_sync_accounts::view::DeviceView>::sse_decode(
+                deserializer,
+            ));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::api::identity::DiagnosticRecordView> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::api::identity::DiagnosticRecordView>::sse_decode(
                 deserializer,
             ));
         }
@@ -11322,275 +11498,281 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        56 => wire__crate__api__identity__NdsClient_discover_local_agent_impl(
+        56 => wire__crate__api__identity__NdsClient_diagnostic_search_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        57 => wire__crate__api__identity__NdsClient_github_catalog_credentials_impl(
+        57 => wire__crate__api__identity__NdsClient_discover_local_agent_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        58 => wire__crate__api__identity__NdsClient_github_catalog_source_impl(
+        58 => wire__crate__api__identity__NdsClient_github_catalog_credentials_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        59 => wire__crate__api__identity__NdsClient_github_repository_page_impl(
+        59 => wire__crate__api__identity__NdsClient_github_catalog_source_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        60 => wire__crate__api__identity__NdsClient_import_browser_invitation_impl(
+        60 => wire__crate__api__identity__NdsClient_github_repository_page_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        61 => wire__crate__api__identity__NdsClient_import_invitation_impl(
+        61 => wire__crate__api__identity__NdsClient_import_browser_invitation_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        62 => wire__crate__api__identity__NdsClient_incident_action_impl(
+        62 => wire__crate__api__identity__NdsClient_import_invitation_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        63 => {
+        63 => wire__crate__api__identity__NdsClient_incident_action_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        64 => {
             wire__crate__api__identity__NdsClient_incidents_impl(port, ptr, rust_vec_len, data_len)
         }
-        64 => wire__crate__api__identity__NdsClient_logout_impl(port, ptr, rust_vec_len, data_len),
-        67 => wire__crate__api__identity__NdsClient_organizations_impl(
+        65 => wire__crate__api__identity__NdsClient_logout_impl(port, ptr, rust_vec_len, data_len),
+        68 => wire__crate__api__identity__NdsClient_organizations_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        68 => {
+        69 => {
             wire__crate__api__identity__NdsClient_passkeys_impl(port, ptr, rust_vec_len, data_len)
         }
-        69 => wire__crate__api__identity__NdsClient_poll_github_impl(
+        70 => wire__crate__api__identity__NdsClient_poll_github_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        70 => wire__crate__api__identity__NdsClient_poll_passkey_impl(
+        71 => wire__crate__api__identity__NdsClient_poll_passkey_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        71 => wire__crate__api__identity__NdsClient_prepare_device_impl(
+        72 => wire__crate__api__identity__NdsClient_prepare_device_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        72 => wire__crate__api__identity__NdsClient_publish_device_state_impl(
+        73 => wire__crate__api__identity__NdsClient_publish_device_state_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        73 => wire__crate__api__identity__NdsClient_publish_local_state_impl(
+        74 => wire__crate__api__identity__NdsClient_publish_local_state_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        74 => {
+        75 => {
             wire__crate__api__identity__NdsClient_reconcile_impl(port, ptr, rust_vec_len, data_len)
         }
-        75 => wire__crate__api__identity__NdsClient_refresh_impl(port, ptr, rust_vec_len, data_len),
-        76 => wire__crate__api__identity__NdsClient_refresh_devices_impl(
+        76 => wire__crate__api__identity__NdsClient_refresh_impl(port, ptr, rust_vec_len, data_len),
+        77 => wire__crate__api__identity__NdsClient_refresh_devices_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        77 => wire__crate__api__identity__NdsClient_request_email_impl(
+        78 => wire__crate__api__identity__NdsClient_request_email_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        79 => wire__crate__api__identity__NdsClient_revoke_device_impl(
+        80 => wire__crate__api__identity__NdsClient_revoke_device_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        80 => wire__crate__api__identity__NdsClient_revoke_passkey_impl(
+        81 => wire__crate__api__identity__NdsClient_revoke_passkey_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        81 => wire__crate__api__identity__NdsClient_saved_github_repository_page_impl(
+        82 => wire__crate__api__identity__NdsClient_saved_github_repository_page_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        82 => wire__crate__api__identity__NdsClient_screen_accept_impl(
+        83 => wire__crate__api__identity__NdsClient_screen_accept_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        84 => wire__crate__api__identity__NdsClient_screen_close_impl(
+        85 => wire__crate__api__identity__NdsClient_screen_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        85 => wire__crate__api__identity__NdsClient_screen_incoming_impl(
+        86 => wire__crate__api__identity__NdsClient_screen_incoming_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        86 => wire__crate__api__identity__NdsClient_screen_open_impl(
+        87 => wire__crate__api__identity__NdsClient_screen_open_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        87 => wire__crate__api__identity__NdsClient_screen_open_for_organization_impl(
+        88 => wire__crate__api__identity__NdsClient_screen_open_for_organization_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        88 => wire__crate__api__identity__NdsClient_screen_prepare_impl(
+        89 => wire__crate__api__identity__NdsClient_screen_prepare_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        89 => wire__crate__api__identity__NdsClient_screen_stop_impl(
+        90 => wire__crate__api__identity__NdsClient_screen_stop_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        90 => wire__crate__api__identity__NdsClient_screen_targets_impl(
+        91 => wire__crate__api__identity__NdsClient_screen_targets_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        91 => wire__crate__api__identity__NdsClient_select_github_credential_impl(
+        92 => wire__crate__api__identity__NdsClient_select_github_credential_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        92 => wire__crate__api__identity__NdsClient_select_organization_impl(
+        93 => wire__crate__api__identity__NdsClient_select_organization_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        93 => wire__crate__api__identity__NdsClient_set_device_control_impl(
+        94 => wire__crate__api__identity__NdsClient_set_device_control_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        95 => {
+        96 => {
             wire__crate__api__identity__NdsClient_shutdown_impl(port, ptr, rust_vec_len, data_len)
         }
-        97 => wire__crate__api__identity__NdsClient_start_github_impl(
+        98 => wire__crate__api__identity__NdsClient_start_github_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        98 => wire__crate__api__identity__NdsClient_start_passkey_impl(
+        99 => wire__crate__api__identity__NdsClient_start_passkey_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        99 => wire__crate__api__identity__NdsClient_sync_states_impl(
+        100 => wire__crate__api__identity__NdsClient_sync_states_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        100 => wire__crate__api__identity__NdsClient_vault_copy_secret_impl(
+        101 => wire__crate__api__identity__NdsClient_vault_copy_secret_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        101 => wire__crate__api__identity__NdsClient_vault_delete_impl(
+        102 => wire__crate__api__identity__NdsClient_vault_delete_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        102 => wire__crate__api__identity__NdsClient_vault_records_impl(
+        103 => wire__crate__api__identity__NdsClient_vault_records_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        103 => wire__crate__api__identity__NdsClient_vault_refresh_impl(
+        104 => wire__crate__api__identity__NdsClient_vault_refresh_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        104 => wire__crate__api__identity__NdsClient_vault_resolve_impl(
+        105 => wire__crate__api__identity__NdsClient_vault_resolve_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        105 => {
+        106 => {
             wire__crate__api__identity__NdsClient_vault_save_impl(port, ptr, rust_vec_len, data_len)
         }
-        106 => wire__crate__api__identity__NdsClient_vault_snapshot_impl(
+        107 => wire__crate__api__identity__NdsClient_vault_snapshot_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        107 => {
+        108 => {
             wire__crate__api__identity__NdsClient_vault_sync_impl(port, ptr, rust_vec_len, data_len)
         }
-        108 => wire__crate__api__identity__NdsClient_verify_email_impl(
+        109 => wire__crate__api__identity__NdsClient_verify_email_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        111 => {
+        112 => {
             wire__crate__api__screen__ScreenFrame_read_once_impl(port, ptr, rust_vec_len, data_len)
         }
-        112 => wire__crate__api__screen__ScreenFrame_validate_context_impl(
+        113 => wire__crate__api__screen__ScreenFrame_validate_context_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        114 => wire__crate__api__screen__ScreenHost_close_impl(port, ptr, rust_vec_len, data_len),
-        115 => wire__crate__api__screen__ScreenHost_closed_impl(port, ptr, rust_vec_len, data_len),
-        117 => wire__crate__api__screen__ScreenView_close_impl(port, ptr, rust_vec_len, data_len),
-        118 => wire__crate__api__screen__ScreenView_closed_impl(port, ptr, rust_vec_len, data_len),
-        119 => wire__crate__api__screen__ScreenView_frame_impl(port, ptr, rust_vec_len, data_len),
-        134 => {
+        115 => wire__crate__api__screen__ScreenHost_close_impl(port, ptr, rust_vec_len, data_len),
+        116 => wire__crate__api__screen__ScreenHost_closed_impl(port, ptr, rust_vec_len, data_len),
+        118 => wire__crate__api__screen__ScreenView_close_impl(port, ptr, rust_vec_len, data_len),
+        119 => wire__crate__api__screen__ScreenView_closed_impl(port, ptr, rust_vec_len, data_len),
+        120 => wire__crate__api__screen__ScreenView_frame_impl(port, ptr, rust_vec_len, data_len),
+        136 => {
             wire__crate__api__telemetry__shutdown_telemetry_impl(port, ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),
@@ -11642,76 +11824,81 @@ fn pde_ffi_dispatcher_sync_impl(
             rust_vec_len,
             data_len,
         ),
-        65 => wire__crate__api__identity__NdsClient_new_impl(ptr, rust_vec_len, data_len),
-        66 => wire__crate__api__identity__NdsClient_new_with_cache_base_impl(
+        66 => wire__crate__api__identity__NdsClient_new_impl(ptr, rust_vec_len, data_len),
+        67 => wire__crate__api__identity__NdsClient_new_with_cache_base_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        78 => wire__crate__api__identity__NdsClient_reserve_clipboard_copy_impl(
+        79 => wire__crate__api__identity__NdsClient_reserve_clipboard_copy_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        83 => wire__crate__api__identity__NdsClient_screen_cancel_impl(ptr, rust_vec_len, data_len),
-        94 => wire__crate__api__identity__NdsClient_set_lifecycle_impl(ptr, rust_vec_len, data_len),
-        96 => wire__crate__api__identity__NdsClient_snapshot_impl(ptr, rust_vec_len, data_len),
-        109 => wire__crate__api__screen__ScreenFrame_check_live_impl(ptr, rust_vec_len, data_len),
-        110 => wire__crate__api__screen__ScreenFrame_layout_impl(ptr, rust_vec_len, data_len),
-        113 => wire__crate__api__screen__ScreenHost_cancel_impl(ptr, rust_vec_len, data_len),
-        116 => wire__crate__api__screen__ScreenView_cancel_impl(ptr, rust_vec_len, data_len),
-        120 => wire__crate__api__modules__cache_binding_bound_impl(ptr, rust_vec_len, data_len),
-        121 => wire__crate__api__modules__cache_binding_kind_impl(ptr, rust_vec_len, data_len),
-        122 => wire__crate__api__organizations__capture_invitation_link_impl(
+        84 => wire__crate__api__identity__NdsClient_screen_cancel_impl(ptr, rust_vec_len, data_len),
+        95 => wire__crate__api__identity__NdsClient_set_lifecycle_impl(ptr, rust_vec_len, data_len),
+        97 => wire__crate__api__identity__NdsClient_snapshot_impl(ptr, rust_vec_len, data_len),
+        110 => wire__crate__api__screen__ScreenFrame_check_live_impl(ptr, rust_vec_len, data_len),
+        111 => wire__crate__api__screen__ScreenFrame_layout_impl(ptr, rust_vec_len, data_len),
+        114 => wire__crate__api__screen__ScreenHost_cancel_impl(ptr, rust_vec_len, data_len),
+        117 => wire__crate__api__screen__ScreenView_cancel_impl(ptr, rust_vec_len, data_len),
+        121 => wire__crate__api__modules__cache_binding_bound_impl(ptr, rust_vec_len, data_len),
+        122 => wire__crate__api__modules__cache_binding_kind_impl(ptr, rust_vec_len, data_len),
+        123 => wire__crate__api__organizations__capture_invitation_link_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        123 => wire__crate__api__telemetry__client_diagnostics_impl(ptr, rust_vec_len, data_len),
-        124 => wire__crate__api__identity__client_work_permitted_impl(ptr, rust_vec_len, data_len),
-        125 => wire__nddev_device_sync_vault__view__clipboard_view_default_impl(
+        124 => wire__crate__api__telemetry__client_diagnostics_impl(ptr, rust_vec_len, data_len),
+        125 => wire__crate__api__identity__client_work_permitted_impl(ptr, rust_vec_len, data_len),
+        126 => wire__nddev_device_sync_vault__view__clipboard_view_default_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        126 => wire__crate__api__telemetry__configure_debug_impl(ptr, rust_vec_len, data_len),
-        127 => wire__nddev_device_sync_accounts__view__delivery_view_default_impl(
+        127 => wire__crate__api__telemetry__configure_debug_impl(ptr, rust_vec_len, data_len),
+        128 => wire__nddev_device_sync_accounts__view__delivery_collection_default_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        128 => wire__nddev_device_sync_accounts__view__export_policy_default_impl(
+        129 => wire__nddev_device_sync_accounts__view__delivery_view_default_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        129 => wire__crate__api__telemetry__init_app_impl(ptr, rust_vec_len, data_len),
-        130 => wire__crate__api__identity__new_vault_record_id_impl(ptr, rust_vec_len, data_len),
-        131 => wire__crate__api__telemetry__record_client_failure_impl(ptr, rust_vec_len, data_len),
-        132 => {
+        130 => wire__nddev_device_sync_accounts__view__export_policy_default_impl(
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        131 => wire__crate__api__telemetry__init_app_impl(ptr, rust_vec_len, data_len),
+        132 => wire__crate__api__identity__new_vault_record_id_impl(ptr, rust_vec_len, data_len),
+        133 => wire__crate__api__telemetry__record_client_failure_impl(ptr, rust_vec_len, data_len),
+        134 => {
             wire__crate__api__telemetry__record_client_lifecycle_impl(ptr, rust_vec_len, data_len)
         }
-        133 => wire__crate__api__screen__screen_supported_impl(ptr, rust_vec_len, data_len),
-        135 => wire__crate__api__modules__supports_local_agent_impl(ptr, rust_vec_len, data_len),
-        136 => {
+        135 => wire__crate__api__screen__screen_supported_impl(ptr, rust_vec_len, data_len),
+        137 => wire__crate__api__modules__supports_local_agent_impl(ptr, rust_vec_len, data_len),
+        138 => {
             wire__crate__api__identity__supports_native_clipboard_impl(ptr, rust_vec_len, data_len)
         }
-        137 => wire__crate__api__identity__supports_native_clipboard_read_impl(
+        139 => wire__crate__api__identity__supports_native_clipboard_read_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        138 => wire__crate__api__modules__update_action_kind_impl(ptr, rust_vec_len, data_len),
-        139 => wire__crate__api__modules__update_action_platform_impl(ptr, rust_vec_len, data_len),
-        140 => {
+        140 => wire__crate__api__modules__update_action_kind_impl(ptr, rust_vec_len, data_len),
+        141 => wire__crate__api__modules__update_action_platform_impl(ptr, rust_vec_len, data_len),
+        142 => {
             wire__nddev_device_sync_vault__view__vault_error_code_impl(ptr, rust_vec_len, data_len)
         }
-        141 => wire__nddev_device_sync_vault__view__vault_view_default_impl(
+        143 => wire__nddev_device_sync_vault__view__vault_view_default_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        142 => {
+        144 => {
             wire__nddev_device_sync_accounts__view__view_default_impl(ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),
@@ -12404,12 +12591,41 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_telemetry::v
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for FrbWrapper<nddev_device_sync_accounts::view::DeliveryCollection>
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self.0 {
+            nddev_device_sync_accounts::view::DeliveryCollection::Unknown => 0.into_dart(),
+            nddev_device_sync_accounts::view::DeliveryCollection::Standard => 1.into_dart(),
+            nddev_device_sync_accounts::view::DeliveryCollection::Debug => 2.into_dart(),
+            nddev_device_sync_accounts::view::DeliveryCollection::Off => 3.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<nddev_device_sync_accounts::view::DeliveryCollection>
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        FrbWrapper<nddev_device_sync_accounts::view::DeliveryCollection>,
+    > for nddev_device_sync_accounts::view::DeliveryCollection
+{
+    fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_accounts::view::DeliveryCollection> {
+        self.into()
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for FrbWrapper<nddev_device_sync_accounts::view::DeliveryView> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.0.initialized.into_into_dart().into_dart(),
             self.0.local_persistence_ready.into_into_dart().into_dart(),
             self.0.policy.into_into_dart().into_dart(),
+            self.0.collection.into_into_dart().into_dart(),
+            self.0.debug_expires_at.into_into_dart().into_dart(),
             self.0.paused.into_into_dart().into_dart(),
             self.0.pending.into_into_dart().into_dart(),
             self.0.delivered.into_into_dart().into_dart(),
@@ -12516,6 +12732,56 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_accounts::vi
 {
     fn into_into_dart(self) -> FrbWrapper<nddev_device_sync_accounts::view::DeviceView> {
         self.into()
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::identity::DiagnosticPage {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.records.into_into_dart().into_dart(),
+            self.truncated.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::identity::DiagnosticPage
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::identity::DiagnosticPage>
+    for crate::api::identity::DiagnosticPage
+{
+    fn into_into_dart(self) -> crate::api::identity::DiagnosticPage {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::identity::DiagnosticRecordView {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.timestamp.into_into_dart().into_dart(),
+            self.service_name.into_into_dart().into_dart(),
+            self.event_name.into_into_dart().into_dart(),
+            self.name.into_into_dart().into_dart(),
+            self.module.into_into_dart().into_dart(),
+            self.outcome.into_into_dart().into_dart(),
+            self.error_type.into_into_dart().into_dart(),
+            self.operation_id.into_into_dart().into_dart(),
+            self.device_id.into_into_dart().into_dart(),
+            self.duration_ms.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::identity::DiagnosticRecordView
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::identity::DiagnosticRecordView>
+    for crate::api::identity::DiagnosticRecordView
+{
+    fn into_into_dart(self) -> crate::api::identity::DiagnosticRecordView {
+        self
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
@@ -12760,7 +13026,8 @@ nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleDisab
 nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired => 11.into_dart(),
 nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict => 12.into_dart(),
 nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::AccountIgnored => 13.into_dart(),
-nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::IgnoreListInvalid => 14.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::RepositoryIgnored => 14.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::IgnoreListInvalid => 15.into_dart(),
                     _ => unreachable!(),
                 }
     }
@@ -13202,6 +13469,7 @@ impl flutter_rust_bridge::IntoDart
             self.0.repository.into_into_dart().into_dart(),
             self.0.observation.into_into_dart().into_dart(),
             self.0.synchronization.into_into_dart().into_dart(),
+            self.0.ignored.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -14747,12 +15015,35 @@ impl SseEncode for nddev_device_sync_telemetry::view::DebugScope {
     }
 }
 
+impl SseEncode for nddev_device_sync_accounts::view::DeliveryCollection {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                nddev_device_sync_accounts::view::DeliveryCollection::Unknown => 0,
+                nddev_device_sync_accounts::view::DeliveryCollection::Standard => 1,
+                nddev_device_sync_accounts::view::DeliveryCollection::Debug => 2,
+                nddev_device_sync_accounts::view::DeliveryCollection::Off => 3,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
 impl SseEncode for nddev_device_sync_accounts::view::DeliveryView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.initialized, serializer);
         <Option<bool>>::sse_encode(self.local_persistence_ready, serializer);
         <nddev_device_sync_accounts::view::ExportPolicy>::sse_encode(self.policy, serializer);
+        <nddev_device_sync_accounts::view::DeliveryCollection>::sse_encode(
+            self.collection,
+            serializer,
+        );
+        <u64>::sse_encode(self.debug_expires_at, serializer);
         <bool>::sse_encode(self.paused, serializer);
         <u32>::sse_encode(self.pending, serializer);
         <u64>::sse_encode(self.delivered, serializer);
@@ -14807,6 +15098,30 @@ impl SseEncode for nddev_device_sync_accounts::view::DeviceView {
         <bool>::sse_encode(self.revoked, serializer);
         <bool>::sse_encode(self.is_current, serializer);
         <String>::sse_encode(self.created_at, serializer);
+    }
+}
+
+impl SseEncode for crate::api::identity::DiagnosticPage {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<crate::api::identity::DiagnosticRecordView>>::sse_encode(self.records, serializer);
+        <bool>::sse_encode(self.truncated, serializer);
+    }
+}
+
+impl SseEncode for crate::api::identity::DiagnosticRecordView {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.timestamp, serializer);
+        <String>::sse_encode(self.service_name, serializer);
+        <String>::sse_encode(self.event_name, serializer);
+        <String>::sse_encode(self.name, serializer);
+        <String>::sse_encode(self.module, serializer);
+        <String>::sse_encode(self.outcome, serializer);
+        <String>::sse_encode(self.error_type, serializer);
+        <String>::sse_encode(self.operation_id, serializer);
+        <String>::sse_encode(self.device_id, serializer);
+        <Option<f64>>::sse_encode(self.duration_ms, serializer);
     }
 }
 
@@ -14953,7 +15268,8 @@ nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleDisab
 nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired => { 11 }
 nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict => { 12 }
 nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::AccountIgnored => { 13 }
-nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::IgnoreListInvalid => { 14 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::RepositoryIgnored => { 14 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::IgnoreListInvalid => { 15 }
  _ => { unimplemented!(""); }}, serializer);
     }
 }
@@ -15122,6 +15438,7 @@ impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubSavedR
             self.synchronization,
             serializer,
         );
+        <bool>::sse_encode(self.ignored, serializer);
     }
 }
 
@@ -15270,6 +15587,16 @@ impl SseEncode for Vec<nddev_device_sync_accounts::view::DeviceView> {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <nddev_device_sync_accounts::view::DeviceView>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::api::identity::DiagnosticRecordView> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::identity::DiagnosticRecordView>::sse_encode(item, serializer);
         }
     }
 }

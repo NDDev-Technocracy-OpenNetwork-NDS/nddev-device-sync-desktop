@@ -405,8 +405,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connecting => 'Connecting';
 
   @override
-  String get diagnosticsUnavailable =>
-      'Local diagnostics are unavailable. Sign-in can continue.';
+  String get diagnosticsUnavailable => 'Diagnostics search is unavailable.';
 
   @override
   String get localDiagnosticsOnly =>
@@ -933,6 +932,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get catalogIgnoreListInvalid =>
       'The ignored-account list on this device cannot be read. Nothing is included until it is fixed.';
+
+  @override
+  String get catalogRepositoryIgnored =>
+      'This repository is on this device\'s ignored-repository list.';
+
+  @override
+  String get catalogRepositoryIgnoredLabel => 'Ignored on this device';
 
   @override
   String get catalogOrganization => 'Organization';
@@ -1602,4 +1608,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get purposeDesktop => 'Desktop';
+
+  @override
+  String get collectionUnknown =>
+      'Diagnostics collection policy has not been confirmed.';
+
+  @override
+  String get collectionStandard => 'Diagnostics collection: standard.';
+
+  @override
+  String collectionDebug(String until) {
+    return 'Diagnostics collection: debug until $until.';
+  }
+
+  @override
+  String get collectionOff =>
+      'Diagnostics collection is off: nothing new is collected or sent.';
+
+  @override
+  String get ownDiagnostics => 'Show my diagnostics (last hour)';
+
+  @override
+  String get diagnosticsEmpty => 'No diagnostics in the last hour.';
+
+  @override
+  String get diagnosticsTruncated => 'Only the newest records are shown.';
 }

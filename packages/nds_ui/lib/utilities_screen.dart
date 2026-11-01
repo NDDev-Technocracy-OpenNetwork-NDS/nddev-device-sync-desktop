@@ -33,12 +33,14 @@ class _UtilitiesState extends State<UtilitiesScreen> {
   bool _leaving = false, _allowPop = false;
   archive.Page? _archive;
   native.IncidentPage? _incidents;
+  native.DiagnosticPage? _diagnostics;
   String? _error;
   bool _copied = false;
   bool _busy = false, _polling = false;
   bool get _paused => !ApplicationActivityScope.read(context).value;
   Completer<void>? _pollCompletion;
   bool _clipboardUnavailable = false, _incidentsUnavailable = false;
+  bool _diagnosticsUnavailable = false;
   @override
   void initState() {
     super.initState();
@@ -290,6 +292,31 @@ class _UtilitiesState extends State<UtilitiesScreen> {
     }
   }
 
+  /// The signed-in account's own diagnostics of the last hour (P2 member scope).
+  Future<void> _ownDiagnostics() async {
+    final client = widget.client;
+    final epoch = _epoch;
+    try {
+      final page = await client.diagnosticSearch(
+        organizationId: '',
+        traces: false,
+        minutes: 60,
+        limit: 20,
+      );
+      if (_current(client, epoch)) {
+        setState(() {
+          _diagnostics = page;
+          _diagnosticsUnavailable = false;
+        });
+      }
+    } catch (error) {
+      if (error is native.ClientError) error.dispose();
+      if (_current(client, epoch)) {
+        setState(() => _diagnosticsUnavailable = true);
+      }
+    }
+  }
+
   Future<void> _incidentAction(
     native.IncidentView incident,
     int seconds,
@@ -530,6 +557,41 @@ class _UtilitiesState extends State<UtilitiesScreen> {
                   native.ExportPolicy.disabled => l.exportDisabled,
                 }),
                 if (delivery.paused) Text(l.exportPaused),
+                Text(switch (delivery.collection) {
+                  native.DeliveryCollection.unknown => l.collectionUnknown,
+                  native.DeliveryCollection.standard => l.collectionStandard,
+                  native.DeliveryCollection.debug => l.collectionDebug(
+                    _date(
+                      DateTime.fromMillisecondsSinceEpoch(
+                        delivery.debugExpiresAt.toInt() * 1000,
+                        isUtc: true,
+                      ).toIso8601String(),
+                    ),
+                  ),
+                  native.DeliveryCollection.off => l.collectionOff,
+                }, key: const Key('collection-mode')),
+                TextButton(
+                  key: const Key('own-diagnostics'),
+                  onPressed: _busy ? null : () => _action(_ownDiagnostics),
+                  child: Text(l.ownDiagnostics),
+                ),
+                if (_diagnosticsUnavailable) Text(l.diagnosticsUnavailable),
+                if (_diagnostics?.records.isEmpty == true)
+                  Text(l.diagnosticsEmpty),
+                for (final record
+                    in _diagnostics?.records ?? <native.DiagnosticRecordView>[])
+                  Text(
+                    [
+                      _date(record.timestamp),
+                      record.eventName.isNotEmpty
+                          ? record.eventName
+                          : record.name,
+                      record.module,
+                      record.outcome,
+                    ].where((part) => part.isNotEmpty).join(' · '),
+                  ),
+                if (_diagnostics?.truncated == true)
+                  Text(l.diagnosticsTruncated),
                 if (delivery.lastSuccessAt != BigInt.zero)
                   Text(
                     l.exportLastSeen(

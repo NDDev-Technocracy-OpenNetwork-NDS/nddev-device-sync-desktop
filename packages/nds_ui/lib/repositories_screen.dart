@@ -274,28 +274,29 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
     }
   }
 
-  String _errorText(AppLocalizations l, native.GithubCatalogError error) =>
-      switch (error) {
-        native.GithubCatalogError.moduleDisabled => l.moduleDisabled,
-        native.GithubCatalogError.modulePermissionRequired =>
-          l.modulePermissionRequired,
-        native.GithubCatalogError.moduleConfigurationConflict =>
-          l.moduleConfigurationConflict,
-        native.GithubCatalogError.authorizationRequired => l.catalogSignIn,
-        native.GithubCatalogError.credentialChanged =>
-          l.catalogCredentialChanged,
-        native.GithubCatalogError.busy => l.operationBusy,
-        native.GithubCatalogError.cancelled => l.catalogCancelled,
-        native.GithubCatalogError.timeout => l.catalogTimeout,
-        native.GithubCatalogError.invalidInput =>
-          _savedMode ? l.catalogReadSavedAgain : l.catalogChooseCredential,
-        native.GithubCatalogError.invalidResponse => l.catalogInvalidResponse,
-        native.GithubCatalogError.providerFailed => l.catalogProviderFailed,
-        native.GithubCatalogError.unavailable => l.catalogUnavailable,
-        native.GithubCatalogError.capacityExhausted => l.catalogCapacityReached,
-        native.GithubCatalogError.accountIgnored => l.catalogAccountIgnored,
-        native.GithubCatalogError.ignoreListInvalid => l.catalogIgnoreListInvalid,
-      };
+  String _errorText(
+    AppLocalizations l,
+    native.GithubCatalogError error,
+  ) => switch (error) {
+    native.GithubCatalogError.moduleDisabled => l.moduleDisabled,
+    native.GithubCatalogError.modulePermissionRequired =>
+      l.modulePermissionRequired,
+    native.GithubCatalogError.moduleConfigurationConflict =>
+      l.moduleConfigurationConflict,
+    native.GithubCatalogError.authorizationRequired => l.catalogSignIn,
+    native.GithubCatalogError.credentialChanged => l.catalogCredentialChanged,
+    native.GithubCatalogError.busy => l.operationBusy,
+    native.GithubCatalogError.cancelled => l.catalogCancelled,
+    native.GithubCatalogError.timeout => l.catalogTimeout,
+    native.GithubCatalogError.invalidInput =>
+      _savedMode ? l.catalogReadSavedAgain : l.catalogChooseCredential,
+    native.GithubCatalogError.invalidResponse => l.catalogInvalidResponse,
+    native.GithubCatalogError.providerFailed => l.catalogProviderFailed,
+    native.GithubCatalogError.unavailable => l.catalogUnavailable,
+    native.GithubCatalogError.capacityExhausted => l.catalogCapacityReached,
+    native.GithubCatalogError.accountIgnored => l.catalogAccountIgnored,
+    native.GithubCatalogError.ignoreListInvalid => l.catalogIgnoreListInvalid,
+  };
 
   String _observed(AppLocalizations l, String milliseconds) {
     final value = int.tryParse(milliseconds);

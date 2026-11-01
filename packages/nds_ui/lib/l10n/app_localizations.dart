@@ -1710,6 +1710,18 @@ abstract class AppLocalizations {
   /// **'The ignored-account list on this device cannot be read. Nothing is included until it is fixed.'**
   String get catalogIgnoreListInvalid;
 
+  /// No description provided for @catalogRepositoryIgnored.
+  ///
+  /// In en, this message translates to:
+  /// **'This repository is on this device\'s ignored-repository list.'**
+  String get catalogRepositoryIgnored;
+
+  /// No description provided for @catalogRepositoryIgnoredLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ignored on this device'**
+  String get catalogRepositoryIgnoredLabel;
+
   /// No description provided for @catalogOrganization.
   ///
   /// In en, this message translates to:

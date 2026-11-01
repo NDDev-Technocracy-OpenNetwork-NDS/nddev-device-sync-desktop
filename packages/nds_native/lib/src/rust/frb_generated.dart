@@ -7064,14 +7064,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 3)
-      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
     return GithubSavedRepositoryView(
       repository: dco_decode_github_repository_summary_view(arr[0]),
       observation: dco_decode_github_observation_view(arr[1]),
       synchronization: dco_decode_opt_box_autoadd_github_commit_sync_view(
         arr[2],
       ),
+      ignored: dco_decode_bool(arr[3]),
     );
   }
 
@@ -9288,10 +9289,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_observation = sse_decode_github_observation_view(deserializer);
     var var_synchronization =
         sse_decode_opt_box_autoadd_github_commit_sync_view(deserializer);
+    var var_ignored = sse_decode_bool(deserializer);
     return GithubSavedRepositoryView(
       repository: var_repository,
       observation: var_observation,
       synchronization: var_synchronization,
+      ignored: var_ignored,
     );
   }
 
@@ -11693,6 +11696,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       self.synchronization,
       serializer,
     );
+    sse_encode_bool(self.ignored, serializer);
   }
 
   @protected

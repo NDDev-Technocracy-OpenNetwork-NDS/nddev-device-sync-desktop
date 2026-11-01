@@ -923,6 +923,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get catalogEmptyPage => 'No repositories on this page.';
 
   @override
+  String get catalogOwnerIgnored =>
+      'Ignored on this device by the owner\'s list. Saved data is kept; it is not discovered, connected or synchronized.';
+
+  @override
+  String get catalogAccountIgnored =>
+      'This GitHub account is on this device\'s ignored-account list.';
+
+  @override
+  String get catalogIgnoreListInvalid =>
+      'The ignored-account list on this device cannot be read. Nothing is included until it is fixed.';
+
+  @override
   String get catalogOrganization => 'Organization';
 
   @override

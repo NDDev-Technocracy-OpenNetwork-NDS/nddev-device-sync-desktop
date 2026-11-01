@@ -25,6 +25,12 @@ enum GithubCatalogError {
   moduleDisabled,
   modulePermissionRequired,
   moduleConfigurationConflict,
+
+  /// The repository owner is on the host's ignored-account list.
+  accountIgnored,
+
+  /// The host's ignored-account list exists but cannot be read or validated.
+  ignoreListInvalid,
 }
 
 class GithubCommitSyncView {
@@ -314,14 +320,23 @@ class GithubSavedRepositoryGroupView {
   final GithubSavedOwnerView? owner;
   final List<GithubSavedRepositoryView> repositories;
 
+  /// The owner is on the host's ignored-account list: its saved data stays, but it is not
+  /// discovered, connected or synchronized and is left out of counts and actions.
+  final bool ignored;
+
   const GithubSavedRepositoryGroupView({
     required this.ownerId,
     this.owner,
     required this.repositories,
+    required this.ignored,
   });
 
   @override
-  int get hashCode => ownerId.hashCode ^ owner.hashCode ^ repositories.hashCode;
+  int get hashCode =>
+      ownerId.hashCode ^
+      owner.hashCode ^
+      repositories.hashCode ^
+      ignored.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -330,7 +345,8 @@ class GithubSavedRepositoryGroupView {
           runtimeType == other.runtimeType &&
           ownerId == other.ownerId &&
           owner == other.owner &&
-          repositories == other.repositories;
+          repositories == other.repositories &&
+          ignored == other.ignored;
 }
 
 class GithubSavedRepositoryPageView {

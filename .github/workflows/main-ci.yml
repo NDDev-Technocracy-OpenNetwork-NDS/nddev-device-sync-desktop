@@ -68,7 +68,7 @@ jobs:
       - run: flutter pub get --enforce-lockfile
         working-directory: packages/nds_native
       - name: Install verified prebuilt Rust quality tools
-        uses: NDDev-Technocracy-Standarts/std-0004-ci-cd-workflows/.github/actions/tools@365415f32190ae22ff22462e791a4829ad6e91fc # nddev-cicd-v0.6.16
+        uses: NDDev-Technocracy-Standarts/std-0004-ci-cd-workflows/.github/actions/tools@c192c6adcf22088abf456635de614d42e8fa3f8d # nddev-cicd-v0.6.20
         with:
           # cargo-audit 0.22.2, cargo-deny 0.20.2 and cargo-nextest 0.9.149 from checksummed
           # releases instead of compiling them with cargo install in every job.
@@ -237,7 +237,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: NDDev-Technocracy-Standarts/std-0004-ci-cd-workflows
-          ref: ea492e553862c0638341f8b41d5455427f680174
+          ref: c192c6adcf22088abf456635de614d42e8fa3f8d # nddev-cicd-v0.6.20
           path: vendor/ci-standard
           persist-credentials: false
       - name: Prepare the checksum-pinned SPDX tool

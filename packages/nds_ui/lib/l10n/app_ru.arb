@@ -683,5 +683,13 @@
   "purposeServerDesktop": "Серверный рабочий стол",
   "purposeBuildDevDesktop": "Сборка и разработка",
   "purposeDevDesktop": "Разработка",
-  "purposeDesktop": "Рабочий стол"
+  "purposeDesktop": "Рабочий стол",
+  "collectionUnknown": "Политика сбора диагностики ещё не подтверждена.",
+  "collectionStandard": "Сбор диагностики: стандартный.",
+  "collectionDebug": "Сбор диагностики: отладка до {until}.",
+  "collectionOff": "Сбор диагностики выключен: ничего нового не собирается и не отправляется.",
+  "ownDiagnostics": "Показать мою диагностику (за час)",
+  "diagnosticsUnavailable": "Поиск диагностики недоступен.",
+  "diagnosticsEmpty": "За последний час диагностики нет.",
+  "diagnosticsTruncated": "Показаны только самые новые записи."
 }

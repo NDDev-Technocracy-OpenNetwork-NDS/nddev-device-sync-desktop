@@ -692,5 +692,14 @@
   "purposeServerDesktop": "Server desktop",
   "purposeBuildDevDesktop": "Build and development",
   "purposeDevDesktop": "Development",
-  "purposeDesktop": "Desktop"
+  "purposeDesktop": "Desktop",
+  "collectionUnknown": "Diagnostics collection policy has not been confirmed.",
+  "collectionStandard": "Diagnostics collection: standard.",
+  "collectionDebug": "Diagnostics collection: debug until {until}.",
+  "@collectionDebug": {"placeholders": {"until": {"type": "String"}}},
+  "collectionOff": "Diagnostics collection is off: nothing new is collected or sent.",
+  "ownDiagnostics": "Show my diagnostics (last hour)",
+  "diagnosticsUnavailable": "Diagnostics search is unavailable.",
+  "diagnosticsEmpty": "No diagnostics in the last hour.",
+  "diagnosticsTruncated": "Only the newest records are shown."
 }

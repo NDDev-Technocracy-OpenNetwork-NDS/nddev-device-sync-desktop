@@ -405,8 +405,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connecting => 'Connecting';
 
   @override
-  String get diagnosticsUnavailable =>
-      'Local diagnostics are unavailable. Sign-in can continue.';
+  String get diagnosticsUnavailable => 'Diagnostics search is unavailable.';
 
   @override
   String get localDiagnosticsOnly =>
@@ -1609,4 +1608,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get purposeDesktop => 'Desktop';
+
+  @override
+  String get collectionUnknown =>
+      'Diagnostics collection policy has not been confirmed.';
+
+  @override
+  String get collectionStandard => 'Diagnostics collection: standard.';
+
+  @override
+  String collectionDebug(String until) {
+    return 'Diagnostics collection: debug until $until.';
+  }
+
+  @override
+  String get collectionOff =>
+      'Diagnostics collection is off: nothing new is collected or sent.';
+
+  @override
+  String get ownDiagnostics => 'Show my diagnostics (last hour)';
+
+  @override
+  String get diagnosticsEmpty => 'No diagnostics in the last hour.';
+
+  @override
+  String get diagnosticsTruncated => 'Only the newest records are shown.';
 }

@@ -17,9 +17,9 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 import 'screen.dart';
 
-// These functions are ignored because they are not marked as `pub`: `cancel_work`, `catalog_active`, `clear_replica_fenced`, `client_activity`, `client_replication_permitted`, `clipboard_error`, `clipboard_vault`, `data_directory`, `ensure_delivery`, `incident_view`, `native_cache_base`, `native_runtime`, `observe_cleanup`, `observe_in_span`, `observe_incident`, `observe_operation`, `observe`, `publish_state_inner`, `replica_start_error`, `reset_replica_schedule`, `reset_replica_session`, `retire_local_resources`, `schedule`, `seal_identity_modules`, `shared_identity`, `shutdown_owned_modules_current`, `shutdown_owned_modules`, `start_replica_fenced`, `start_replica_for_schedule`, `stop_native_owner`, `stop_replica`, `vault`, `wake_replica`, `write_clipboard`
+// These functions are ignored because they are not marked as `pub`: `cancel_work`, `catalog_active`, `clear_replica_fenced`, `client_activity`, `client_replication_permitted`, `clipboard_error`, `clipboard_vault`, `data_directory`, `diagnostic_view`, `ensure_delivery`, `incident_view`, `native_cache_base`, `native_runtime`, `observe_cleanup`, `observe_in_span`, `observe_incident`, `observe_operation`, `observe`, `publish_state_inner`, `replica_start_error`, `reset_replica_schedule`, `reset_replica_session`, `retire_local_resources`, `schedule`, `seal_identity_modules`, `shared_identity`, `shutdown_owned_modules_current`, `shutdown_owned_modules`, `start_replica_fenced`, `start_replica_for_schedule`, `stop_native_owner`, `stop_replica`, `vault`, `wake_replica`, `write_clipboard`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `ClipboardReservation`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `drop`, `drop`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `drop`, `drop`
 
 /// Presentation reports raw lifecycle once; Core retains interactive admission.
 bool clientWorkPermitted({required ClientLifecycle state}) =>
@@ -84,6 +84,18 @@ abstract class NdsClient implements RustOpaqueInterface {
   Future<DeviceControlView> deviceControl();
 
   Future<List<DeviceModuleView>> deviceModules();
+
+  /// This account's own stored diagnostics (P2), newest first. A non-empty
+  /// `organization_id` asks for an organization this account administers instead;
+  /// the server decides the right from the signed request and refuses with
+  /// `forbidden_scope`. `minutes` is the look-back window (at most the one-week
+  /// retention); `traces` selects spans instead of log records.
+  Future<DiagnosticPage> diagnosticSearch({
+    required String organizationId,
+    required bool traces,
+    required int minutes,
+    required int limit,
+  });
 
   Future<LocalAgent> discoverLocalAgent();
 
@@ -258,6 +270,80 @@ abstract class NdsClient implements RustOpaqueInterface {
   Future<VaultView> vaultSync();
 
   Future<View> verifyEmail({required String code});
+}
+
+class DiagnosticPage {
+  final List<DiagnosticRecordView> records;
+  final bool truncated;
+
+  const DiagnosticPage({required this.records, required this.truncated});
+
+  @override
+  int get hashCode => records.hashCode ^ truncated.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DiagnosticPage &&
+          runtimeType == other.runtimeType &&
+          records == other.records &&
+          truncated == other.truncated;
+}
+
+/// One stored diagnostic record: fixed, redacted fields only; absent fields are empty.
+class DiagnosticRecordView {
+  final String timestamp;
+  final String serviceName;
+  final String eventName;
+  final String name;
+  final String module;
+  final String outcome;
+  final String errorType;
+  final String operationId;
+  final String deviceId;
+  final double? durationMs;
+
+  const DiagnosticRecordView({
+    required this.timestamp,
+    required this.serviceName,
+    required this.eventName,
+    required this.name,
+    required this.module,
+    required this.outcome,
+    required this.errorType,
+    required this.operationId,
+    required this.deviceId,
+    this.durationMs,
+  });
+
+  @override
+  int get hashCode =>
+      timestamp.hashCode ^
+      serviceName.hashCode ^
+      eventName.hashCode ^
+      name.hashCode ^
+      module.hashCode ^
+      outcome.hashCode ^
+      errorType.hashCode ^
+      operationId.hashCode ^
+      deviceId.hashCode ^
+      durationMs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DiagnosticRecordView &&
+          runtimeType == other.runtimeType &&
+          timestamp == other.timestamp &&
+          serviceName == other.serviceName &&
+          eventName == other.eventName &&
+          name == other.name &&
+          module == other.module &&
+          outcome == other.outcome &&
+          errorType == other.errorType &&
+          operationId == other.operationId &&
+          deviceId == other.deviceId &&
+          durationMs == other.durationMs;
 }
 
 class IncidentPage {

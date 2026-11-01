@@ -1077,6 +1077,66 @@ impl NdsClient {
         })
         .await
     }
+    /// This account's own stored diagnostics (P2), newest first. A non-empty
+    /// `organization_id` asks for an organization this account administers instead;
+    /// the server decides the right from the signed request and refuses with
+    /// `forbidden_scope`. `minutes` is the look-back window (at most the one-week
+    /// retention); `traces` selects spans instead of log records.
+    pub async fn diagnostic_search(
+        &self,
+        organization_id: String,
+        traces: bool,
+        minutes: u32,
+        limit: u16,
+    ) -> Result<DiagnosticPage, ClientError> {
+        observe_incident("observability.diagnostics.searched", async {
+            use nddev_device_sync_accounts::observability_wire as wire;
+            if !(1..=7 * 24 * 60).contains(&minutes) || !(1..=50).contains(&limit) {
+                return Err(ClientError::InvalidInput);
+            }
+            let end = time::OffsetDateTime::now_utc();
+            let start = end - time::Duration::minutes(i64::from(minutes));
+            let format = |time: time::OffsetDateTime| {
+                time.format(&time::format_description::well_known::Rfc3339)
+                    .map_err(|_| ClientError::InvalidInput)
+            };
+            let organization = !organization_id.is_empty();
+            let request = wire::DiagnosticSearchRequest {
+                scope: if organization {
+                    wire::DiagnosticScope::Organization
+                } else {
+                    wire::DiagnosticScope::Member
+                },
+                organization_id: organization.then_some(organization_id),
+                signal: if traces {
+                    wire::DiagnosticSignal::Traces
+                } else {
+                    wire::DiagnosticSignal::Logs
+                },
+                start: format(start)?,
+                end: format(end)?,
+                filters: None,
+                limit: i32::from(limit),
+            };
+            let body = serde_json::to_vec(&request).map_err(|_| ClientError::InvalidInput)?;
+            let reply = self
+                .inner
+                .sync_request(nddev_device_sync_accounts::SyncRequest::DiagnosticSearch(
+                    body,
+                ))
+                .await?;
+            let page: wire::DiagnosticSearchPage =
+                serde_json::from_slice(&reply.body).map_err(|_| ClientError::InvalidResponse)?;
+            if page.records.len() > usize::from(limit) {
+                return Err(ClientError::InvalidResponse);
+            }
+            Ok(DiagnosticPage {
+                records: page.records.into_iter().map(diagnostic_view).collect(),
+                truncated: page.truncated,
+            })
+        })
+        .await
+    }
     pub async fn incident_action(
         &self,
         id: String,
@@ -1500,6 +1560,57 @@ pub struct IncidentPage {
     pub incidents: Vec<IncidentView>,
     pub next_cursor: String,
     pub generated_at: String,
+}
+/// One stored diagnostic record: fixed, redacted fields only; absent fields are empty.
+#[derive(Clone)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
+pub struct DiagnosticRecordView {
+    pub timestamp: String,
+    pub service_name: String,
+    pub event_name: String,
+    pub name: String,
+    pub module: String,
+    pub outcome: String,
+    pub error_type: String,
+    pub operation_id: String,
+    pub device_id: String,
+    pub duration_ms: Option<f64>,
+}
+#[derive(Clone)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    derive(tsify::Tsify, serde::Serialize)
+)]
+#[cfg_attr(
+    all(target_arch = "wasm32", feature = "browser-bindings"),
+    tsify(large_number_types_as_bigints, missing_as_null)
+)]
+pub struct DiagnosticPage {
+    pub records: Vec<DiagnosticRecordView>,
+    pub truncated: bool,
+}
+fn diagnostic_view(
+    value: nddev_device_sync_accounts::observability_wire::DiagnosticRecord,
+) -> DiagnosticRecordView {
+    DiagnosticRecordView {
+        timestamp: value.timestamp,
+        service_name: value.service_name,
+        event_name: value.event_name.unwrap_or_default(),
+        name: value.name.unwrap_or_default(),
+        module: value.module.unwrap_or_default(),
+        outcome: value.outcome.unwrap_or_default(),
+        error_type: value.error_type.unwrap_or_default(),
+        operation_id: value.operation_id.unwrap_or_default(),
+        device_id: value.device_id.unwrap_or_default(),
+        duration_ms: value.duration_ms,
+    }
 }
 fn incident_view(
     value: nddev_device_sync_accounts::observability_wire::Incident,

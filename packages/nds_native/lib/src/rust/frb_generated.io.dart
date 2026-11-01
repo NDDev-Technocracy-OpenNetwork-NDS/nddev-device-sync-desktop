@@ -416,6 +416,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   DebugScope dco_decode_debug_scope(dynamic raw);
 
   @protected
+  DeliveryCollection dco_decode_delivery_collection(dynamic raw);
+
+  @protected
   DeliveryView dco_decode_delivery_view(dynamic raw);
 
   @protected
@@ -426,6 +429,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   DeviceView dco_decode_device_view(dynamic raw);
+
+  @protected
+  DiagnosticPage dco_decode_diagnostic_page(dynamic raw);
+
+  @protected
+  DiagnosticRecordView dco_decode_diagnostic_record_view(dynamic raw);
 
   @protected
   Diagnostics dco_decode_diagnostics(dynamic raw);
@@ -571,6 +580,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<DeviceView> dco_decode_list_device_view(dynamic raw);
+
+  @protected
+  List<DiagnosticRecordView> dco_decode_list_diagnostic_record_view(
+    dynamic raw,
+  );
 
   @protected
   List<Entry> dco_decode_list_entry(dynamic raw);
@@ -1177,6 +1191,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   DebugScope sse_decode_debug_scope(SseDeserializer deserializer);
 
   @protected
+  DeliveryCollection sse_decode_delivery_collection(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   DeliveryView sse_decode_delivery_view(SseDeserializer deserializer);
 
   @protected
@@ -1189,6 +1208,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   DeviceView sse_decode_device_view(SseDeserializer deserializer);
+
+  @protected
+  DiagnosticPage sse_decode_diagnostic_page(SseDeserializer deserializer);
+
+  @protected
+  DiagnosticRecordView sse_decode_diagnostic_record_view(
+    SseDeserializer deserializer,
+  );
 
   @protected
   Diagnostics sse_decode_diagnostics(SseDeserializer deserializer);
@@ -1356,6 +1383,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<DeviceView> sse_decode_list_device_view(SseDeserializer deserializer);
+
+  @protected
+  List<DiagnosticRecordView> sse_decode_list_diagnostic_record_view(
+    SseDeserializer deserializer,
+  );
 
   @protected
   List<Entry> sse_decode_list_entry(SseDeserializer deserializer);
@@ -2067,6 +2099,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_debug_scope(DebugScope self, SseSerializer serializer);
 
   @protected
+  void sse_encode_delivery_collection(
+    DeliveryCollection self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_delivery_view(DeliveryView self, SseSerializer serializer);
 
   @protected
@@ -2083,6 +2121,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_device_view(DeviceView self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_diagnostic_page(
+    DiagnosticPage self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_diagnostic_record_view(
+    DiagnosticRecordView self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_diagnostics(Diagnostics self, SseSerializer serializer);
@@ -2284,6 +2334,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_device_view(
     List<DeviceView> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_diagnostic_record_view(
+    List<DiagnosticRecordView> self,
     SseSerializer serializer,
   );
 

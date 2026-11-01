@@ -930,6 +930,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get catalogEmptyPage => 'На этой странице нет репозиториев.';
 
   @override
+  String get catalogOwnerIgnored =>
+      'Игнорируется на этом устройстве по списку владельца. Сохранённые данные остаются; аккаунт не обнаруживается, не подключается и не синхронизируется.';
+
+  @override
+  String get catalogAccountIgnored =>
+      'Этот аккаунт GitHub в списке игнорируемых на этом устройстве.';
+
+  @override
+  String get catalogIgnoreListInvalid =>
+      'Список игнорируемых аккаунтов на этом устройстве не читается. Пока он не исправлен, ничего не включается.';
+
+  @override
   String get catalogOrganization => 'Организация';
 
   @override

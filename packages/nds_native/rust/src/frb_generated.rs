@@ -8225,6 +8225,7 @@ const _: fn() = || {
             GithubSavedRepositoryGroupView.owner;
         let _: Vec<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView> =
             GithubSavedRepositoryGroupView.repositories;
+        let _: bool = GithubSavedRepositoryGroupView.ignored;
     }
     {
         let GithubSavedRepositoryPageView =
@@ -9404,6 +9405,8 @@ impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubCatalo
 10 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleDisabled,
 11 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired,
 12 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict,
+13 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::AccountIgnored,
+14 => nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::IgnoreListInvalid,
             _ => unreachable!("Invalid variant for GithubCatalogError: {}", inner),
         };
     }
@@ -9615,10 +9618,12 @@ impl SseDecode for nddev_device_sync_github::catalog_runtime::view::GithubSavedR
         let mut var_repositories = <Vec<
             nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView,
         >>::sse_decode(deserializer);
+        let mut var_ignored = <bool>::sse_decode(deserializer);
         return nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryGroupView {
             owner_id: var_ownerId,
             owner: var_owner,
             repositories: var_repositories,
+            ignored: var_ignored,
         };
     }
 }
@@ -12754,6 +12759,8 @@ nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::CapacityExh
 nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleDisabled => 10.into_dart(),
 nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired => 11.into_dart(),
 nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict => 12.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::AccountIgnored => 13.into_dart(),
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::IgnoreListInvalid => 14.into_dart(),
                     _ => unreachable!(),
                 }
     }
@@ -13131,6 +13138,7 @@ impl flutter_rust_bridge::IntoDart
             self.0.owner_id.into_into_dart().into_dart(),
             self.0.owner.into_into_dart().into_dart(),
             self.0.repositories.into_into_dart().into_dart(),
+            self.0.ignored.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -14944,6 +14952,8 @@ nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::CapacityExh
 nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleDisabled => { 10 }
 nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModulePermissionRequired => { 11 }
 nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::ModuleConfigurationConflict => { 12 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::AccountIgnored => { 13 }
+nddev_device_sync_github::catalog_runtime::view::GithubCatalogError::IgnoreListInvalid => { 14 }
  _ => { unimplemented!(""); }}, serializer);
     }
 }
@@ -15082,6 +15092,7 @@ impl SseEncode for nddev_device_sync_github::catalog_runtime::view::GithubSavedR
             self.owner, serializer,
         );
         <Vec<nddev_device_sync_github::catalog_runtime::view::GithubSavedRepositoryView>>::sse_encode(self.repositories, serializer);
+        <bool>::sse_encode(self.ignored, serializer);
     }
 }
 

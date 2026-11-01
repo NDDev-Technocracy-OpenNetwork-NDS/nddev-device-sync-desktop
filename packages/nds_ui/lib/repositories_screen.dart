@@ -293,6 +293,8 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
         native.GithubCatalogError.providerFailed => l.catalogProviderFailed,
         native.GithubCatalogError.unavailable => l.catalogUnavailable,
         native.GithubCatalogError.capacityExhausted => l.catalogCapacityReached,
+        native.GithubCatalogError.accountIgnored => l.catalogAccountIgnored,
+        native.GithubCatalogError.ignoreListInvalid => l.catalogIgnoreListInvalid,
       };
 
   String _observed(AppLocalizations l, String milliseconds) {
@@ -339,6 +341,8 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
         'operation_timeout' => l.catalogTimeout,
         'provider_failed' => l.catalogProviderFailed,
         'operation_cancelled' => l.catalogCancelled,
+        'account_ignored' => l.catalogAccountIgnored,
+        'ignore_list_invalid' => l.catalogIgnoreListInvalid,
         _ => l.repositorySyncRefused,
       },
     },
@@ -416,6 +420,7 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
     native.GithubOwnerView? owner,
     List<Widget> repositories, [
     native.GithubObservationView? observation,
+    bool ignored = false,
   ]) => Card(
     key: ValueKey('catalog-owner-$ownerId'),
     child: Padding(
@@ -434,6 +439,11 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
                   : l.catalogPersonal,
             ),
           if (observation != null) Text(_observation(l, observation)),
+          if (ignored)
+            Text(
+              l.catalogOwnerIgnored,
+              key: ValueKey('catalog-owner-ignored-$ownerId'),
+            ),
           ...repositories,
         ],
       ),
@@ -516,18 +526,27 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
               if (_savedPage != null) ...[
                 if (_savedPage!.groups.isEmpty) Text(l.catalogEmptyPage),
                 for (final group in _savedPage!.groups)
-                  _ownerCard(l, group.ownerId, group.owner?.owner, [
-                    for (final item in group.repositories)
-                      _repositoryTile(
-                        l,
-                        item.repository,
-                        item.observation,
-                        group.owner?.observation.conflicted == false
-                            ? group.owner?.owner
-                            : null,
-                        item.synchronization,
-                      ),
-                  ], group.owner?.observation),
+                  _ownerCard(
+                    l,
+                    group.ownerId,
+                    group.owner?.owner,
+                    [
+                      for (final item in group.repositories)
+                        _repositoryTile(
+                          l,
+                          item.repository,
+                          item.observation,
+                          // An ignored owner keeps its saved data but offers no action.
+                          group.owner?.observation.conflicted == false &&
+                                  !group.ignored
+                              ? group.owner?.owner
+                              : null,
+                          item.synchronization,
+                        ),
+                    ],
+                    group.owner?.observation,
+                    group.ignored,
+                  ),
               ],
             ] else ...[
               Text(l.catalogHelp),

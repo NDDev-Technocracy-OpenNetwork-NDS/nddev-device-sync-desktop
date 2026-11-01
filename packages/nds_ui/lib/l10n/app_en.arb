@@ -430,6 +430,8 @@
   "catalogOwnerIgnored": "Ignored on this device by the owner's list. Saved data is kept; it is not discovered, connected or synchronized.",
   "catalogAccountIgnored": "This GitHub account is on this device's ignored-account list.",
   "catalogIgnoreListInvalid": "The ignored-account list on this device cannot be read. Nothing is included until it is fixed.",
+  "catalogRepositoryIgnored": "This repository is on this device's ignored-repository list.",
+  "catalogRepositoryIgnoredLabel": "Ignored on this device",
   "catalogOrganization": "Organization",
   "catalogPersonal": "Personal account",
   "catalogPublic": "Public",

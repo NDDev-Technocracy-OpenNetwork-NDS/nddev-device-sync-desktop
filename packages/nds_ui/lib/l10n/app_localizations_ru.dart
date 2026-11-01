@@ -942,6 +942,13 @@ class AppLocalizationsRu extends AppLocalizations {
       'Список игнорируемых аккаунтов на этом устройстве не читается. Пока он не исправлен, ничего не включается.';
 
   @override
+  String get catalogRepositoryIgnored =>
+      'Этот репозиторий в списке игнорируемых на этом устройстве.';
+
+  @override
+  String get catalogRepositoryIgnoredLabel => 'Игнорируется на этом устройстве';
+
+  @override
   String get catalogOrganization => 'Организация';
 
   @override

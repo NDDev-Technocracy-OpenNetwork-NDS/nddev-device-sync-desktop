@@ -295,6 +295,7 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
     native.GithubCatalogError.unavailable => l.catalogUnavailable,
     native.GithubCatalogError.capacityExhausted => l.catalogCapacityReached,
     native.GithubCatalogError.accountIgnored => l.catalogAccountIgnored,
+    native.GithubCatalogError.repositoryIgnored => l.catalogRepositoryIgnored,
     native.GithubCatalogError.ignoreListInvalid => l.catalogIgnoreListInvalid,
   };
 
@@ -343,6 +344,7 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
         'provider_failed' => l.catalogProviderFailed,
         'operation_cancelled' => l.catalogCancelled,
         'account_ignored' => l.catalogAccountIgnored,
+        'repository_ignored' => l.catalogRepositoryIgnored,
         'ignore_list_invalid' => l.catalogIgnoreListInvalid,
         _ => l.repositorySyncRefused,
       },
@@ -374,6 +376,7 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
     native.GithubObservationView? observation,
     native.GithubOwnerView? owner,
     native.GithubCommitSyncView? synchronization,
+    bool ignored = false,
   ]) => ListTile(
     key: ValueKey('catalog-repository-${repository.id}'),
     contentPadding: EdgeInsets.zero,
@@ -407,6 +410,7 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
           native.GithubRepositoryVisibilityView.private => l.catalogPrivate,
           native.GithubRepositoryVisibilityView.internal => l.catalogInternal,
         },
+        if (ignored) l.catalogRepositoryIgnoredLabel,
         if (repository.archived) l.catalogArchived,
         if (repository.defaultBranch != null) repository.defaultBranch!,
         if (observation != null) _observation(l, observation),
@@ -537,12 +541,15 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
                           l,
                           item.repository,
                           item.observation,
-                          // An ignored owner keeps its saved data but offers no action.
+                          // An ignored owner or repository keeps its saved data but
+                          // offers no action.
                           group.owner?.observation.conflicted == false &&
-                                  !group.ignored
+                                  !group.ignored &&
+                                  !item.ignored
                               ? group.owner?.owner
                               : null,
                           item.synchronization,
+                          item.ignored,
                         ),
                     ],
                     group.owner?.observation,

@@ -935,6 +935,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'The ignored-account list on this device cannot be read. Nothing is included until it is fixed.';
 
   @override
+  String get catalogRepositoryIgnored =>
+      'This repository is on this device\'s ignored-repository list.';
+
+  @override
+  String get catalogRepositoryIgnoredLabel => 'Ignored on this device';
+
+  @override
   String get catalogOrganization => 'Organization';
 
   @override

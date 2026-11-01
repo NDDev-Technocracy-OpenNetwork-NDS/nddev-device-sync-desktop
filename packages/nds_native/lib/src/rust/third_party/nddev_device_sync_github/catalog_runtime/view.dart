@@ -29,6 +29,9 @@ enum GithubCatalogError {
   /// The repository owner is on the host's ignored-account list.
   accountIgnored,
 
+  /// The repository is on the host's ignored-repository list.
+  repositoryIgnored,
+
   /// The host's ignored-account list exists but cannot be read or validated.
   ignoreListInvalid,
 }
@@ -389,15 +392,23 @@ class GithubSavedRepositoryView {
   final GithubObservationView observation;
   final GithubCommitSyncView? synchronization;
 
+  /// The repository itself is on the host's ignore list: its saved data stays, but it is not
+  /// discovered, connected or synchronized.
+  final bool ignored;
+
   const GithubSavedRepositoryView({
     required this.repository,
     required this.observation,
     this.synchronization,
+    required this.ignored,
   });
 
   @override
   int get hashCode =>
-      repository.hashCode ^ observation.hashCode ^ synchronization.hashCode;
+      repository.hashCode ^
+      observation.hashCode ^
+      synchronization.hashCode ^
+      ignored.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -406,7 +417,8 @@ class GithubSavedRepositoryView {
           runtimeType == other.runtimeType &&
           repository == other.repository &&
           observation == other.observation &&
-          synchronization == other.synchronization;
+          synchronization == other.synchronization &&
+          ignored == other.ignored;
 }
 
 /// Saved owner intent, not provider access or this device's consent.

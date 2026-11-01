@@ -65,7 +65,7 @@ pub struct NdsClient {
     pub(crate) screen: Mutex<Option<super::screen::ScreenSlot>>,
     // Raw lifecycle fact; admission and publication share this lifetime owner.
     pub(crate) screen_lifecycle: Mutex<ClientLifecycle>,
-    delivery: Mutex<Option<super::telemetry::Delivery>>,
+    delivery: Mutex<Option<Arc<super::telemetry::Delivery>>>,
     #[cfg(not(target_arch = "wasm32"))]
     clipboard: nddev_device_sync_clipboard::os::TextClipboard,
 }
@@ -346,6 +346,9 @@ impl NdsClient {
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         if let Some(owner) = self.native_runtime() {
             owner.ensure_delivery(|identity| super::telemetry::start_delivery(identity, true));
+            if let Some(delivery) = owner.delivery_handle() {
+                super::telemetry::follow_collection(&delivery);
+            }
             return;
         }
         {
@@ -358,7 +361,12 @@ impl NdsClient {
                 *delivery = super::telemetry::start_delivery(
                     self.inner.clone(),
                     self.replication_active.load(Ordering::Relaxed),
-                );
+                )
+                .map(Arc::new);
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            if let Some(delivery) = delivery.as_ref() {
+                super::telemetry::follow_collection(delivery);
             }
         }
     }

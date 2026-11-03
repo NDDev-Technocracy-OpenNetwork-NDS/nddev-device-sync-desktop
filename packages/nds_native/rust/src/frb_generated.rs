@@ -8071,6 +8071,11 @@ const _: fn() = || {
         let _: bool = Branch.diverged;
     }
     {
+        let BrowserBuild = None::<crate::api::module_types::BrowserBuild>.unwrap();
+        let _: String = BrowserBuild.version;
+        let _: String = BrowserBuild.commit;
+    }
+    {
         let BrowserDocument = None::<crate::api::module_types::BrowserDocument>.unwrap();
         let _: String = BrowserDocument.target;
         let _: String = BrowserDocument.document;
@@ -8091,9 +8096,12 @@ const _: fn() = || {
     {
         let BrowserStatus = None::<crate::api::module_types::BrowserStatus>.unwrap();
         let _: bool = BrowserStatus.enabled;
+        let _: Option<String> = BrowserStatus.observation;
         let _: String = BrowserStatus.browser;
         let _: String = BrowserStatus.extension;
         let _: usize = BrowserStatus.sessions;
+        let _: Option<crate::api::module_types::BrowserBuild> = BrowserStatus.host;
+        let _: Option<bool> = BrowserStatus.compatible;
     }
     {
         let BrowserTab = None::<crate::api::module_types::BrowserTab>.unwrap();
@@ -8967,6 +8975,18 @@ impl SseDecode for nddev_device_sync_github::view::Branch {
     }
 }
 
+impl SseDecode for crate::api::module_types::BrowserBuild {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_version = <String>::sse_decode(deserializer);
+        let mut var_commit = <String>::sse_decode(deserializer);
+        return crate::api::module_types::BrowserBuild {
+            version: var_version,
+            commit: var_commit,
+        };
+    }
+}
+
 impl SseDecode for crate::api::module_types::BrowserDocument {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -9004,6 +9024,7 @@ impl SseDecode for crate::api::module_types::BrowserScriptFailure {
             0 => crate::api::module_types::BrowserScriptFailure::ScriptError,
             1 => crate::api::module_types::BrowserScriptFailure::TargetClosed,
             2 => crate::api::module_types::BrowserScriptFailure::BrowserDisconnected,
+            3 => crate::api::module_types::BrowserScriptFailure::Aborted,
             _ => unreachable!("Invalid variant for BrowserScriptFailure: {}", inner),
         };
     }
@@ -9027,14 +9048,21 @@ impl SseDecode for crate::api::module_types::BrowserStatus {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_enabled = <bool>::sse_decode(deserializer);
+        let mut var_observation = <Option<String>>::sse_decode(deserializer);
         let mut var_browser = <String>::sse_decode(deserializer);
         let mut var_extension_ = <String>::sse_decode(deserializer);
         let mut var_sessions = <usize>::sse_decode(deserializer);
+        let mut var_host =
+            <Option<crate::api::module_types::BrowserBuild>>::sse_decode(deserializer);
+        let mut var_compatible = <Option<bool>>::sse_decode(deserializer);
         return crate::api::module_types::BrowserStatus {
             enabled: var_enabled,
+            observation: var_observation,
             browser: var_browser,
             extension: var_extension_,
             sessions: var_sessions,
+            host: var_host,
+            compatible: var_compatible,
         };
     }
 }
@@ -10424,6 +10452,19 @@ impl SseDecode for Option<bool> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<bool>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::api::module_types::BrowserBuild> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::api::module_types::BrowserBuild>::sse_decode(
+                deserializer,
+            ));
         } else {
             return None;
         }
@@ -12212,6 +12253,27 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<nddev_device_sync_github::view
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::api::module_types::BrowserBuild> {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.0.version.into_into_dart().into_dart(),
+            self.0.commit.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<crate::api::module_types::BrowserBuild>
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::api::module_types::BrowserBuild>>
+    for crate::api::module_types::BrowserBuild
+{
+    fn into_into_dart(self) -> FrbWrapper<crate::api::module_types::BrowserBuild> {
+        self.into()
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::api::module_types::BrowserDocument> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -12262,6 +12324,7 @@ impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::api::module_types::Brow
             crate::api::module_types::BrowserScriptFailure::ScriptError => 0.into_dart(),
             crate::api::module_types::BrowserScriptFailure::TargetClosed => 1.into_dart(),
             crate::api::module_types::BrowserScriptFailure::BrowserDisconnected => 2.into_dart(),
+            crate::api::module_types::BrowserScriptFailure::Aborted => 3.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -12304,9 +12367,12 @@ impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::api::module_types::Brow
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.0.enabled.into_into_dart().into_dart(),
+            self.0.observation.into_into_dart().into_dart(),
             self.0.browser.into_into_dart().into_dart(),
             self.0.extension.into_into_dart().into_dart(),
             self.0.sessions.into_into_dart().into_dart(),
+            self.0.host.into_into_dart().into_dart(),
+            self.0.compatible.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -14817,6 +14883,14 @@ impl SseEncode for nddev_device_sync_github::view::Branch {
     }
 }
 
+impl SseEncode for crate::api::module_types::BrowserBuild {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.version, serializer);
+        <String>::sse_encode(self.commit, serializer);
+    }
+}
+
 impl SseEncode for crate::api::module_types::BrowserDocument {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -14846,6 +14920,7 @@ impl SseEncode for crate::api::module_types::BrowserScriptFailure {
                 crate::api::module_types::BrowserScriptFailure::ScriptError => 0,
                 crate::api::module_types::BrowserScriptFailure::TargetClosed => 1,
                 crate::api::module_types::BrowserScriptFailure::BrowserDisconnected => 2,
+                crate::api::module_types::BrowserScriptFailure::Aborted => 3,
                 _ => {
                     unimplemented!("");
                 }
@@ -14868,9 +14943,12 @@ impl SseEncode for crate::api::module_types::BrowserStatus {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.enabled, serializer);
+        <Option<String>>::sse_encode(self.observation, serializer);
         <String>::sse_encode(self.browser, serializer);
         <String>::sse_encode(self.extension, serializer);
         <usize>::sse_encode(self.sessions, serializer);
+        <Option<crate::api::module_types::BrowserBuild>>::sse_encode(self.host, serializer);
+        <Option<bool>>::sse_encode(self.compatible, serializer);
     }
 }
 
@@ -15886,6 +15964,16 @@ impl SseEncode for Option<bool> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <bool>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::api::module_types::BrowserBuild> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::api::module_types::BrowserBuild>::sse_encode(value, serializer);
         }
     }
 }

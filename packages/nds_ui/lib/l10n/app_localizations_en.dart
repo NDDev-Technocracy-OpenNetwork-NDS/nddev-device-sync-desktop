@@ -1479,6 +1479,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get browserHostStatus => 'Browser';
 
   @override
+  String get browserUpdateRequired =>
+      'Update the browser extension and its host to compatible versions before running browser work.';
+
+  @override
   String get browserExtensionStatus => 'Extension';
 
   @override

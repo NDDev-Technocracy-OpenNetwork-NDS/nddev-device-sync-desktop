@@ -2652,6 +2652,12 @@ abstract class AppLocalizations {
   /// **'Browser'**
   String get browserHostStatus;
 
+  /// No description provided for @browserUpdateRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the browser extension and its host to compatible versions before running browser work.'**
+  String get browserUpdateRequired;
+
   /// No description provided for @browserExtensionStatus.
   ///
   /// In en, this message translates to:

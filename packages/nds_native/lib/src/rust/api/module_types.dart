@@ -8,6 +8,24 @@ import 'modules.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+class BrowserBuild {
+  final String version;
+  final String commit;
+
+  const BrowserBuild({required this.version, required this.commit});
+
+  @override
+  int get hashCode => version.hashCode ^ commit.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BrowserBuild &&
+          runtimeType == other.runtimeType &&
+          version == other.version &&
+          commit == other.commit;
+}
+
 class BrowserDocument {
   final String target;
   final String document;
@@ -54,7 +72,12 @@ class BrowserOutcome {
           tabs == other.tabs;
 }
 
-enum BrowserScriptFailure { scriptError, targetClosed, browserDisconnected }
+enum BrowserScriptFailure {
+  scriptError,
+  targetClosed,
+  browserDisconnected,
+  aborted,
+}
 
 class BrowserSession {
   final String project;
@@ -82,23 +105,32 @@ class BrowserSession {
 
 class BrowserStatus {
   final bool enabled;
+  final String? observation;
   final String browser;
   final String extension_;
   final BigInt sessions;
+  final BrowserBuild? host;
+  final bool? compatible;
 
   const BrowserStatus({
     required this.enabled,
+    this.observation,
     required this.browser,
     required this.extension_,
     required this.sessions,
+    this.host,
+    this.compatible,
   });
 
   @override
   int get hashCode =>
       enabled.hashCode ^
+      observation.hashCode ^
       browser.hashCode ^
       extension_.hashCode ^
-      sessions.hashCode;
+      sessions.hashCode ^
+      host.hashCode ^
+      compatible.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -106,9 +138,12 @@ class BrowserStatus {
       other is BrowserStatus &&
           runtimeType == other.runtimeType &&
           enabled == other.enabled &&
+          observation == other.observation &&
           browser == other.browser &&
           extension_ == other.extension_ &&
-          sessions == other.sessions;
+          sessions == other.sessions &&
+          host == other.host &&
+          compatible == other.compatible;
 }
 
 class BrowserTab {

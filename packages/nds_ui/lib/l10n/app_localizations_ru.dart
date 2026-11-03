@@ -1490,6 +1490,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get browserHostStatus => 'Браузер';
 
   @override
+  String get browserUpdateRequired =>
+      'Обновите расширение и службу браузера до совместимых версий перед запуском браузерных задач.';
+
+  @override
   String get browserExtensionStatus => 'Расширение';
 
   @override

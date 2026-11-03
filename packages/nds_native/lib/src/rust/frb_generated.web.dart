@@ -309,6 +309,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool dco_decode_box_autoadd_bool(dynamic raw);
 
   @protected
+  BrowserBuild dco_decode_box_autoadd_browser_build(dynamic raw);
+
+  @protected
   BrowserDocument dco_decode_box_autoadd_browser_document(dynamic raw);
 
   @protected
@@ -368,6 +371,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Branch dco_decode_branch(dynamic raw);
+
+  @protected
+  BrowserBuild dco_decode_browser_build(dynamic raw);
 
   @protected
   BrowserDocument dco_decode_browser_document(dynamic raw);
@@ -679,6 +685,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
+
+  @protected
+  BrowserBuild? dco_decode_opt_box_autoadd_browser_build(dynamic raw);
 
   @protected
   BrowserDocument? dco_decode_opt_box_autoadd_browser_document(dynamic raw);
@@ -1074,6 +1083,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool sse_decode_box_autoadd_bool(SseDeserializer deserializer);
 
   @protected
+  BrowserBuild sse_decode_box_autoadd_browser_build(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   BrowserDocument sse_decode_box_autoadd_browser_document(
     SseDeserializer deserializer,
   );
@@ -1139,6 +1153,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Branch sse_decode_branch(SseDeserializer deserializer);
+
+  @protected
+  BrowserBuild sse_decode_browser_build(SseDeserializer deserializer);
 
   @protected
   BrowserDocument sse_decode_browser_document(SseDeserializer deserializer);
@@ -1494,6 +1511,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer);
+
+  @protected
+  BrowserBuild? sse_decode_opt_box_autoadd_browser_build(
+    SseDeserializer deserializer,
+  );
 
   @protected
   BrowserDocument? sse_decode_opt_box_autoadd_browser_document(
@@ -1951,6 +1973,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_browser_build(
+    BrowserBuild self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_browser_document(
     BrowserDocument self,
     SseSerializer serializer,
@@ -2033,6 +2061,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_branch(Branch self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_browser_build(BrowserBuild self, SseSerializer serializer);
 
   @protected
   void sse_encode_browser_document(
@@ -2479,6 +2510,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_browser_build(
+    BrowserBuild? self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_opt_box_autoadd_browser_document(

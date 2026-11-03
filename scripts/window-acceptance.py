@@ -253,9 +253,17 @@ Atspi.exit()
         ["/usr/bin/python3", "-c", program, str(gui.pid), json.dumps(labels), "1" if activate else "0"],
         capture_output=True, text=True, timeout=5,
     )
-    if result.returncode:
+    if result.returncode or len(result.stdout) > 65536:
         return False
-    return json.loads(result.stdout)["found"]
+    rows = []
+    for line in result.stdout.splitlines():
+        try:
+            value = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(value, dict) and type(value.get("found")) is bool:
+            rows.append(value)
+    return len(rows) == 1 and rows[0]["found"]
 
 
 def diagnostic_collection(gui, gui_log, cli_read):
@@ -343,6 +351,10 @@ def worker(root):
         "NDS_TEST_ISOLATED_GITHUB_TOKEN_FILE",
     ]:
         env.pop(k, None)
+    if OPTIONS.diagnostic_export_fixture is not None:
+        # Only this private GUI process enables its accessibility bridge.
+        env.pop("NO_AT_BRIDGE", None)
+        env["GTK_MODULES"] = "atk-bridge"
     daemon = None
     gui = None
     with (W / "keyring.log").open("wb") as keylog:

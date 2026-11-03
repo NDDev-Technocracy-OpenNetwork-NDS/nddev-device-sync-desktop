@@ -89,6 +89,10 @@ pub fn configure_debug(scope: DebugScope, seconds: u16) -> Result<(), Diagnostic
         return Err(DiagnosticsError::InvalidInput);
     }
     let logger = logger().ok_or(DiagnosticsError::Unavailable)?;
+    // A window the user starts or stops here is theirs; the server-policy follower
+    // never closes it.
+    #[cfg(not(target_arch = "wasm32"))]
+    FOLLOWER_OPENED.store(false, std::sync::atomic::Ordering::Release);
     logger
         .logger
         .control
@@ -283,7 +287,121 @@ mod tests {
 }
 
 pub(crate) use nddev_device_sync_accounts::telemetry::Delivery;
+#[cfg(not(target_arch = "wasm32"))]
+use nddev_device_sync_accounts::view::DeliveryCollection;
 pub use nddev_device_sync_accounts::view::DeliveryView;
+
+#[cfg(not(target_arch = "wasm32"))]
+/// Whether the active local debug window was opened by the server-policy follower.
+static FOLLOWER_OPENED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+#[cfg(not(target_arch = "wasm32"))]
+/// The delivery the follower currently watches; one follower per delivery.
+static FOLLOWING: Mutex<std::sync::Weak<Delivery>> = Mutex::new(std::sync::Weak::new());
+#[cfg(not(target_arch = "wasm32"))]
+/// One local window never exceeds this; it is re-armed while the server window lasts.
+const FOLLOW_WINDOW_SECONDS: u64 = 300;
+#[cfg(not(target_arch = "wasm32"))]
+const FOLLOW_INTERVAL: Duration = Duration::from_secs(15);
+
+#[cfg(not(target_arch = "wasm32"))]
+/// What the follower does for one observed delivery policy (desktop#172).
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum Follow {
+    /// Open an I/O debug window for this many seconds.
+    Open(u64),
+    /// Close the window the follower opened.
+    Close,
+    Keep,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+/// The server states a finite debug window per device; the app follows it with its own
+/// local SDK window that never outlives the server's end. A window the user opened is
+/// never closed by the follower.
+pub(crate) fn follow_decision(
+    collection: DeliveryCollection,
+    debug_expires_at: u64,
+    now: u64,
+    active: bool,
+    opened_by_follower: bool,
+) -> Follow {
+    match collection {
+        DeliveryCollection::Debug if debug_expires_at > now => {
+            if active {
+                Follow::Keep
+            } else {
+                Follow::Open((debug_expires_at - now).min(FOLLOW_WINDOW_SECONDS))
+            }
+        }
+        _ if active && opened_by_follower => Follow::Close,
+        _ => Follow::Keep,
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn follow_once(view: &DeliveryView) {
+    use std::sync::atomic::Ordering;
+    let Some(process) = logger() else {
+        return;
+    };
+    let control = &process.logger.control;
+    let active = control.debug_active();
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |time| time.as_secs());
+    match follow_decision(
+        view.collection,
+        view.debug_expires_at,
+        now,
+        active,
+        FOLLOWER_OPENED.load(Ordering::Acquire),
+    ) {
+        Follow::Open(seconds) if seconds > 0 => {
+            let window = DebugWindow {
+                scope: DebugScope::Io.as_str().into(),
+                duration: Duration::from_secs(seconds),
+                events: 100,
+            };
+            if control.set_debug(Some(window)).is_ok() {
+                FOLLOWER_OPENED.store(true, Ordering::Release);
+            }
+        }
+        Follow::Close => {
+            if control.set_debug(None).is_ok() {
+                FOLLOWER_OPENED.store(false, Ordering::Release);
+            }
+        }
+        _ if !active => FOLLOWER_OPENED.store(false, Ordering::Release),
+        _ => {}
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+/// Starts the follower for this delivery unless it already runs. It ends with the delivery.
+pub(crate) fn follow_collection(delivery: &std::sync::Arc<Delivery>) {
+    {
+        let mut current = FOLLOWING.lock().unwrap_or_else(|error| error.into_inner());
+        if current
+            .upgrade()
+            .is_some_and(|watched| std::sync::Arc::ptr_eq(&watched, delivery))
+        {
+            return;
+        }
+        *current = std::sync::Arc::downgrade(delivery);
+    }
+    let watched = std::sync::Arc::downgrade(delivery);
+    drop(nddev_device_sync_accounts::runtime::spawn(async move {
+        loop {
+            let Some(delivery) = watched.upgrade() else {
+                break;
+            };
+            let view = delivery.snapshot();
+            drop(delivery);
+            follow_once(&view);
+            nddev_device_sync_accounts::runtime::sleep(FOLLOW_INTERVAL).await;
+        }
+    }));
+}
 
 pub(crate) fn start_delivery(
     identity: std::sync::Arc<nddev_device_sync_accounts::IdentityClient>,
@@ -296,4 +414,43 @@ pub(crate) fn start_delivery(
         process.traces.subscribe().ok()?,
         foreground,
     ))
+}
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod follow_tests {
+    use super::{Follow, follow_decision};
+    use nddev_device_sync_accounts::view::DeliveryCollection::{Debug, Off, Standard, Unknown};
+
+    #[test]
+    fn the_local_window_follows_a_finite_server_debug_window() {
+        // Seven minutes of server debug: windows of at most five minutes, ending with it.
+        assert_eq!(
+            follow_decision(Debug, 1_420, 1_000, false, false),
+            Follow::Open(300)
+        );
+        assert_eq!(
+            follow_decision(Debug, 1_420, 1_300, true, true),
+            Follow::Keep
+        );
+        assert_eq!(
+            follow_decision(Debug, 1_420, 1_301, false, true),
+            Follow::Open(119)
+        );
+        // An ended or contradictory window opens nothing.
+        assert_eq!(
+            follow_decision(Debug, 1_000, 1_000, false, false),
+            Follow::Keep
+        );
+        assert_eq!(follow_decision(Debug, 0, 1_000, false, false), Follow::Keep);
+    }
+
+    #[test]
+    fn leaving_debug_closes_only_the_followers_window() {
+        for mode in [Standard, Off, Unknown] {
+            assert_eq!(follow_decision(mode, 0, 1_000, true, true), Follow::Close);
+            // A window the user started from Utilities stays theirs.
+            assert_eq!(follow_decision(mode, 0, 1_000, true, false), Follow::Keep);
+            assert_eq!(follow_decision(mode, 0, 1_000, false, false), Follow::Keep);
+        }
+    }
 }

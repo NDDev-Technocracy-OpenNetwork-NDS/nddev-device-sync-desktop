@@ -7,12 +7,26 @@ import '../../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `fmt`, `fmt`, `fmt`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ClientError>>
 abstract class ClientError implements RustOpaqueInterface {
   /// An allowlisted code for localization; never an underlying I/O message.
   String code();
+}
+
+/// The device's effective collection policy as the server last stated it. Named apart from
+/// the protocol's `CollectionMode` so bindings generated from this view never confuse them. `Debug` is always
+/// finite: `DeliveryView::debug_expires_at` carries its end. The host that owns the local
+/// telemetry controller opens or closes its own debug window from it.
+enum DeliveryCollection {
+  unknown,
+  standard,
+  debug,
+  off;
+
+  static DeliveryCollection default_() => RustLib.instance.api
+      .nddevDeviceSyncAccountsViewDeliveryCollectionDefault();
 }
 
 class DeliveryView {
@@ -21,6 +35,10 @@ class DeliveryView {
   /// Browser durable-spool availability; native transport does not use it.
   final bool? localPersistenceReady;
   final ExportPolicy policy;
+  final DeliveryCollection collection;
+
+  /// Unix seconds when the debug collection window ends; 0 outside debug.
+  final BigInt debugExpiresAt;
   final bool paused;
   final int pending;
   final BigInt delivered;
@@ -36,6 +54,8 @@ class DeliveryView {
     required this.initialized,
     this.localPersistenceReady,
     required this.policy,
+    required this.collection,
+    required this.debugExpiresAt,
     required this.paused,
     required this.pending,
     required this.delivered,
@@ -56,6 +76,8 @@ class DeliveryView {
       initialized.hashCode ^
       localPersistenceReady.hashCode ^
       policy.hashCode ^
+      collection.hashCode ^
+      debugExpiresAt.hashCode ^
       paused.hashCode ^
       pending.hashCode ^
       delivered.hashCode ^
@@ -75,6 +97,8 @@ class DeliveryView {
           initialized == other.initialized &&
           localPersistenceReady == other.localPersistenceReady &&
           policy == other.policy &&
+          collection == other.collection &&
+          debugExpiresAt == other.debugExpiresAt &&
           paused == other.paused &&
           pending == other.pending &&
           delivered == other.delivered &&

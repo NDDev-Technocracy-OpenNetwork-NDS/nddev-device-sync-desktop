@@ -407,8 +407,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get connecting => 'Подключение';
 
   @override
-  String get diagnosticsUnavailable =>
-      'Локальная диагностика недоступна. Вход в NDS остаётся доступен.';
+  String get diagnosticsUnavailable => 'Поиск диагностики недоступен.';
 
   @override
   String get localDiagnosticsOnly =>
@@ -928,6 +927,25 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get catalogEmptyPage => 'На этой странице нет репозиториев.';
+
+  @override
+  String get catalogOwnerIgnored =>
+      'Игнорируется на этом устройстве по списку владельца. Сохранённые данные остаются; аккаунт не обнаруживается, не подключается и не синхронизируется.';
+
+  @override
+  String get catalogAccountIgnored =>
+      'Этот аккаунт GitHub в списке игнорируемых на этом устройстве.';
+
+  @override
+  String get catalogIgnoreListInvalid =>
+      'Список игнорируемых аккаунтов на этом устройстве не читается. Пока он не исправлен, ничего не включается.';
+
+  @override
+  String get catalogRepositoryIgnored =>
+      'Этот репозиторий в списке игнорируемых на этом устройстве.';
+
+  @override
+  String get catalogRepositoryIgnoredLabel => 'Игнорируется на этом устройстве';
 
   @override
   String get catalogOrganization => 'Организация';
@@ -1601,4 +1619,29 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get purposeDesktop => 'Рабочий стол';
+
+  @override
+  String get collectionUnknown =>
+      'Политика сбора диагностики ещё не подтверждена.';
+
+  @override
+  String get collectionStandard => 'Сбор диагностики: стандартный.';
+
+  @override
+  String collectionDebug(String until) {
+    return 'Сбор диагностики: отладка до $until.';
+  }
+
+  @override
+  String get collectionOff =>
+      'Сбор диагностики выключен: ничего нового не собирается и не отправляется.';
+
+  @override
+  String get ownDiagnostics => 'Показать мою диагностику (за час)';
+
+  @override
+  String get diagnosticsEmpty => 'За последний час диагностики нет.';
+
+  @override
+  String get diagnosticsTruncated => 'Показаны только самые новые записи.';
 }

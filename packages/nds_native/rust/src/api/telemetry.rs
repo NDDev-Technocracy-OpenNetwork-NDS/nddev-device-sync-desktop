@@ -76,7 +76,7 @@ pub fn init_app() -> Result<(), DiagnosticsError> {
             logger,
             traces,
             #[cfg(not(target_arch = "wasm32"))]
-            following: Following::default(),
+            following: Following::new(),
         }))
     });
     // An unavailable OS sink is explicitly degraded; identity may still work.
@@ -303,12 +303,21 @@ use nddev_device_sync_accounts::view::DeliveryCollection;
 pub use nddev_device_sync_accounts::view::DeliveryView;
 
 #[cfg(not(target_arch = "wasm32"))]
-#[derive(Default)]
 struct Following {
     delivery: std::sync::Weak<Delivery>,
     // Only this exact follower may close or shorten the window it opened.
     // Manual controls clear this marker under the same process mutex.
     opened_until: Option<u64>,
+}
+#[cfg(not(target_arch = "wasm32"))]
+impl Following {
+    // Keep process-private state outside generated bridge constructors.
+    fn new() -> Self {
+        Self {
+            delivery: std::sync::Weak::new(),
+            opened_until: None,
+        }
+    }
 }
 #[cfg(not(target_arch = "wasm32"))]
 /// One local window never exceeds this; it is re-armed while the server window lasts.

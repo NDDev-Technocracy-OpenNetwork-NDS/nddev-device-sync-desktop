@@ -534,8 +534,10 @@ mod follow_tests {
             )
         };
         let retired = delivery("https://retired.example.invalid");
-        let current = delivery("https://current.example.invalid");
         let retired_witness = Arc::downgrade(&retired);
+        // Retire the SDK subscription before admitting its replacement.
+        drop(retired);
+        let current = delivery("https://current.example.invalid");
         let current_witness = Arc::downgrade(&current);
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -550,8 +552,8 @@ mod follow_tests {
             super::apply_following(&mut process, &view, now);
         }
         assert!(super::client_diagnostics().debug_enabled);
-        // The retired delivery reports Unknown: it would close a process-global
-        // follower window if its captured ownership were not revalidated.
+        // A late callback from the retired delivery must not close the
+        // replacement window after its captured owner has gone away.
         assert!(!super::follow_once(&retired_witness));
         assert!(super::client_diagnostics().debug_enabled);
         {
@@ -573,7 +575,6 @@ mod follow_tests {
         assert!(!super::follow_once(&current_witness));
         assert!(super::client_diagnostics().debug_enabled);
         super::configure_debug(super::DebugScope::Http, 0).unwrap();
-        drop(retired);
         std::process::exit(0);
     }
 

@@ -5,7 +5,7 @@ use crate::api::{
         GithubCatalogError, GithubCredentialReferencePage, GithubRepositoryPageView,
         GithubSavedRepositoryPageView, GithubSourceView,
     },
-    identity::{IncidentPage, IncidentView, NdsClient},
+    identity::{DiagnosticPage, IncidentPage, IncidentView, NdsClient},
     module_control::DeviceModuleView,
     organizations::{CompanyCommand, LocalOrganization},
     telemetry,
@@ -252,6 +252,27 @@ impl BrowserClient {
                 .await
                 .map_err(client_error)?,
         })
+    }
+    pub async fn diagnostic_search(
+        &self,
+        organization_id: String,
+        traces: js_sys::Boolean,
+        minutes: js_sys::Number,
+        limit: js_sys::Number,
+    ) -> Result<Ts<DiagnosticPage>, JsError> {
+        let limit =
+            u16::try_from(unsigned_number(limit)?).map_err(|_| JsError::new("invalid_input"))?;
+        present(
+            self.inner
+                .diagnostic_search(
+                    organization_id,
+                    boolean_input(traces)?,
+                    unsigned_number(minutes)?,
+                    limit,
+                )
+                .await
+                .map_err(client_error)?,
+        )
     }
     pub async fn incidents(&self, after: String) -> Result<Ts<IncidentPage>, JsError> {
         present(self.inner.incidents(after).await.map_err(client_error)?)

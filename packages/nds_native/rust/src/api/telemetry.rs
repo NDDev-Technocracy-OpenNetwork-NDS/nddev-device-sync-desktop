@@ -518,6 +518,11 @@ mod follow_tests {
             std::thread::sleep(Duration::from_secs(12));
             std::process::exit(124);
         }));
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let _entered = runtime.enter();
         super::init_app().unwrap();
         let delivery = |endpoint| {
             Arc::new(

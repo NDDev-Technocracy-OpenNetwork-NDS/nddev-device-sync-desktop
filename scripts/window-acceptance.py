@@ -272,7 +272,7 @@ def diagnostic_collection(gui, gui_log, cli_read):
     assert receipt.parent.resolve() == FIXTURE.parent.resolve() and receipt.resolve() != FIXTURE.resolve()
     state = json.loads(receipt.read_text())
     assert state["status"] == "running" and state["project"].startswith("nds-obs-test-")
-    assert state["expires_at_unix"] > time.time() + 240
+    assert state["expires_at_unix"] > time.time() + 420
     target = Path(state["export_control_file"])
     assert target == receipt.with_suffix(".export-control.json")
     assert target.is_file() and not target.is_symlink()
@@ -304,13 +304,46 @@ def diagnostic_collection(gui, gui_log, cli_read):
         assert gui.poll() is None
         assert not any(dt.datetime.fromisoformat(event["timestamp"].replace("Z", "+00:00")).timestamp() >= since + 1
                        for event in events(gui_log)), "the ordinary app still collected SDK events after confirmed Off"
+        # A real signed-policy refusal must not turn a previously observed Off
+        # back on. The private server validates revision before selecting mode.
+        policy = OPTIONS.diagnostic_policy
+        assert policy is not None and policy.is_absolute() and not policy.is_symlink()
+        assert policy.resolve() == FIXTURE.with_suffix(".collection-policy.json").resolve()
+        assert policy.is_file() and policy.stat().st_size <= 8192
+        original_policy = policy.read_bytes()
+        assert json.loads(original_policy)["revision"] > 0
+
+        def publish_policy(content):
+            pending = policy.with_name(policy.name + ".pending")
+            assert not pending.exists()
+            pending.write_bytes(content)
+            pending.chmod(0o600)
+            pending.replace(policy)
+
+        try:
+            publish_policy(b'{"revision":0,"debug":[]}')
+            unknown = ["Diagnostics collection policy has not been confirmed.",
+                       "Политика сбора диагностики ещё не подтверждена."]
+            wait(lambda: gui.poll() is None and accessible(gui, unknown), 90)
+            assert accessible(gui, stopped), "Unknown resumed a previously disabled SDK"
+            unknown_at = time.time()
+            time.sleep(5)
+            assert not any(dt.datetime.fromisoformat(event["timestamp"].replace("Z", "+00:00")).timestamp() >= unknown_at + 1
+                           for event in events(gui_log)), "Unknown collected a hidden SDK stream"
+        finally:
+            publish_policy(original_policy)
+        wait(lambda: gui.poll() is None and accessible(gui, ["Diagnostics policy: off.",
+                   "Политика диагностики: выключено."]), 90)
+        assert accessible(gui, stopped)
         export(True)
         wait(lambda: gui.poll() is None and accessible(gui, active), 90)
         wait(lambda: any(dt.datetime.fromisoformat(event["timestamp"].replace("Z", "+00:00")).timestamp() >= since + 5
                          for event in events(gui_log)), 30)
         proof = {"source": OPTIONS.source, "actual_gui_accessibility_state": True,
                  "actual_collector_off_on": True, "no_new_sdk_events_during_confirmed_off": True,
-                 "concurrent_functional_cli_with_local_collection_off": True, "resumed": True}
+                 "concurrent_functional_cli_with_local_collection_off": True,
+                 "actual_unknown_policy_kept_collection_off": True,
+                 "resumed": True}
         (W / "diagnostic-collection-proof.json").write_text(json.dumps(proof, indent=2) + "\n")
         print("PASS: ordinary installed GUI and concurrent CLI followed real collector Off/on", flush=True)
     finally:

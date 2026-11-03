@@ -14,7 +14,6 @@ use std::{
 struct ProcessTelemetry {
     logger: Logger,
     traces: ClientTraces,
-    #[cfg(not(target_arch = "wasm32"))]
     following: Following,
 }
 static LOGGER: OnceLock<Option<Mutex<ProcessTelemetry>>> = OnceLock::new();
@@ -66,16 +65,15 @@ pub fn init_app() -> Result<(), DiagnosticsError> {
             debug: None,
         };
         let traces = ClientTraces::new(&config).ok()?;
-        let logger = nddev_device_sync_telemetry::install_client_with_tracer_to(
+        let logger = nddev_device_sync_telemetry::install_client_with_traces_to(
             config,
-            traces.tracer(),
+            &traces,
             nddev_device_sync_telemetry::LocalOutput::Stdout,
         )
         .ok()?;
         Some(Mutex::new(ProcessTelemetry {
             logger,
             traces,
-            #[cfg(not(target_arch = "wasm32"))]
             following: Following::new(),
         }))
     });
@@ -107,7 +105,6 @@ pub fn configure_debug(scope: DebugScope, seconds: u16) -> Result<(), Diagnostic
             events: 100,
         }))
         .map_err(|_| DiagnosticsError::Unavailable)?;
-    #[cfg(not(target_arch = "wasm32"))]
     {
         let mut logger = logger;
         logger.following.opened_until = None;
@@ -298,18 +295,15 @@ mod tests {
 }
 
 pub(crate) use nddev_device_sync_accounts::telemetry::Delivery;
-#[cfg(not(target_arch = "wasm32"))]
 use nddev_device_sync_accounts::view::DeliveryCollection;
 pub use nddev_device_sync_accounts::view::DeliveryView;
 
-#[cfg(not(target_arch = "wasm32"))]
 struct Following {
     delivery: std::sync::Weak<Delivery>,
     // Only this exact follower may close or shorten the window it opened.
     // Manual controls clear this marker under the same process mutex.
     opened_until: Option<u64>,
 }
-#[cfg(not(target_arch = "wasm32"))]
 impl Following {
     // Keep process-private state outside generated bridge constructors.
     fn new() -> Self {
@@ -319,13 +313,10 @@ impl Following {
         }
     }
 }
-#[cfg(not(target_arch = "wasm32"))]
 /// One local window never exceeds this; it is re-armed while the server window lasts.
 const FOLLOW_WINDOW_SECONDS: u64 = 300;
-#[cfg(not(target_arch = "wasm32"))]
-const FOLLOW_INTERVAL: Duration = Duration::from_secs(15);
+const FOLLOW_INTERVAL: Duration = Duration::from_secs(1);
 
-#[cfg(not(target_arch = "wasm32"))]
 /// What the follower does for one observed delivery policy (desktop#172).
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Follow {
@@ -336,7 +327,6 @@ pub(crate) enum Follow {
     Keep,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 /// The server states a finite debug window per device; the app follows it with its own
 /// local SDK window that never outlives the server's end. A window the user opened is
 /// never closed by the follower.
@@ -360,7 +350,6 @@ pub(crate) fn follow_decision(
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 fn close_following(process: &mut ProcessTelemetry) -> bool {
     if process.following.opened_until.is_some() {
         if process.logger.control.set_debug(None).is_err() {
@@ -371,7 +360,6 @@ fn close_following(process: &mut ProcessTelemetry) -> bool {
     true
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 fn follow_once(watched: &std::sync::Weak<Delivery>) -> bool {
     let Some(mut process) = logger() else {
         return false;
@@ -389,15 +377,46 @@ fn follow_once(watched: &std::sync::Weak<Delivery>) -> bool {
     };
     let view = delivery.snapshot();
     drop(delivery);
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |time| time.as_secs());
-    apply_following(&mut process, &view, now);
+    apply_following(&mut process, &view, policy_now());
+
     true
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+fn policy_now() -> u64 {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |time| time.as_secs())
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        let seconds = js_sys::Date::now() / 1000.0;
+        if seconds.is_finite() && seconds >= 0.0 {
+            seconds as u64
+        } else {
+            0
+        }
+    }
+}
+
 fn apply_following(process: &mut ProcessTelemetry, view: &DeliveryView, now: u64) {
+    // Unknown never revokes an already observed Off. Only this exact current
+    // delivery can apply a positive Standard/Debug policy and resume collection.
+    let enabled = match view.collection {
+        DeliveryCollection::Off => Some(false),
+        DeliveryCollection::Standard | DeliveryCollection::Debug => Some(true),
+        DeliveryCollection::Unknown => None,
+    };
+    if let Some(enabled) = enabled
+        && process
+            .logger
+            .control
+            .set_collection_enabled(enabled)
+            .is_err()
+    {
+        return;
+    }
     let active = process.logger.control.debug_active();
     match follow_decision(
         view.collection,
@@ -424,7 +443,6 @@ fn apply_following(process: &mut ProcessTelemetry, view: &DeliveryView, now: u64
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 /// Follows only the current delivery. Replacement closes its owned window;
 /// delivery loss ends its task. Manual windows keep their independent lifetime.
 pub(crate) fn follow_collection(delivery: &std::sync::Arc<Delivery>) {
@@ -576,10 +594,33 @@ mod follow_tests {
         super::configure_debug(super::DebugScope::Http, 30).unwrap();
         {
             let mut process = super::logger().unwrap();
-            view.collection = Off;
+            view.collection = Standard;
             super::apply_following(&mut process, &view, now);
         }
         assert!(super::client_diagnostics().debug_enabled);
+        {
+            let mut process = super::logger().unwrap();
+            view.collection = Off;
+            super::apply_following(&mut process, &view, now);
+        }
+        assert_eq!(super::client_diagnostics().collection_enabled, Some(false));
+        assert!(!super::client_diagnostics().debug_enabled);
+        assert!(super::configure_debug(super::DebugScope::Http, 30).is_err());
+        {
+            let mut process = super::logger().unwrap();
+            view.collection = Unknown;
+            super::apply_following(&mut process, &view, now);
+        }
+        assert_eq!(super::client_diagnostics().collection_enabled, Some(false));
+        assert!(!super::follow_once(&retired_witness));
+        assert_eq!(super::client_diagnostics().collection_enabled, Some(false));
+        {
+            let mut process = super::logger().unwrap();
+            view.collection = Standard;
+            super::apply_following(&mut process, &view, now);
+        }
+        assert_eq!(super::client_diagnostics().collection_enabled, Some(true));
+        super::configure_debug(super::DebugScope::Http, 30).unwrap();
         drop(current);
         assert!(!super::follow_once(&current_witness));
         assert!(super::client_diagnostics().debug_enabled);

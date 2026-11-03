@@ -394,6 +394,7 @@ class _UtilitiesState extends State<UtilitiesScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final delivery = widget.client.deliverySnapshot();
+    final local = native.clientDiagnostics();
     final screen = DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -570,6 +571,11 @@ class _UtilitiesState extends State<UtilitiesScreen> {
                   ),
                   native.DeliveryCollection.off => l.collectionOff,
                 }, key: const Key('collection-mode')),
+                Text(switch (local.collectionEnabled) {
+                  true => l.diagnosticsCollectionActive,
+                  false => l.diagnosticsCollectionOff,
+                  null => l.diagnosticsCollectionUnknown,
+                }, key: const Key('local-collection-state')),
                 TextButton(
                   key: const Key('own-diagnostics'),
                   onPressed: _busy ? null : () => _action(_ownDiagnostics),
@@ -603,11 +609,10 @@ class _UtilitiesState extends State<UtilitiesScreen> {
                       ),
                     ),
                   ),
-                Text(
-                  delivery.initialized
-                      ? l.telemetryInitialized
-                      : l.telemetryUnavailable,
-                ),
+                if (!delivery.initialized)
+                  Text(l.telemetryUnavailable)
+                else if (delivery.policy == native.ExportPolicy.enabled && !delivery.paused)
+                  Text(l.telemetryInitialized),
                 TextButton(
                   key: const Key('refresh-incidents'),
                   onPressed: _busy ? null : () => _action(_alerts),

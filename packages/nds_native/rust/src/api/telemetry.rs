@@ -486,11 +486,24 @@ mod follow_tests {
         use std::{sync::Arc, time::Duration};
         const CHILD: &str = "NDS_TEST_FOLLOWER_OWNERSHIP_CHILD";
         if std::env::var_os(CHILD).is_none() {
-            let state = tempfile::tempdir().unwrap();
+            use std::os::unix::fs::DirBuilderExt;
+            struct State(std::path::PathBuf);
+            impl Drop for State {
+                fn drop(&mut self) {
+                    let _ = std::fs::remove_dir_all(&self.0);
+                }
+            }
+            let directory =
+                std::env::temp_dir().join(format!("nds-follower-{}", uuid::Uuid::new_v4()));
+            std::fs::DirBuilder::new()
+                .mode(0o700)
+                .create(&directory)
+                .unwrap();
+            let state = State(directory);
             let output = std::process::Command::new(std::env::current_exe().unwrap())
                 .args(["--exact", "api::telemetry::follow_tests::retired_delivery_and_shortened_policy_keep_exact_window_ownership", "--nocapture"])
                 .env(CHILD, "1")
-                .env("XDG_STATE_HOME", state.path())
+                .env("XDG_STATE_HOME", &state.0)
                 .output().unwrap();
             assert!(
                 output.status.success(),

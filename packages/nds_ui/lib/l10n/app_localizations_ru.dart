@@ -842,11 +842,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get telemetryPersistenceReady =>
-      'Запись журналов в хранилище браузера подтверждена.';
+      'Запись журналов в локальное хранилище подтверждена.';
 
   @override
   String get telemetryPersistenceUnavailable =>
-      'Успешная запись журналов в постоянное хранилище браузера не подтверждена. Несохранённые события могут потеряться при закрытии страницы.';
+      'Успешная запись журналов в локальное хранилище не подтверждена. Несохранённые события могут потеряться при закрытии приложения или страницы.';
 
   @override
   String get vaultStorageUnavailable =>

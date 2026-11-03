@@ -291,7 +291,7 @@ def diagnostic_collection(gui, gui_log, cli_read):
     active = ["Diagnostic collection is active in this app.", "Сбор диагностики в этом приложении включён."]
     stopped = ["Diagnostic collection is off in this app.", "Сбор диагностики в этом приложении выключен."]
     wait(lambda: accessible(gui, ["Clipboard and alerts", "Буфер обмена и предупреждения"], True), 30)
-    wait(lambda: accessible(gui, ["Alerts", "Предупреждения"], True), 20)
+    # Flutter combines the visible label with its tab-position semantics.\n    wait(lambda: accessible(gui, ["Alerts\nTab 2 of 2", "Предупреждения\nВкладка 2 из 2"], True), 20)
     wait(lambda: accessible(gui, active), 30)
     try:
         export(False)

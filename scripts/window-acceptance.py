@@ -326,7 +326,15 @@ def diagnostic_collection(gui, gui_log, cli_read):
             unknown = ["Diagnostics collection policy has not been confirmed.",
                        "Политика сбора диагностики ещё не подтверждена."]
             wait(lambda: gui.poll() is None and accessible(gui, unknown), 90)
-            assert accessible(gui, stopped), "Unknown resumed a previously disabled SDK"
+            try:
+                wait(lambda: gui.poll() is None and accessible(gui, stopped), 10)
+            except AssertionError:
+                print(json.dumps({"phase": "observe local SDK after Unknown",
+                    "active_label_visible": accessible(gui, active),
+                    "unknown_label_visible": accessible(gui, [
+                        "Diagnostic collection in this app has not been confirmed.",
+                        "Сбор диагностики в этом приложении не подтверждён."])}), flush=True)
+                raise
             unknown_at = time.time()
             time.sleep(5)
             assert not any(dt.datetime.fromisoformat(event["timestamp"].replace("Z", "+00:00")).timestamp() >= unknown_at + 1
@@ -523,6 +531,14 @@ def worker(root):
                 assert len(ids) == 1
                 window = next(iter(ids))
                 pid = gui.pid
+                # Policy and local collection are separate visible fields. Keep
+                # their wrapped Unknown text inside this owned test viewport.
+                run(["xdotool", "windowsize", "--sync", window, "1280", "940"])
+                geometry = dict(line.split("=", 1) for line in run(
+                    ["xdotool", "getwindowgeometry", "--shell", window]
+                ).splitlines() if "=" in line)
+                assert geometry["WIDTH"] == "1280" and geometry["HEIGHT"] == "940"
+                (W / "window-geometry.json").write_text(json.dumps(geometry, indent=2) + chr(10))
                 if OPTIONS.diagnostic_policy is not None:
                     diagnostic_policy(root, gui_log)
 

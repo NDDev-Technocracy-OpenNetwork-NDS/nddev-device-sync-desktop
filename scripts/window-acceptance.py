@@ -2,6 +2,7 @@
 
 import argparse, ctypes as C, hashlib, json, os, re, secrets, sqlite3, subprocess, sys, tempfile, time, urllib.request
 from pathlib import Path
+import datetime as dt
 from urllib.parse import urlparse
 
 P = argparse.ArgumentParser(description=__doc__)
@@ -12,6 +13,7 @@ P.add_argument("--evidence", type=Path, required=True)
 P.add_argument("--source", required=True)
 P.add_argument("--cli", type=Path, required=True)
 P.add_argument("--cli-source", required=True)
+P.add_argument("--diagnostic-policy", type=Path, help="Owned fixture collection policy for installed debug-window qualification")
 P.add_argument("--worker", type=Path, help=argparse.SUPPRESS)
 OPTIONS = P.parse_args()
 ROOT = Path(__file__).resolve().parents[1]
@@ -147,6 +149,67 @@ def control(mode):
     pending.replace(target)
     wanted = "running" if mode == "online" else "offline"
     wait(lambda: json.loads(p.read_text()).get("status") == wanted, 15)
+
+
+def diagnostic_policy(root, gui_log):
+    policy = OPTIONS.diagnostic_policy
+    assert policy is not None and policy.is_absolute() and not policy.is_symlink()
+    assert policy.resolve() == FIXTURE.with_suffix(".collection-policy.json").resolve()
+    assert policy.is_file() and policy.stat().st_size <= 8192
+    assert json.loads(policy.read_text()) == {"revision": 1, "debug": []}
+    seeded = json.loads((root / "seeded").read_text())
+    device = seeded["device_id"]
+    assert seeded["ready"] is True and re.fullmatch("[A-Za-z0-9._:-]{1,128}", device)
+
+    def publish(revision, end=None):
+        data = {"revision": revision, "debug": []}
+        if end is not None:
+            data["debug"] = [{"device_id": device, "expires_at": dt.datetime.fromtimestamp(
+                end, dt.timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")}]
+        pending = policy.with_name(policy.name + ".pending")
+        assert not pending.exists()
+        pending.write_text(json.dumps(data))
+        pending.chmod(0o600)
+        pending.replace(policy)
+
+    def at(event):
+        return dt.datetime.fromisoformat(event["timestamp"].replace("Z", "+00:00")).timestamp()
+
+    def transitions(since):
+        assert gui_log.stat().st_size <= 16 * 1024 * 1024
+        return [event for event in events(gui_log)
+                if event["event.name"] in ["logging.debug.enabled", "logging.debug.disabled"]
+                and event.get("scope") == "io" and at(event) >= since]
+
+    started = time.time()
+    try:
+        publish(2, started + 180)
+        first = wait(lambda: next((event for event in transitions(started)
+            if event["event.name"] == "logging.debug.enabled"), None), 75)
+        assert type(first.get("duration_seconds")) is int and 1 <= first["duration_seconds"] <= 180
+        print("Installed diagnostics: the signed device policy opened a finite local SDK window", flush=True)
+        shortened = time.time()
+        end = shortened + 75
+        publish(3, end)
+        second = wait(lambda: next((event for event in transitions(shortened)
+            if event["event.name"] == "logging.debug.enabled"
+            and type(event.get("duration_seconds")) is int
+            and 1 <= event["duration_seconds"] <= 75), None), 65)
+        print("Installed diagnostics: the shortened operator window reached the actual app", flush=True)
+        wait(lambda: time.time() >= end + 18, 100)
+        rows = transitions(shortened)
+        assert rows and rows[-1]["event.name"] == "logging.debug.disabled"
+        assert not any(event["event.name"] == "logging.debug.enabled" and at(event) > end + 1 for event in rows)
+        proof = {"source": OPTIONS.source, "device_scoped": True,
+                 "initial_duration_seconds": first["duration_seconds"],
+                 "shortened_duration_seconds": second["duration_seconds"],
+                 "closed_by_policy_end_or_event_budget": True,
+                 "no_reopen_after_expiry": True,
+                 "scope": "Actual installed ordinary GTK/Flutter app and signed server policy; manual-window ownership is qualified separately by the real-SDK regression."}
+        (W / "diagnostic-policy-proof.json").write_text(json.dumps(proof, indent=2) + "\n")
+        print("PASS: installed app followed the finite device-scoped debug policy and stopped reopening after expiry", flush=True)
+    finally:
+        publish(4)
 
 
 def worker(root):
@@ -316,6 +379,8 @@ def worker(root):
                 assert len(ids) == 1
                 window = next(iter(ids))
                 pid = gui.pid
+                if OPTIONS.diagnostic_policy is not None:
+                    diagnostic_policy(root, gui_log)
 
                 def cli_read(name, expect_record):
                     path = W / name
@@ -572,7 +637,7 @@ def main():
             ],
             env=env,
             check=True,
-            timeout=510,
+            timeout=720 if OPTIONS.diagnostic_policy is not None else 510,
         )
 
 

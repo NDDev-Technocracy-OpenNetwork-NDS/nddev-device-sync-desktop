@@ -286,7 +286,15 @@ fn window_case(seed: bool) {
                 let view = client.vault_snapshot().await.unwrap();
                 assert!(view.unlocked && view.pending == 0 && !view.catching_up);
                 assert!(view.last_sync_at > 0 && view.sync_error.is_empty());
-                std::fs::write(root.join("seeded"), b"ready").unwrap();
+                std::fs::write(
+                    root.join("seeded"),
+                    serde_json::to_vec(&json!({
+                        "ready": true,
+                        "device_id": client.snapshot().current_device_id,
+                    }))
+                    .unwrap(),
+                )
+                .unwrap();
             } else {
                 assert!(view.authenticated && view.offline_authorized && !view.session_verified);
                 let view = client

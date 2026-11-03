@@ -5,6 +5,8 @@ from pathlib import Path
 import datetime as dt
 from urllib.parse import urlparse
 
+from native_resources import sample_resources
+
 P = argparse.ArgumentParser(description=__doc__)
 P.add_argument("--fixture", type=Path, required=True)
 P.add_argument("--bundle", type=Path, required=True)
@@ -218,6 +220,8 @@ def diagnostic_policy(root, gui_log):
 
 
 def accessible(gui, labels, activate=False):
+    sample_resources(gui, W / "gui-resources.jsonl")
+    assert gui.poll() is None, "GUI exited; inspect gui-runtime.log and gui-resources.jsonl"
     # Public accessibility in this task's private DBus/display; read only this
     # actual GUI PID and return only the requested fixed labels.
     program = r"""
@@ -520,6 +524,8 @@ def worker(root):
                     stderr=subprocess.STDOUT,
                 )
 
+                sample_resources(gui, W / "gui-resources.jsonl", force=True)
+
                 def running_batch():
                     assert gui.poll() is None, "GUI stopped; inspect owned log"
                     return any(
@@ -670,6 +676,7 @@ def worker(root):
                 run(["xdotool", "windowfocus", "--sync", window])
                 run(["xdotool", "key", "--clearmodifiers", "ctrl+q"])
                 assert gui.wait(timeout=15) == 0
+                sample_resources(gui, W / "gui-resources.jsonl", force=True)
                 assert any(
                     row["event.name"] == "sync.runtime.stopped"
                     for row in events(gui_log)
@@ -684,6 +691,8 @@ def worker(root):
                     stderr=subprocess.STDOUT,
                 )
 
+                sample_resources(gui, W / "gui-resources.jsonl", force=True)
+
                 def restarted_ready():
                     assert gui.poll() is None
                     return any(
@@ -696,6 +705,7 @@ def worker(root):
                 assert pending() == 0 and len(windows(True)) == 1
                 run(["gapplication", "action", APP, "quit"])
                 assert gui.wait(timeout=15) == 0
+                sample_resources(gui, W / "gui-resources.jsonl", force=True)
                 assert any(
                     row["event.name"] == "sync.runtime.stopped"
                     for row in events(W / "restarted-gui-runtime.log")
@@ -753,6 +763,8 @@ def worker(root):
                     except subprocess.TimeoutExpired:
                         child.kill()
                         child.wait(timeout=5)
+            if gui is not None:
+                sample_resources(gui, W / "gui-resources.jsonl", force=True)
 
 
 def main():

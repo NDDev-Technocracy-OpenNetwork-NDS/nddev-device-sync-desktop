@@ -1551,13 +1551,13 @@ abstract class AppLocalizations {
   /// No description provided for @telemetryPersistenceReady.
   ///
   /// In en, this message translates to:
-  /// **'Browser log storage has confirmed writes.'**
+  /// **'Local diagnostic storage has confirmed a successful write.'**
   String get telemetryPersistenceReady;
 
   /// No description provided for @telemetryPersistenceUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Durable browser log storage has not confirmed a successful write. Unstored events can be lost when this page closes.'**
+  /// **'Local diagnostic storage has not confirmed a successful write. Unstored events can be lost when this app or page closes.'**
   String get telemetryPersistenceUnavailable;
 
   /// No description provided for @vaultStorageUnavailable.
@@ -2651,6 +2651,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Browser'**
   String get browserHostStatus;
+
+  /// No description provided for @browserUpdateRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the browser extension and its host to compatible versions before running browser work.'**
+  String get browserUpdateRequired;
 
   /// No description provided for @browserExtensionStatus.
   ///

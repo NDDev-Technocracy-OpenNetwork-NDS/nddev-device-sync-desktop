@@ -836,11 +836,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get telemetryPersistenceReady =>
-      'Browser log storage has confirmed writes.';
+      'Local diagnostic storage has confirmed a successful write.';
 
   @override
   String get telemetryPersistenceUnavailable =>
-      'Durable browser log storage has not confirmed a successful write. Unstored events can be lost when this page closes.';
+      'Local diagnostic storage has not confirmed a successful write. Unstored events can be lost when this app or page closes.';
 
   @override
   String get vaultStorageUnavailable =>
@@ -1477,6 +1477,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get browserHostStatus => 'Browser';
+
+  @override
+  String get browserUpdateRequired =>
+      'Update the browser extension and its host to compatible versions before running browser work.';
 
   @override
   String get browserExtensionStatus => 'Extension';

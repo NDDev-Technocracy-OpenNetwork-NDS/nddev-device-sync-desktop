@@ -14,6 +14,8 @@ use std::{
 struct ProcessTelemetry {
     logger: Logger,
     traces: ClientTraces,
+    #[cfg(not(target_arch = "wasm32"))]
+    following: Following,
 }
 static LOGGER: OnceLock<Option<Mutex<ProcessTelemetry>>> = OnceLock::new();
 fn logger() -> Option<MutexGuard<'static, ProcessTelemetry>> {
@@ -70,7 +72,12 @@ pub fn init_app() -> Result<(), DiagnosticsError> {
             nddev_device_sync_telemetry::LocalOutput::Stdout,
         )
         .ok()?;
-        Some(Mutex::new(ProcessTelemetry { logger, traces }))
+        Some(Mutex::new(ProcessTelemetry {
+            logger,
+            traces,
+            #[cfg(not(target_arch = "wasm32"))]
+            following: Following::new(),
+        }))
     });
     // An unavailable OS sink is explicitly degraded; identity may still work.
     Ok(())
@@ -91,8 +98,6 @@ pub fn configure_debug(scope: DebugScope, seconds: u16) -> Result<(), Diagnostic
     let logger = logger().ok_or(DiagnosticsError::Unavailable)?;
     // A window the user starts or stops here is theirs; the server-policy follower
     // never closes it.
-    #[cfg(not(target_arch = "wasm32"))]
-    FOLLOWER_OPENED.store(false, std::sync::atomic::Ordering::Release);
     logger
         .logger
         .control
@@ -101,7 +106,13 @@ pub fn configure_debug(scope: DebugScope, seconds: u16) -> Result<(), Diagnostic
             duration: Duration::from_secs(u64::from(seconds)),
             events: 100,
         }))
-        .map_err(|_| DiagnosticsError::Unavailable)
+        .map_err(|_| DiagnosticsError::Unavailable)?;
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let mut logger = logger;
+        logger.following.opened_until = None;
+    }
+    Ok(())
 }
 
 /// True means the SDK accepted the call, not that an external collector received it.
@@ -292,11 +303,22 @@ use nddev_device_sync_accounts::view::DeliveryCollection;
 pub use nddev_device_sync_accounts::view::DeliveryView;
 
 #[cfg(not(target_arch = "wasm32"))]
-/// Whether the active local debug window was opened by the server-policy follower.
-static FOLLOWER_OPENED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+struct Following {
+    delivery: std::sync::Weak<Delivery>,
+    // Only this exact follower may close or shorten the window it opened.
+    // Manual controls clear this marker under the same process mutex.
+    opened_until: Option<u64>,
+}
 #[cfg(not(target_arch = "wasm32"))]
-/// The delivery the follower currently watches; one follower per delivery.
-static FOLLOWING: Mutex<std::sync::Weak<Delivery>> = Mutex::new(std::sync::Weak::new());
+impl Following {
+    // Keep process-private state outside generated bridge constructors.
+    fn new() -> Self {
+        Self {
+            delivery: std::sync::Weak::new(),
+            opened_until: None,
+        }
+    }
+}
 #[cfg(not(target_arch = "wasm32"))]
 /// One local window never exceeds this; it is re-armed while the server window lasts.
 const FOLLOW_WINDOW_SECONDS: u64 = 300;
@@ -323,38 +345,66 @@ pub(crate) fn follow_decision(
     debug_expires_at: u64,
     now: u64,
     active: bool,
-    opened_by_follower: bool,
+    opened_until: Option<u64>,
 ) -> Follow {
     match collection {
         DeliveryCollection::Debug if debug_expires_at > now => {
-            if active {
-                Follow::Keep
-            } else {
+            if !active || opened_until.is_some_and(|end| end > debug_expires_at) {
                 Follow::Open((debug_expires_at - now).min(FOLLOW_WINDOW_SECONDS))
+            } else {
+                Follow::Keep
             }
         }
-        _ if active && opened_by_follower => Follow::Close,
+        _ if active && opened_until.is_some() => Follow::Close,
         _ => Follow::Keep,
     }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn follow_once(view: &DeliveryView) {
-    use std::sync::atomic::Ordering;
-    let Some(process) = logger() else {
-        return;
+fn close_following(process: &mut ProcessTelemetry) -> bool {
+    if process.following.opened_until.is_some() {
+        if process.logger.control.set_debug(None).is_err() {
+            return false;
+        }
+        process.following.opened_until = None;
+    }
+    true
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn follow_once(watched: &std::sync::Weak<Delivery>) -> bool {
+    let Some(mut process) = logger() else {
+        return false;
     };
-    let control = &process.logger.control;
-    let active = control.debug_active();
+    // Fence replacement and the SDK effect with the same mutex used by manual
+    // controls. A late old task cannot change the replacement or its window.
+    if !std::sync::Weak::ptr_eq(&process.following.delivery, watched) {
+        return false;
+    }
+    let Some(delivery) = watched.upgrade() else {
+        if close_following(&mut process) {
+            process.following.delivery = std::sync::Weak::new();
+        }
+        return false;
+    };
+    let view = delivery.snapshot();
+    drop(delivery);
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |time| time.as_secs());
+    apply_following(&mut process, &view, now);
+    true
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn apply_following(process: &mut ProcessTelemetry, view: &DeliveryView, now: u64) {
+    let active = process.logger.control.debug_active();
     match follow_decision(
         view.collection,
         view.debug_expires_at,
         now,
         active,
-        FOLLOWER_OPENED.load(Ordering::Acquire),
+        process.following.opened_until,
     ) {
         Follow::Open(seconds) if seconds > 0 => {
             let window = DebugWindow {
@@ -362,42 +412,37 @@ fn follow_once(view: &DeliveryView) {
                 duration: Duration::from_secs(seconds),
                 events: 100,
             };
-            if control.set_debug(Some(window)).is_ok() {
-                FOLLOWER_OPENED.store(true, Ordering::Release);
+            if process.logger.control.set_debug(Some(window)).is_ok() {
+                process.following.opened_until = Some(now.saturating_add(seconds));
             }
         }
         Follow::Close => {
-            if control.set_debug(None).is_ok() {
-                FOLLOWER_OPENED.store(false, Ordering::Release);
-            }
+            close_following(process);
         }
-        _ if !active => FOLLOWER_OPENED.store(false, Ordering::Release),
+        _ if !active => process.following.opened_until = None,
         _ => {}
     }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-/// Starts the follower for this delivery unless it already runs. It ends with the delivery.
+/// Follows only the current delivery. Replacement closes its owned window;
+/// delivery loss ends its task. Manual windows keep their independent lifetime.
 pub(crate) fn follow_collection(delivery: &std::sync::Arc<Delivery>) {
+    let watched = std::sync::Arc::downgrade(delivery);
     {
-        let mut current = FOLLOWING.lock().unwrap_or_else(|error| error.into_inner());
-        if current
-            .upgrade()
-            .is_some_and(|watched| std::sync::Arc::ptr_eq(&watched, delivery))
-        {
+        let Some(mut process) = logger() else {
+            return;
+        };
+        if std::sync::Weak::ptr_eq(&process.following.delivery, &watched) {
             return;
         }
-        *current = std::sync::Arc::downgrade(delivery);
+        if !close_following(&mut process) {
+            return;
+        }
+        process.following.delivery = watched.clone();
     }
-    let watched = std::sync::Arc::downgrade(delivery);
     drop(nddev_device_sync_accounts::runtime::spawn(async move {
-        loop {
-            let Some(delivery) = watched.upgrade() else {
-                break;
-            };
-            let view = delivery.snapshot();
-            drop(delivery);
-            follow_once(&view);
+        while follow_once(&watched) {
             nddev_device_sync_accounts::runtime::sleep(FOLLOW_INTERVAL).await;
         }
     }));
@@ -425,32 +470,133 @@ mod follow_tests {
     fn the_local_window_follows_a_finite_server_debug_window() {
         // Seven minutes of server debug: windows of at most five minutes, ending with it.
         assert_eq!(
-            follow_decision(Debug, 1_420, 1_000, false, false),
+            follow_decision(Debug, 1_420, 1_000, false, None),
             Follow::Open(300)
         );
         assert_eq!(
-            follow_decision(Debug, 1_420, 1_300, true, true),
+            follow_decision(Debug, 1_420, 1_300, true, Some(1_300)),
             Follow::Keep
         );
         assert_eq!(
-            follow_decision(Debug, 1_420, 1_301, false, true),
+            follow_decision(Debug, 1_420, 1_301, false, Some(1_300)),
             Follow::Open(119)
         );
         // An ended or contradictory window opens nothing.
         assert_eq!(
-            follow_decision(Debug, 1_000, 1_000, false, false),
+            follow_decision(Debug, 1_000, 1_000, false, None),
             Follow::Keep
         );
-        assert_eq!(follow_decision(Debug, 0, 1_000, false, false), Follow::Keep);
+        assert_eq!(follow_decision(Debug, 0, 1_000, false, None), Follow::Keep);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn retired_delivery_and_shortened_policy_keep_exact_window_ownership() {
+        use std::{sync::Arc, time::Duration};
+        const CHILD: &str = "NDS_TEST_FOLLOWER_OWNERSHIP_CHILD";
+        if std::env::var_os(CHILD).is_none() {
+            use std::os::unix::fs::DirBuilderExt;
+            struct State(std::path::PathBuf);
+            impl Drop for State {
+                fn drop(&mut self) {
+                    let _ = std::fs::remove_dir_all(&self.0);
+                }
+            }
+            let directory =
+                std::env::temp_dir().join(format!("nds-follower-{}", uuid::Uuid::new_v4()));
+            std::fs::DirBuilder::new()
+                .mode(0o700)
+                .create(&directory)
+                .unwrap();
+            let state = State(directory);
+            let output = std::process::Command::new(std::env::current_exe().unwrap())
+                .args(["--exact", "api::telemetry::follow_tests::retired_delivery_and_shortened_policy_keep_exact_window_ownership", "--nocapture"])
+                .env(CHILD, "1")
+                .env("XDG_STATE_HOME", &state.0)
+                .output().unwrap();
+            assert!(
+                output.status.success(),
+                "isolated follower SDK regression failed: {}",
+                output.status
+            );
+            assert!(output.stdout.len() < 262_144);
+            return;
+        }
+        // Process-owned watchdog bounds a failed global SDK/credential startup.
+        drop(std::thread::spawn(|| {
+            std::thread::sleep(Duration::from_secs(12));
+            std::process::exit(124);
+        }));
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let _entered = runtime.enter();
+        super::init_app().unwrap();
+        let delivery = |endpoint| {
+            Arc::new(
+                super::start_delivery(
+                    Arc::new(nddev_device_sync_accounts::IdentityClient::new(endpoint).unwrap()),
+                    false,
+                )
+                .unwrap(),
+            )
+        };
+        let retired = delivery("https://retired.example.invalid");
+        let retired_witness = Arc::downgrade(&retired);
+        // Retire the SDK subscription before admitting its replacement.
+        drop(retired);
+        let current = delivery("https://current.example.invalid");
+        let current_witness = Arc::downgrade(&current);
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let mut view = current.snapshot();
+        view.collection = Debug;
+        view.debug_expires_at = now + 120;
+        {
+            let mut process = super::logger().unwrap();
+            process.following.delivery = current_witness.clone();
+            super::apply_following(&mut process, &view, now);
+        }
+        assert!(super::client_diagnostics().debug_enabled);
+        // A late callback from the retired delivery must not close the
+        // replacement window after its captured owner has gone away.
+        assert!(!super::follow_once(&retired_witness));
+        assert!(super::client_diagnostics().debug_enabled);
+        {
+            let mut process = super::logger().unwrap();
+            view.debug_expires_at = now + 1;
+            super::apply_following(&mut process, &view, now);
+        }
+        // This exercises the real SDK timer, not just the decision enum.
+        std::thread::sleep(Duration::from_millis(1250));
+        assert!(!super::client_diagnostics().debug_enabled);
+        super::configure_debug(super::DebugScope::Http, 30).unwrap();
+        {
+            let mut process = super::logger().unwrap();
+            view.collection = Off;
+            super::apply_following(&mut process, &view, now);
+        }
+        assert!(super::client_diagnostics().debug_enabled);
+        drop(current);
+        assert!(!super::follow_once(&current_witness));
+        assert!(super::client_diagnostics().debug_enabled);
+        super::configure_debug(super::DebugScope::Http, 0).unwrap();
+        std::process::exit(0);
     }
 
     #[test]
     fn leaving_debug_closes_only_the_followers_window() {
         for mode in [Standard, Off, Unknown] {
-            assert_eq!(follow_decision(mode, 0, 1_000, true, true), Follow::Close);
+            assert_eq!(
+                follow_decision(mode, 0, 1_000, true, Some(1_300)),
+                Follow::Close
+            );
             // A window the user started from Utilities stays theirs.
-            assert_eq!(follow_decision(mode, 0, 1_000, true, false), Follow::Keep);
-            assert_eq!(follow_decision(mode, 0, 1_000, false, false), Follow::Keep);
+            assert_eq!(follow_decision(mode, 0, 1_000, true, None), Follow::Keep);
+            assert_eq!(follow_decision(mode, 0, 1_000, false, None), Follow::Keep);
         }
     }
 }

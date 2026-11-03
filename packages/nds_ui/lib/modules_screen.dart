@@ -457,15 +457,21 @@ class _ModulesScreenState extends State<ModulesScreen> {
   );
 
   Widget _resultView(AppLocalizations l) => switch (_result) {
-    native.BrowserStatus value => _rows([
-      (
-        l.browserOwnerSwitch,
-        value.enabled ? l.browserSwitchEnabled : l.browserSwitchDisabled,
-      ),
-      (l.browserHostStatus, value.browser),
-      (l.browserExtensionStatus, value.extension_),
-      (l.browserSessionCount, '${value.sessions}'),
-    ]),
+    native.BrowserStatus value => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _rows([
+          (
+            l.browserOwnerSwitch,
+            value.enabled ? l.browserSwitchEnabled : l.browserSwitchDisabled,
+          ),
+          (l.browserHostStatus, value.browser),
+          (l.browserExtensionStatus, value.extension_),
+          (l.browserSessionCount, '${value.sessions}'),
+        ]),
+        if (value.compatible == false) Text(l.browserUpdateRequired),
+      ],
+    ),
     List<native.BrowserSession> value => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

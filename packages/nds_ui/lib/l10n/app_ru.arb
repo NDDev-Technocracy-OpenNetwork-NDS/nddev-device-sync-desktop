@@ -639,6 +639,7 @@
   "remoteScreen": "Удалённый экран",
   "browserOwnerSwitch": "Переключатель владельца браузера",
   "browserHostStatus": "Браузер",
+  "browserUpdateRequired": "Обновите расширение и службу браузера до совместимых версий перед запуском браузерных задач.",
   "browserExtensionStatus": "Расширение",
   "browserSessionCount": "Сессии браузера",
   "browserSessionScope": "Здесь показаны сессии хоста браузера. Этот список не даёт управление сессиями другого агента.",

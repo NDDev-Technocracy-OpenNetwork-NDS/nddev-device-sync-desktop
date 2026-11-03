@@ -646,6 +646,7 @@
   "remoteScreen": "Remote screen",
   "browserOwnerSwitch": "Browser owner switch",
   "browserHostStatus": "Browser",
+  "browserUpdateRequired": "Update the browser extension and its host to compatible versions before running browser work.",
   "browserExtensionStatus": "Extension",
   "browserSessionCount": "Browser sessions",
   "browserSessionScope": "This list includes the browser host’s sessions. It does not grant control over sessions owned by another agent.",

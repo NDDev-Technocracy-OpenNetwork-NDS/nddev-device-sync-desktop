@@ -157,7 +157,10 @@ def diagnostic_policy(root, gui_log):
     assert policy is not None and policy.is_absolute() and not policy.is_symlink()
     assert policy.resolve() == FIXTURE.with_suffix(".collection-policy.json").resolve()
     assert policy.is_file() and policy.stat().st_size <= 8192
-    assert json.loads(policy.read_text()) == {"revision": 1, "debug": []}
+    original_policy = json.loads(policy.read_text())
+    assert set(original_policy) == {"revision", "debug"} and original_policy["debug"] == []
+    revision = original_policy["revision"]
+    assert type(revision) is int and 1 <= revision <= 9_007_199_254_740_988
     seeded = json.loads((root / "seeded").read_text())
     device = seeded["device_id"]
     assert seeded["ready"] is True and re.fullmatch("[A-Za-z0-9._:-]{1,128}", device)
@@ -184,14 +187,14 @@ def diagnostic_policy(root, gui_log):
 
     started = time.time()
     try:
-        publish(2, started + 180)
+        publish(revision + 1, started + 180)
         first = wait(lambda: next((event for event in transitions(started)
             if event["event.name"] == "logging.debug.enabled"), None), 75)
         assert type(first.get("duration_seconds")) is int and 1 <= first["duration_seconds"] <= 180
         print("Installed diagnostics: the signed device policy opened a finite local SDK window", flush=True)
         shortened = time.time()
         end = shortened + 75
-        publish(3, end)
+        publish(revision + 2, end)
         second = wait(lambda: next((event for event in transitions(shortened)
             if event["event.name"] == "logging.debug.enabled"
             and type(event.get("duration_seconds")) is int
@@ -210,7 +213,7 @@ def diagnostic_policy(root, gui_log):
         (W / "diagnostic-policy-proof.json").write_text(json.dumps(proof, indent=2) + "\n")
         print("PASS: installed app followed the finite device-scoped debug policy and stopped reopening after expiry", flush=True)
     finally:
-        publish(4)
+        publish(revision + 3)
 
 
 

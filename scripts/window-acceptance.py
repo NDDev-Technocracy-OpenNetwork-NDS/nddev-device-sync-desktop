@@ -6,6 +6,7 @@ import datetime as dt
 from urllib.parse import urlparse
 
 from native_resources import sample_resources
+from accessibility_worker import AccessibilityWorker
 
 P = argparse.ArgumentParser(description=__doc__)
 P.add_argument("--fixture", type=Path, required=True)
@@ -44,6 +45,7 @@ APP = "ai.nddev.nds.nddev_device_sync_desktop"
 NAME = "^NDDev OpenNetwork$"
 PREFIX = "api::replica_acceptance::"
 HTTP = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+ACCESSIBILITY = None
 
 
 def run(args, **kw):
@@ -220,57 +222,54 @@ def diagnostic_policy(root, gui_log):
 
 
 def accessible(gui, labels, activate=False):
+    global ACCESSIBILITY
     sample_resources(gui, W / "gui-resources.jsonl")
     assert gui.poll() is None, "GUI exited; inspect gui-runtime.log and gui-resources.jsonl"
-    # Public accessibility in this task's private DBus/display; read only this
-    # actual GUI PID and return only the requested fixed labels.
-    program = r"""
-import gi,json,sys,time
-gi.require_version("Atspi","2.0")
-from gi.repository import Atspi
-pid=int(sys.argv[1]); labels=json.loads(sys.argv[2]); activate=sys.argv[3]=="1"
-Atspi.init();Atspi.set_timeout(250,500)
-end=time.monotonic()+2
-desktop=Atspi.get_desktop(0);queue=[];seen=0;found=False
-for i in range(min(desktop.get_child_count(),32)):
-    item=desktop.get_child_at_index(i)
-    if item and item.get_process_id()==pid:queue.append((item,0))
-while queue and seen<1024 and time.monotonic()<end:
-    item,depth=queue.pop(0);seen+=1
-    try:
-        if item.get_name() in labels:
-            if not activate:found=True;break
-            candidate=item
-            for _ in range(3):
-                action=candidate.get_action_iface()
-                if action and action.get_n_actions()>0:
-                    found=bool(action.do_action(0));break
-                candidate=candidate.get_parent()
-                if candidate is None:break
-            if found:break
-        if depth<24:
-            for i in range(min(item.get_child_count(),256)):
-                child=item.get_child_at_index(i)
-                if child:queue.append((child,depth+1))
-    except Exception:pass
-print(json.dumps({"found":found,"visited":seen}))
-Atspi.exit()
-"""
-    result = subprocess.run(
-        ["/usr/bin/python3", "-c", program, str(gui.pid), json.dumps(labels), "1" if activate else "0"],
-        capture_output=True, text=True, timeout=5,
+    first = ACCESSIBILITY is None
+    if first:
+        ACCESSIBILITY = AccessibilityWorker(
+            W / "accessibility-worker.log", W / "accessibility-worker-proof.json",
+        )
+    result = ACCESSIBILITY.query(gui.pid, labels, activate)
+    sample_resources(
+        gui, W / "gui-resources.jsonl", force=first, tracked_pid=ACCESSIBILITY.process.pid,
     )
-    if result.returncode or len(result.stdout) > 65536:
-        return False
-    rows = []
-    for line in result.stdout.splitlines():
-        try:
-            value = json.loads(line)
-        except ValueError:
-            continue
-        if isinstance(value, dict) and type(value.get("found")) is bool:
-            rows.append(value)
-    return len(rows) == 1 and rows[0]["found"]
+    return result
+
+
+def accessibility_lifetime(gui, labels):
+    # A real-query loop rejects the previous per-poll connection churn without
+    # requiring a system-library update or changing a process resource limit.
+    before = sample_resources(
+        gui, W / "gui-resources.jsonl", force=True, tracked_pid=ACCESSIBILITY.process.pid,
+    )
+    deadline = time.monotonic() + 30
+    positives = 0
+    for _ in range(128):
+        assert time.monotonic() < deadline, "Owned accessibility lifetime probe deadline"
+        positives += int(accessible(gui, labels))
+    after = sample_resources(
+        gui, W / "gui-resources.jsonl", force=True, tracked_pid=ACCESSIBILITY.process.pid,
+    )
+    assert "fd_types" in before and "fd_types" in after, "GUI resource inventory unavailable"
+    for snapshot in [before, after]:
+        assert snapshot.get("exit") is None and not snapshot.get("process_gone"), "GUI exited during resource probe"
+        assert "sample_error" not in snapshot and not snapshot.get("fd_sample_truncated"), "GUI resource inventory incomplete"
+    assert gui.poll() is None, "GUI exited during accessibility polling"
+    old = before["fd_types"].get("anon_inode:[pidfd]", 0)
+    current = after["fd_types"].get("anon_inode:[pidfd]", 0)
+    proof = {
+        "source": OPTIONS.source, "queries": 128, "positive_reads": positives,
+        "worker_pid": ACCESSIBILITY.process.pid, "worker_restarts": 0,
+        "pidfds_before": old, "pidfds_after": current,
+        "targets_before": before.get("pidfd_targets"),
+        "targets_after": after.get("pidfd_targets"),
+        "soft_nofile": after.get("nofile_soft"),
+        "passed": positives > 0 and current <= old + 3,
+        "scope": "Actual owned GUI accessibility reads and pidfd plateau; other native gates remain separate",
+    }
+    (W / "accessibility-lifetime-proof.json").write_text(json.dumps(proof, indent=2) + "\n")
+    assert proof["passed"], "Owned GUI pidfds grew with accessibility polling"
 
 
 def diagnostic_collection(gui, gui_log, cli_read):
@@ -301,6 +300,7 @@ def diagnostic_collection(gui, gui_log, cli_read):
     # Flutter combines the visible label with its tab-position semantics.
     wait(lambda: accessible(gui, ['Alerts\nTab 2 of 2', 'Предупреждения\nВкладка\xa02 из\xa02'], True), 20)
     wait(lambda: accessible(gui, active), 30)
+    accessibility_lifetime(gui, active)
     try:
         export(False)
         wait(lambda: gui.poll() is None and accessible(gui, stopped), 90)
@@ -713,6 +713,9 @@ def worker(root):
             assert "SYNTHETIC_WINDOW_SECRET" not in (
                 W / "restarted-gui-runtime.log"
             ).read_text(errors="replace")
+            if ACCESSIBILITY is not None:
+                ACCESSIBILITY.close()
+                assert ACCESSIBILITY.process.returncode == 0, "Owned accessibility worker did not close normally"
             proof = {
                 "source": OPTIONS.source,
                 "gui_binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
@@ -755,6 +758,8 @@ def worker(root):
                 "PASS: GUI retained one Rust replica owner while visible/hidden CLI reads stayed fresh; hidden replay, reopen and both drained quit paths completed."
             )
         finally:
+            if ACCESSIBILITY is not None:
+                ACCESSIBILITY.close()
             for child in [gui, daemon]:
                 if child is not None and child.poll() is None:
                     child.terminate()

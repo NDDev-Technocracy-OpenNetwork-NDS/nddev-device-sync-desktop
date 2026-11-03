@@ -7518,18 +7518,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   LocalDiagnostics dco_decode_local_diagnostics(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 9)
-      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
+    if (arr.length != 10)
+      throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
     return LocalDiagnostics(
       sinkInitialized: dco_decode_bool(arr[0]),
-      debugEnabled: dco_decode_bool(arr[1]),
-      debugScope: dco_decode_opt_box_autoadd_debug_scope(arr[2]),
-      rejectedFieldsOrEvents: dco_decode_opt_box_autoadd_u_64(arr[3]),
-      droppedEvents: dco_decode_opt_box_autoadd_u_64(arr[4]),
-      pendingEvents: dco_decode_opt_box_autoadd_u_64(arr[5]),
-      writeFailures: dco_decode_opt_box_autoadd_u_64(arr[6]),
-      terminating: dco_decode_opt_box_autoadd_bool(arr[7]),
-      shutdownIncomplete: dco_decode_opt_box_autoadd_bool(arr[8]),
+      collectionEnabled: dco_decode_opt_box_autoadd_bool(arr[1]),
+      debugEnabled: dco_decode_bool(arr[2]),
+      debugScope: dco_decode_opt_box_autoadd_debug_scope(arr[3]),
+      rejectedFieldsOrEvents: dco_decode_opt_box_autoadd_u_64(arr[4]),
+      droppedEvents: dco_decode_opt_box_autoadd_u_64(arr[5]),
+      pendingEvents: dco_decode_opt_box_autoadd_u_64(arr[6]),
+      writeFailures: dco_decode_opt_box_autoadd_u_64(arr[7]),
+      terminating: dco_decode_opt_box_autoadd_bool(arr[8]),
+      shutdownIncomplete: dco_decode_opt_box_autoadd_bool(arr[9]),
     );
   }
 
@@ -9994,6 +9995,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   LocalDiagnostics sse_decode_local_diagnostics(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_sinkInitialized = sse_decode_bool(deserializer);
+    var var_collectionEnabled = sse_decode_opt_box_autoadd_bool(deserializer);
     var var_debugEnabled = sse_decode_bool(deserializer);
     var var_debugScope = sse_decode_opt_box_autoadd_debug_scope(deserializer);
     var var_rejectedFieldsOrEvents = sse_decode_opt_box_autoadd_u_64(
@@ -10006,6 +10008,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_shutdownIncomplete = sse_decode_opt_box_autoadd_bool(deserializer);
     return LocalDiagnostics(
       sinkInitialized: var_sinkInitialized,
+      collectionEnabled: var_collectionEnabled,
       debugEnabled: var_debugEnabled,
       debugScope: var_debugScope,
       rejectedFieldsOrEvents: var_rejectedFieldsOrEvents,
@@ -12415,6 +12418,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_bool(self.sinkInitialized, serializer);
+    sse_encode_opt_box_autoadd_bool(self.collectionEnabled, serializer);
     sse_encode_bool(self.debugEnabled, serializer);
     sse_encode_opt_box_autoadd_debug_scope(self.debugScope, serializer);
     sse_encode_opt_box_autoadd_u_64(self.rejectedFieldsOrEvents, serializer);

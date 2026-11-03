@@ -8376,6 +8376,7 @@ const _: fn() = || {
     {
         let LocalDiagnostics = None::<nddev_device_sync_telemetry::view::LocalDiagnostics>.unwrap();
         let _: bool = LocalDiagnostics.sink_initialized;
+        let _: Option<bool> = LocalDiagnostics.collection_enabled;
         let _: bool = LocalDiagnostics.debug_enabled;
         let _: Option<nddev_device_sync_telemetry::view::DebugScope> = LocalDiagnostics.debug_scope;
         let _: Option<u64> = LocalDiagnostics.rejected_fields_or_events;
@@ -10335,6 +10336,7 @@ impl SseDecode for nddev_device_sync_telemetry::view::LocalDiagnostics {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_sinkInitialized = <bool>::sse_decode(deserializer);
+        let mut var_collectionEnabled = <Option<bool>>::sse_decode(deserializer);
         let mut var_debugEnabled = <bool>::sse_decode(deserializer);
         let mut var_debugScope =
             <Option<nddev_device_sync_telemetry::view::DebugScope>>::sse_decode(deserializer);
@@ -10346,6 +10348,7 @@ impl SseDecode for nddev_device_sync_telemetry::view::LocalDiagnostics {
         let mut var_shutdownIncomplete = <Option<bool>>::sse_decode(deserializer);
         return nddev_device_sync_telemetry::view::LocalDiagnostics {
             sink_initialized: var_sinkInitialized,
+            collection_enabled: var_collectionEnabled,
             debug_enabled: var_debugEnabled,
             debug_scope: var_debugScope,
             rejected_fields_or_events: var_rejectedFieldsOrEvents,
@@ -13666,6 +13669,7 @@ impl flutter_rust_bridge::IntoDart
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.0.sink_initialized.into_into_dart().into_dart(),
+            self.0.collection_enabled.into_into_dart().into_dart(),
             self.0.debug_enabled.into_into_dart().into_dart(),
             self.0.debug_scope.into_into_dart().into_dart(),
             self.0
@@ -15873,6 +15877,7 @@ impl SseEncode for nddev_device_sync_telemetry::view::LocalDiagnostics {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.sink_initialized, serializer);
+        <Option<bool>>::sse_encode(self.collection_enabled, serializer);
         <bool>::sse_encode(self.debug_enabled, serializer);
         <Option<nddev_device_sync_telemetry::view::DebugScope>>::sse_encode(
             self.debug_scope,

@@ -611,7 +611,8 @@ class _UtilitiesState extends State<UtilitiesScreen> {
                   ),
                 if (!delivery.initialized)
                   Text(l.telemetryUnavailable)
-                else if (delivery.policy == native.ExportPolicy.enabled && !delivery.paused)
+                else if (delivery.policy == native.ExportPolicy.enabled &&
+                    !delivery.paused)
                   Text(l.telemetryInitialized),
                 TextButton(
                   key: const Key('refresh-incidents'),

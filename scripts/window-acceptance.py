@@ -14,6 +14,7 @@ P.add_argument("--source", required=True)
 P.add_argument("--cli", type=Path, required=True)
 P.add_argument("--cli-source", required=True)
 P.add_argument("--diagnostic-policy", type=Path, help="Owned fixture collection policy for installed debug-window qualification")
+P.add_argument("--diagnostic-export-fixture", type=Path, help="Owned controllable collector receipt for actual installed Off/on acceptance")
 P.add_argument("--worker", type=Path, help=argparse.SUPPRESS)
 OPTIONS = P.parse_args()
 ROOT = Path(__file__).resolve().parents[1]
@@ -210,6 +211,103 @@ def diagnostic_policy(root, gui_log):
         print("PASS: installed app followed the finite device-scoped debug policy and stopped reopening after expiry", flush=True)
     finally:
         publish(4)
+
+
+
+def accessible(gui, labels, activate=False):
+    # Public accessibility in this task's private DBus/display; read only this
+    # actual GUI PID and return only the requested fixed labels.
+    program = r"""
+import gi,json,sys,time
+gi.require_version("Atspi","2.0")
+from gi.repository import Atspi
+pid=int(sys.argv[1]); labels=json.loads(sys.argv[2]); activate=sys.argv[3]=="1"
+Atspi.init();Atspi.set_timeout(250,500)
+end=time.monotonic()+2
+desktop=Atspi.get_desktop(0);queue=[];seen=0;found=False
+for i in range(min(desktop.get_child_count(),32)):
+    item=desktop.get_child_at_index(i)
+    if item and item.get_process_id()==pid:queue.append((item,0))
+while queue and seen<1024 and time.monotonic()<end:
+    item,depth=queue.pop(0);seen+=1
+    try:
+        if item.get_name() in labels:
+            if not activate:found=True;break
+            candidate=item
+            for _ in range(3):
+                action=candidate.get_action_iface()
+                if action and action.get_n_actions()>0:
+                    found=bool(action.do_action(0));break
+                candidate=candidate.get_parent()
+                if candidate is None:break
+            if found:break
+        if depth<24:
+            for i in range(min(item.get_child_count(),256)):
+                child=item.get_child_at_index(i)
+                if child:queue.append((child,depth+1))
+    except Exception:pass
+print(json.dumps({"found":found,"visited":seen}))
+Atspi.exit()
+"""
+    result = subprocess.run(
+        ["/usr/bin/python3", "-c", program, str(gui.pid), json.dumps(labels), "1" if activate else "0"],
+        capture_output=True, text=True, timeout=5,
+    )
+    if result.returncode:
+        return False
+    return json.loads(result.stdout)["found"]
+
+
+def diagnostic_collection(gui, gui_log, cli_read):
+    receipt = OPTIONS.diagnostic_export_fixture
+    assert receipt is not None and receipt.is_absolute() and not receipt.is_symlink()
+    assert receipt.parent.resolve() == FIXTURE.parent.resolve() and receipt.resolve() != FIXTURE.resolve()
+    state = json.loads(receipt.read_text())
+    assert state["status"] == "running" and state["project"].startswith("nds-obs-test-")
+    assert state["expires_at_unix"] > time.time() + 240
+    target = Path(state["export_control_file"])
+    assert target == receipt.with_suffix(".export-control.json")
+    assert target.is_file() and not target.is_symlink()
+
+    def export(enabled):
+        pending = target.with_suffix(".pending")
+        assert not pending.exists()
+        pending.write_text(json.dumps({"export_enabled": enabled}))
+        pending.chmod(0o600);pending.replace(target)
+        def applied():
+            current = json.loads(receipt.read_text())
+            assert current["status"] == "running"
+            return current["export_enabled"] is enabled
+        wait(applied, 75)
+
+    active = ["Diagnostic collection is active in this app.", "Сбор диагностики в этом приложении включён."]
+    stopped = ["Diagnostic collection is off in this app.", "Сбор диагностики в этом приложении выключен."]
+    wait(lambda: accessible(gui, ["Clipboard and alerts", "Буфер обмена и предупреждения"], True), 30)
+    wait(lambda: accessible(gui, ["Alerts", "Предупреждения"], True), 20)
+    wait(lambda: accessible(gui, active), 30)
+    try:
+        export(False)
+        wait(lambda: gui.poll() is None and accessible(gui, stopped), 90)
+        value = cli_read("cli-collection-off.log", False)
+        assert value["diagnostics"]["collection"] == "off"
+        assert value["diagnostics"]["local_collection"] is False
+        since = time.time()
+        time.sleep(5)
+        assert gui.poll() is None
+        assert not any(dt.datetime.fromisoformat(event["timestamp"].replace("Z", "+00:00")).timestamp() >= since + 1
+                       for event in events(gui_log)), "the ordinary app still collected SDK events after confirmed Off"
+        export(True)
+        wait(lambda: gui.poll() is None and accessible(gui, active), 90)
+        wait(lambda: any(dt.datetime.fromisoformat(event["timestamp"].replace("Z", "+00:00")).timestamp() >= since + 5
+                         for event in events(gui_log)), 30)
+        proof = {"source": OPTIONS.source, "actual_gui_accessibility_state": True,
+                 "actual_collector_off_on": True, "no_new_sdk_events_during_confirmed_off": True,
+                 "concurrent_functional_cli_with_local_collection_off": True, "resumed": True}
+        (W / "diagnostic-collection-proof.json").write_text(json.dumps(proof, indent=2) + "\n")
+        print("PASS: ordinary installed GUI and concurrent CLI followed real collector Off/on", flush=True)
+    finally:
+        export(True)
+    wait(lambda: accessible(gui, ["Back", "Назад"], True), 20)
 
 
 def worker(root):
@@ -442,7 +540,10 @@ def worker(root):
                         for row in rows
                     )
                     assert gui.poll() is None
+                    return value
 
+                if OPTIONS.diagnostic_export_fixture is not None:
+                    diagnostic_collection(gui, gui_log, cli_read)
                 cli_read("cli-visible.log", False)
                 control("offline")
                 with (W / "stage.log").open("wb") as stage:
@@ -637,7 +738,7 @@ def main():
             ],
             env=env,
             check=True,
-            timeout=720 if OPTIONS.diagnostic_policy is not None else 510,
+            timeout=960 if OPTIONS.diagnostic_export_fixture is not None else (720 if OPTIONS.diagnostic_policy is not None else 510),
         )
 
 

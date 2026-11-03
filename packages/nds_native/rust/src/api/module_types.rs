@@ -6,7 +6,7 @@ pub use nddev_device_sync_agent::view::cache::Status as CacheStatus;
 pub use nddev_device_sync_agent::view::{
     BrowserDocument,
     browser::{
-        Outcome as BrowserOutcome, ScriptFailure as BrowserScriptFailure,
+        Build as BrowserBuild, Outcome as BrowserOutcome, ScriptFailure as BrowserScriptFailure,
         Session as BrowserSession, Status as BrowserStatus, Tab as BrowserTab,
     },
 };
@@ -51,9 +51,18 @@ pub enum _Reachability {
 #[cfg_attr(feature = "flutter", frb(mirror(BrowserStatus)))]
 pub struct _BrowserStatus {
     pub enabled: bool,
+    pub observation: Option<String>,
     pub browser: String,
     pub extension: String,
     pub sessions: usize,
+    pub host: Option<BrowserBuild>,
+    pub compatible: Option<bool>,
+}
+
+#[cfg_attr(feature = "flutter", frb(mirror(BrowserBuild)))]
+pub struct _BrowserBuild {
+    pub version: String,
+    pub commit: String,
 }
 
 #[cfg_attr(feature = "flutter", frb(mirror(BrowserSession)))]
@@ -84,6 +93,7 @@ pub enum _BrowserScriptFailure {
     ScriptError,
     TargetClosed,
     BrowserDisconnected,
+    Aborted,
 }
 
 #[cfg_attr(feature = "flutter", frb(mirror(BrowserDocument)))]

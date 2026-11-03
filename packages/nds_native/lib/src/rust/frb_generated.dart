@@ -6442,6 +6442,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  BrowserBuild dco_decode_box_autoadd_browser_build(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_browser_build(raw);
+  }
+
+  @protected
   BrowserDocument dco_decode_box_autoadd_browser_document(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_browser_document(raw);
@@ -6565,6 +6571,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  BrowserBuild dco_decode_browser_build(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return BrowserBuild(
+      version: dco_decode_String(arr[0]),
+      commit: dco_decode_String(arr[1]),
+    );
+  }
+
+  @protected
   BrowserDocument dco_decode_browser_document(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -6613,13 +6631,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   BrowserStatus dco_decode_browser_status(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
     return BrowserStatus(
       enabled: dco_decode_bool(arr[0]),
-      browser: dco_decode_String(arr[1]),
-      extension_: dco_decode_String(arr[2]),
-      sessions: dco_decode_usize(arr[3]),
+      observation: dco_decode_opt_String(arr[1]),
+      browser: dco_decode_String(arr[2]),
+      extension_: dco_decode_String(arr[3]),
+      sessions: dco_decode_usize(arr[4]),
+      host: dco_decode_opt_box_autoadd_browser_build(arr[5]),
+      compatible: dco_decode_opt_box_autoadd_bool(arr[6]),
     );
   }
 
@@ -7574,6 +7595,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   bool? dco_decode_opt_box_autoadd_bool(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_bool(raw);
+  }
+
+  @protected
+  BrowserBuild? dco_decode_opt_box_autoadd_browser_build(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_browser_build(raw);
   }
 
   @protected
@@ -8614,6 +8641,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  BrowserBuild sse_decode_box_autoadd_browser_build(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_browser_build(deserializer));
+  }
+
+  @protected
   BrowserDocument sse_decode_box_autoadd_browser_document(
     SseDeserializer deserializer,
   ) {
@@ -8749,6 +8784,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  BrowserBuild sse_decode_browser_build(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_version = sse_decode_String(deserializer);
+    var var_commit = sse_decode_String(deserializer);
+    return BrowserBuild(version: var_version, commit: var_commit);
+  }
+
+  @protected
   BrowserDocument sse_decode_browser_document(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_target = sse_decode_String(deserializer);
@@ -8799,14 +8842,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   BrowserStatus sse_decode_browser_status(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_enabled = sse_decode_bool(deserializer);
+    var var_observation = sse_decode_opt_String(deserializer);
     var var_browser = sse_decode_String(deserializer);
     var var_extension_ = sse_decode_String(deserializer);
     var var_sessions = sse_decode_usize(deserializer);
+    var var_host = sse_decode_opt_box_autoadd_browser_build(deserializer);
+    var var_compatible = sse_decode_opt_box_autoadd_bool(deserializer);
     return BrowserStatus(
       enabled: var_enabled,
+      observation: var_observation,
       browser: var_browser,
       extension_: var_extension_,
       sessions: var_sessions,
+      host: var_host,
+      compatible: var_compatible,
     );
   }
 
@@ -10048,6 +10097,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  BrowserBuild? sse_decode_opt_box_autoadd_browser_build(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_browser_build(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   BrowserDocument? sse_decode_opt_box_autoadd_browser_document(
     SseDeserializer deserializer,
   ) {
@@ -11267,6 +11329,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_browser_build(
+    BrowserBuild self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_browser_build(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_browser_document(
     BrowserDocument self,
     SseSerializer serializer,
@@ -11408,6 +11479,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_browser_build(BrowserBuild self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.version, serializer);
+    sse_encode_String(self.commit, serializer);
+  }
+
+  @protected
   void sse_encode_browser_document(
     BrowserDocument self,
     SseSerializer serializer,
@@ -11453,9 +11531,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_encode_browser_status(BrowserStatus self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_bool(self.enabled, serializer);
+    sse_encode_opt_String(self.observation, serializer);
     sse_encode_String(self.browser, serializer);
     sse_encode_String(self.extension_, serializer);
     sse_encode_usize(self.sessions, serializer);
+    sse_encode_opt_box_autoadd_browser_build(self.host, serializer);
+    sse_encode_opt_box_autoadd_bool(self.compatible, serializer);
   }
 
   @protected
@@ -12408,6 +12489,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_box_autoadd_bool(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_browser_build(
+    BrowserBuild? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_browser_build(self, serializer);
     }
   }
 

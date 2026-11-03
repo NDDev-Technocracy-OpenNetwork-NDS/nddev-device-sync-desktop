@@ -32,7 +32,7 @@ enum DeliveryCollection {
 class DeliveryView {
   final bool initialized;
 
-  /// Browser durable-spool availability; native transport does not use it.
+  /// Last demonstrated payload-write readiness of the platform durable spool.
   final bool? localPersistenceReady;
   final ExportPolicy policy;
   final DeliveryCollection collection;

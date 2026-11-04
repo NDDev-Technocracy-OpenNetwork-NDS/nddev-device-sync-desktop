@@ -304,6 +304,7 @@ def diagnostic_collection(gui, gui_log, cli_read):
     try:
         export(False)
         wait(lambda: gui.poll() is None and accessible(gui, stopped), 90)
+        confirmed_off_at = time.time()
         value = cli_read("cli-collection-off.log", False)
         assert value["diagnostics"]["collection"] == "off"
         assert value["diagnostics"]["local_collection"] is False
@@ -351,15 +352,19 @@ def diagnostic_collection(gui, gui_log, cli_read):
         wait(lambda: gui.poll() is None and accessible(gui, ["Diagnostics policy: off.",
                    "Политика диагностики: выключено."]), 90)
         assert accessible(gui, stopped)
+        restored_off_at = time.time()
         export(True)
         wait(lambda: gui.poll() is None and accessible(gui, active), 90)
+        confirmed_on_at = time.time()
         wait(lambda: any(dt.datetime.fromisoformat(event["timestamp"].replace("Z", "+00:00")).timestamp() >= since + 5
                          for event in events(gui_log)), 30)
         proof = {"source": OPTIONS.source, "actual_gui_accessibility_state": True,
                  "actual_collector_off_on": True, "no_new_sdk_events_during_confirmed_off": True,
                  "concurrent_functional_cli_with_local_collection_off": True,
                  "actual_unknown_policy_kept_collection_off": True,
-                 "resumed": True}
+                 "resumed": True,
+                 "confirmed_off_at_unix": confirmed_off_at, "unknown_at_unix": unknown_at,
+                 "restored_off_at_unix": restored_off_at, "confirmed_on_at_unix": confirmed_on_at}
         (W / "diagnostic-collection-proof.json").write_text(json.dumps(proof, indent=2) + "\n")
         print("PASS: ordinary installed GUI and concurrent CLI followed real collector Off/on", flush=True)
     finally:

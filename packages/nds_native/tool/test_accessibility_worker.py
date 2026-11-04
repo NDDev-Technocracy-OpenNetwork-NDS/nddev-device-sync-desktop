@@ -132,24 +132,14 @@ class CachedAccessible:
         self.pid = pid
         self.children = list(children)
         self.cached_name = None
-        self.cache_mask = 1
 
     def get_name(self):
-        if self.cache_mask == 0:
-            return self.remote_name
         if self.cached_name is None:
             self.cached_name = self.remote_name
         return self.cached_name
 
     def clear_cache(self):
         self.cached_name = None
-        for child in self.children:
-            child.clear_cache()
-
-    def set_cache_mask(self, mask):
-        self.cache_mask = mask
-        for child in self.children:
-            child.set_cache_mask(mask)
 
     def get_child_count(self):
         return len(self.children)
@@ -166,9 +156,7 @@ class AccessibilityFreshnessTest(unittest.TestCase):
         status = CachedAccessible("Off")
         application = CachedAccessible("application", pid=123, children=[status])
         desktop = CachedAccessible("desktop", children=[application])
-        api = types.SimpleNamespace(
-            Cache=types.SimpleNamespace(NONE=0), get_desktop=lambda _: desktop,
-        )
+        api = types.SimpleNamespace(get_desktop=lambda _: desktop)
         self.assertTrue(query_tree(api, 123, ["Off"], False)["found"])
         status.remote_name = "Unknown"
         self.assertTrue(query_tree(api, 123, ["Unknown"], False)["found"])

@@ -169,8 +169,6 @@ def query_tree(Atspi, pid, labels, activate):
     for index in range(min(desktop.get_child_count(), 32)):
         item = desktop.get_child_at_index(index)
         if item and item.get_process_id() == pid:
-            item.set_cache_mask(Atspi.Cache.NONE)
-            item.clear_cache()
             queue.append((item, 0))
     seen = 0
     found = False
@@ -178,6 +176,8 @@ def query_tree(Atspi, pid, labels, activate):
         item, depth = queue.popleft()
         seen += 1
         try:
+            # Keep AT-SPI tree caching enabled and refresh each visited object.
+            item.clear_cache()
             if item.get_name() in labels:
                 if not activate:
                     found = True

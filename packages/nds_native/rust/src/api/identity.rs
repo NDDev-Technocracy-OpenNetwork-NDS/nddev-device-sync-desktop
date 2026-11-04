@@ -364,7 +364,6 @@ impl NdsClient {
                 )
                 .map(Arc::new);
             }
-            #[cfg(not(target_arch = "wasm32"))]
             if let Some(delivery) = delivery.as_ref() {
                 super::telemetry::follow_collection(delivery);
             }

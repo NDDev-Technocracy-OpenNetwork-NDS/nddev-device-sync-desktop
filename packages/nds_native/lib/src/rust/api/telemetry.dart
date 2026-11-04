@@ -8,7 +8,7 @@ import '../third_party/nddev_device_sync_telemetry/view.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `apply_following`, `close_following`, `follow_collection`, `follow_decision`, `follow_once`, `logger`, `new`, `shutdown_local`, `start_delivery`
+// These functions are ignored because they are not marked as `pub`: `apply_following`, `close_following`, `follow_collection`, `follow_decision`, `follow_once`, `logger`, `new`, `policy_now`, `shutdown_local`, `start_delivery`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `Follow`, `Following`, `ProcessTelemetry`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `eq`, `fmt`
 

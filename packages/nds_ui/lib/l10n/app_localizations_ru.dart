@@ -434,6 +434,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get diagnosticsIo => 'Локальные операции';
 
   @override
+  String get diagnosticsCollectionActive =>
+      'Сбор диагностики в этом приложении включён.';
+
+  @override
+  String get diagnosticsCollectionOff =>
+      'Сбор диагностики в этом приложении выключен.';
+
+  @override
+  String get diagnosticsCollectionUnknown =>
+      'Сбор диагностики в этом приложении не подтверждён.';
+
+  @override
   String get devicesTitle => 'Ваши устройства';
 
   @override
@@ -1637,8 +1649,7 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get collectionOff =>
-      'Сбор диагностики выключен: ничего нового не собирается и не отправляется.';
+  String get collectionOff => 'Политика диагностики: выключено.';
 
   @override
   String get ownDiagnostics => 'Показать мою диагностику (за час)';

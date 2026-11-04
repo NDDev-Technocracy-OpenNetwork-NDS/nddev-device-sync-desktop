@@ -865,6 +865,24 @@ abstract class AppLocalizations {
   /// **'Local operations'**
   String get diagnosticsIo;
 
+  /// No description provided for @diagnosticsCollectionActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostic collection is active in this app.'**
+  String get diagnosticsCollectionActive;
+
+  /// No description provided for @diagnosticsCollectionOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostic collection is off in this app.'**
+  String get diagnosticsCollectionOff;
+
+  /// No description provided for @diagnosticsCollectionUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostic collection in this app has not been confirmed.'**
+  String get diagnosticsCollectionUnknown;
+
   /// No description provided for @devicesTitle.
   ///
   /// In en, this message translates to:
@@ -2907,7 +2925,7 @@ abstract class AppLocalizations {
   /// No description provided for @collectionOff.
   ///
   /// In en, this message translates to:
-  /// **'Diagnostics collection is off: nothing new is collected or sent.'**
+  /// **'Diagnostics policy: off.'**
   String get collectionOff;
 
   /// No description provided for @ownDiagnostics.

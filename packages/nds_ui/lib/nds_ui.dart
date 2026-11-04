@@ -1158,7 +1158,9 @@ class _IdentityScreenState extends State<_IdentityScreen> {
                           child: Text(l.diagnosticsIo),
                         ),
                       ],
-                      onChanged: diagnostics.debugEnabled
+                      onChanged:
+                          diagnostics.debugEnabled ||
+                              diagnostics.collectionEnabled != true
                           ? null
                           : (scope) {
                               if (scope != null) {
@@ -1167,20 +1169,24 @@ class _IdentityScreenState extends State<_IdentityScreen> {
                             },
                     ),
                     TextButton(
-                      onPressed: () {
-                        try {
-                          native.configureDebug(
-                            scope: _debugScope,
-                            seconds: diagnostics.debugEnabled ? 0 : 300,
-                          );
-                        } catch (_) {
-                          widget.diagnostics?.reportFailure(
-                            native.FailureKind.nativeBridge,
-                          );
-                          setState(() => _error = 'diagnostics_unavailable');
-                        }
-                        setState(() {});
-                      },
+                      onPressed: diagnostics.collectionEnabled != true
+                          ? null
+                          : () {
+                              try {
+                                native.configureDebug(
+                                  scope: _debugScope,
+                                  seconds: diagnostics.debugEnabled ? 0 : 300,
+                                );
+                              } catch (_) {
+                                widget.diagnostics?.reportFailure(
+                                  native.FailureKind.nativeBridge,
+                                );
+                                setState(
+                                  () => _error = 'diagnostics_unavailable',
+                                );
+                              }
+                              setState(() {});
+                            },
                       child: Text(
                         diagnostics.debugEnabled
                             ? l.diagnosticsOff
@@ -1191,7 +1197,11 @@ class _IdentityScreenState extends State<_IdentityScreen> {
                   Text(
                     diagnostics.sinkInitialized &&
                             widget.diagnostics?.reportingUnavailable != true
-                        ? l.localDiagnosticsOnly
+                        ? switch (diagnostics.collectionEnabled) {
+                            true => l.localDiagnosticsOnly,
+                            false => l.diagnosticsCollectionOff,
+                            null => l.diagnosticsCollectionUnknown,
+                          }
                         : l.diagnosticsUnavailable,
                     key: const Key('diagnostics-status'),
                     style: Theme.of(context).textTheme.bodySmall,

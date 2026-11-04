@@ -5,6 +5,9 @@ from pathlib import Path
 import datetime as dt
 from urllib.parse import urlparse
 
+from native_resources import sample_resources
+from accessibility_worker import AccessibilityWorker
+
 P = argparse.ArgumentParser(description=__doc__)
 P.add_argument("--fixture", type=Path, required=True)
 P.add_argument("--bundle", type=Path, required=True)
@@ -14,6 +17,7 @@ P.add_argument("--source", required=True)
 P.add_argument("--cli", type=Path, required=True)
 P.add_argument("--cli-source", required=True)
 P.add_argument("--diagnostic-policy", type=Path, help="Owned fixture collection policy for installed debug-window qualification")
+P.add_argument("--diagnostic-export-fixture", type=Path, help="Owned controllable collector receipt for actual installed Off/on acceptance")
 P.add_argument("--worker", type=Path, help=argparse.SUPPRESS)
 OPTIONS = P.parse_args()
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,6 +45,7 @@ APP = "ai.nddev.nds.nddev_device_sync_desktop"
 NAME = "^NDDev OpenNetwork$"
 PREFIX = "api::replica_acceptance::"
 HTTP = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+ACCESSIBILITY = None
 
 
 def run(args, **kw):
@@ -156,7 +161,10 @@ def diagnostic_policy(root, gui_log):
     assert policy is not None and policy.is_absolute() and not policy.is_symlink()
     assert policy.resolve() == FIXTURE.with_suffix(".collection-policy.json").resolve()
     assert policy.is_file() and policy.stat().st_size <= 8192
-    assert json.loads(policy.read_text()) == {"revision": 1, "debug": []}
+    original_policy = json.loads(policy.read_text())
+    assert set(original_policy) == {"revision", "debug"} and original_policy["debug"] == []
+    revision = original_policy["revision"]
+    assert type(revision) is int and 1 <= revision <= 9_007_199_254_740_988
     seeded = json.loads((root / "seeded").read_text())
     device = seeded["device_id"]
     assert seeded["ready"] is True and re.fullmatch("[A-Za-z0-9._:-]{1,128}", device)
@@ -183,14 +191,14 @@ def diagnostic_policy(root, gui_log):
 
     started = time.time()
     try:
-        publish(2, started + 180)
+        publish(revision + 1, started + 180)
         first = wait(lambda: next((event for event in transitions(started)
             if event["event.name"] == "logging.debug.enabled"), None), 75)
         assert type(first.get("duration_seconds")) is int and 1 <= first["duration_seconds"] <= 180
         print("Installed diagnostics: the signed device policy opened a finite local SDK window", flush=True)
         shortened = time.time()
         end = shortened + 75
-        publish(3, end)
+        publish(revision + 2, end)
         second = wait(lambda: next((event for event in transitions(shortened)
             if event["event.name"] == "logging.debug.enabled"
             and type(event.get("duration_seconds")) is int
@@ -209,7 +217,158 @@ def diagnostic_policy(root, gui_log):
         (W / "diagnostic-policy-proof.json").write_text(json.dumps(proof, indent=2) + "\n")
         print("PASS: installed app followed the finite device-scoped debug policy and stopped reopening after expiry", flush=True)
     finally:
-        publish(4)
+        publish(revision + 3)
+
+
+
+def accessible(gui, labels, activate=False):
+    global ACCESSIBILITY
+    sample_resources(gui, W / "gui-resources.jsonl")
+    assert gui.poll() is None, "GUI exited; inspect gui-runtime.log and gui-resources.jsonl"
+    first = ACCESSIBILITY is None
+    if first:
+        ACCESSIBILITY = AccessibilityWorker(
+            W / "accessibility-worker.log", W / "accessibility-worker-proof.json",
+        )
+    result = ACCESSIBILITY.query(gui.pid, labels, activate)
+    sample_resources(
+        gui, W / "gui-resources.jsonl", force=first, tracked_pid=ACCESSIBILITY.process.pid,
+    )
+    return result
+
+
+def accessibility_lifetime(gui, labels):
+    # A real-query loop rejects the previous per-poll connection churn without
+    # requiring a system-library update or changing a process resource limit.
+    before = sample_resources(
+        gui, W / "gui-resources.jsonl", force=True, tracked_pid=ACCESSIBILITY.process.pid,
+    )
+    deadline = time.monotonic() + 30
+    positives = 0
+    for _ in range(128):
+        assert time.monotonic() < deadline, "Owned accessibility lifetime probe deadline"
+        positives += int(accessible(gui, labels))
+    after = sample_resources(
+        gui, W / "gui-resources.jsonl", force=True, tracked_pid=ACCESSIBILITY.process.pid,
+    )
+    assert "fd_types" in before and "fd_types" in after, "GUI resource inventory unavailable"
+    for snapshot in [before, after]:
+        assert snapshot.get("exit") is None and not snapshot.get("process_gone"), "GUI exited during resource probe"
+        assert "sample_error" not in snapshot and not snapshot.get("fd_sample_truncated"), "GUI resource inventory incomplete"
+    assert gui.poll() is None, "GUI exited during accessibility polling"
+    old = before["fd_types"].get("anon_inode:[pidfd]", 0)
+    current = after["fd_types"].get("anon_inode:[pidfd]", 0)
+    proof = {
+        "source": OPTIONS.source, "queries": 128, "positive_reads": positives,
+        "worker_pid": ACCESSIBILITY.process.pid, "worker_restarts": 0,
+        "pidfds_before": old, "pidfds_after": current,
+        "targets_before": before.get("pidfd_targets"),
+        "targets_after": after.get("pidfd_targets"),
+        "soft_nofile": after.get("nofile_soft"),
+        "passed": positives > 0 and current <= old + 3,
+        "scope": "Actual owned GUI accessibility reads and pidfd plateau; other native gates remain separate",
+    }
+    (W / "accessibility-lifetime-proof.json").write_text(json.dumps(proof, indent=2) + "\n")
+    assert proof["passed"], "Owned GUI pidfds grew with accessibility polling"
+
+
+def diagnostic_collection(gui, gui_log, cli_read):
+    receipt = OPTIONS.diagnostic_export_fixture
+    assert receipt is not None and receipt.is_absolute() and not receipt.is_symlink()
+    assert receipt.parent.resolve() == FIXTURE.parent.resolve() and receipt.resolve() != FIXTURE.resolve()
+    state = json.loads(receipt.read_text())
+    assert state["status"] == "running" and state["project"].startswith("nds-obs-test-")
+    assert state["expires_at_unix"] > time.time() + 420
+    target = Path(state["export_control_file"])
+    assert target == receipt.with_suffix(".export-control.json")
+    assert target.is_file() and not target.is_symlink()
+
+    def export(enabled):
+        pending = target.with_suffix(".pending")
+        assert not pending.exists()
+        pending.write_text(json.dumps({"export_enabled": enabled}))
+        pending.chmod(0o600);pending.replace(target)
+        def applied():
+            current = json.loads(receipt.read_text())
+            assert current["status"] == "running"
+            return current["export_enabled"] is enabled
+        wait(applied, 75)
+
+    active = ["Diagnostic collection is active in this app.", "Сбор диагностики в этом приложении включён."]
+    stopped = ["Diagnostic collection is off in this app.", "Сбор диагностики в этом приложении выключен."]
+    wait(lambda: accessible(gui, ["Clipboard and alerts", "Буфер обмена и предупреждения"], True), 30)
+    # Flutter combines the visible label with its tab-position semantics.
+    wait(lambda: accessible(gui, ['Alerts\nTab 2 of 2', 'Предупреждения\nВкладка\xa02 из\xa02'], True), 20)
+    wait(lambda: accessible(gui, active), 30)
+    accessibility_lifetime(gui, active)
+    try:
+        export(False)
+        wait(lambda: gui.poll() is None and accessible(gui, stopped), 90)
+        confirmed_off_at = time.time()
+        value = cli_read("cli-collection-off.log", False)
+        assert value["diagnostics"]["collection"] == "off"
+        assert value["diagnostics"]["local_collection"] is False
+        since = time.time()
+        time.sleep(5)
+        assert gui.poll() is None
+        assert not any(dt.datetime.fromisoformat(event["timestamp"].replace("Z", "+00:00")).timestamp() >= since + 1
+                       for event in events(gui_log)), "the ordinary app still collected SDK events after confirmed Off"
+        # A real signed-policy refusal must not turn a previously observed Off
+        # back on. The private server validates revision before selecting mode.
+        policy = OPTIONS.diagnostic_policy
+        assert policy is not None and policy.is_absolute() and not policy.is_symlink()
+        assert policy.resolve() == FIXTURE.with_suffix(".collection-policy.json").resolve()
+        assert policy.is_file() and policy.stat().st_size <= 8192
+        original_policy = policy.read_bytes()
+        assert json.loads(original_policy)["revision"] > 0
+
+        def publish_policy(content):
+            pending = policy.with_name(policy.name + ".pending")
+            assert not pending.exists()
+            pending.write_bytes(content)
+            pending.chmod(0o600)
+            pending.replace(policy)
+
+        try:
+            publish_policy(b'{"revision":0,"debug":[]}')
+            unknown = ["Diagnostics collection policy has not been confirmed.",
+                       "Политика сбора диагностики ещё не подтверждена."]
+            wait(lambda: gui.poll() is None and accessible(gui, unknown), 90)
+            try:
+                wait(lambda: gui.poll() is None and accessible(gui, stopped), 10)
+            except AssertionError:
+                print(json.dumps({"phase": "observe local SDK after Unknown",
+                    "active_label_visible": accessible(gui, active),
+                    "unknown_label_visible": accessible(gui, [
+                        "Diagnostic collection in this app has not been confirmed.",
+                        "Сбор диагностики в этом приложении не подтверждён."])}), flush=True)
+                raise
+            unknown_at = time.time()
+            time.sleep(5)
+            assert not any(dt.datetime.fromisoformat(event["timestamp"].replace("Z", "+00:00")).timestamp() >= unknown_at + 1
+                           for event in events(gui_log)), "Unknown collected a hidden SDK stream"
+        finally:
+            publish_policy(original_policy)
+        wait(lambda: gui.poll() is None and accessible(gui, ["Diagnostics policy: off.",
+                   "Политика диагностики: выключено."]), 90)
+        assert accessible(gui, stopped)
+        restored_off_at = time.time()
+        export(True)
+        wait(lambda: gui.poll() is None and accessible(gui, active), 90)
+        confirmed_on_at = time.time()
+        wait(lambda: any(dt.datetime.fromisoformat(event["timestamp"].replace("Z", "+00:00")).timestamp() >= since + 5
+                         for event in events(gui_log)), 30)
+        proof = {"source": OPTIONS.source, "actual_gui_accessibility_state": True,
+                 "actual_collector_off_on": True, "no_new_sdk_events_during_confirmed_off": True,
+                 "concurrent_functional_cli_with_local_collection_off": True,
+                 "actual_unknown_policy_kept_collection_off": True,
+                 "resumed": True,
+                 "confirmed_off_at_unix": confirmed_off_at, "unknown_at_unix": unknown_at,
+                 "restored_off_at_unix": restored_off_at, "confirmed_on_at_unix": confirmed_on_at}
+        (W / "diagnostic-collection-proof.json").write_text(json.dumps(proof, indent=2) + "\n")
+        print("PASS: ordinary installed GUI and concurrent CLI followed real collector Off/on", flush=True)
+    finally:
+        export(True)
 
 
 def worker(root):
@@ -245,6 +404,10 @@ def worker(root):
         "NDS_TEST_ISOLATED_GITHUB_TOKEN_FILE",
     ]:
         env.pop(k, None)
+    if OPTIONS.diagnostic_export_fixture is not None:
+        # Only this private GUI process enables its accessibility bridge.
+        env.pop("NO_AT_BRIDGE", None)
+        env["GTK_MODULES"] = "atk-bridge"
     daemon = None
     gui = None
     with (W / "keyring.log").open("wb") as keylog:
@@ -365,6 +528,8 @@ def worker(root):
                     stderr=subprocess.STDOUT,
                 )
 
+                sample_resources(gui, W / "gui-resources.jsonl", force=True)
+
                 def running_batch():
                     assert gui.poll() is None, "GUI stopped; inspect owned log"
                     return any(
@@ -379,6 +544,14 @@ def worker(root):
                 assert len(ids) == 1
                 window = next(iter(ids))
                 pid = gui.pid
+                # Policy and local collection are separate visible fields. Keep
+                # their wrapped Unknown text inside this owned test viewport.
+                run(["xdotool", "windowsize", "--sync", window, "1280", "940"])
+                geometry = dict(line.split("=", 1) for line in run(
+                    ["xdotool", "getwindowgeometry", "--shell", window]
+                ).splitlines() if "=" in line)
+                assert geometry["WIDTH"] == "1280" and geometry["HEIGHT"] == "940"
+                (W / "window-geometry.json").write_text(json.dumps(geometry, indent=2) + chr(10))
                 if OPTIONS.diagnostic_policy is not None:
                     diagnostic_policy(root, gui_log)
 
@@ -442,7 +615,10 @@ def worker(root):
                         for row in rows
                     )
                     assert gui.poll() is None
+                    return value
 
+                if OPTIONS.diagnostic_export_fixture is not None:
+                    diagnostic_collection(gui, gui_log, cli_read)
                 cli_read("cli-visible.log", False)
                 control("offline")
                 with (W / "stage.log").open("wb") as stage:
@@ -504,6 +680,7 @@ def worker(root):
                 run(["xdotool", "windowfocus", "--sync", window])
                 run(["xdotool", "key", "--clearmodifiers", "ctrl+q"])
                 assert gui.wait(timeout=15) == 0
+                sample_resources(gui, W / "gui-resources.jsonl", force=True)
                 assert any(
                     row["event.name"] == "sync.runtime.stopped"
                     for row in events(gui_log)
@@ -518,6 +695,8 @@ def worker(root):
                     stderr=subprocess.STDOUT,
                 )
 
+                sample_resources(gui, W / "gui-resources.jsonl", force=True)
+
                 def restarted_ready():
                     assert gui.poll() is None
                     return any(
@@ -530,6 +709,7 @@ def worker(root):
                 assert pending() == 0 and len(windows(True)) == 1
                 run(["gapplication", "action", APP, "quit"])
                 assert gui.wait(timeout=15) == 0
+                sample_resources(gui, W / "gui-resources.jsonl", force=True)
                 assert any(
                     row["event.name"] == "sync.runtime.stopped"
                     for row in events(W / "restarted-gui-runtime.log")
@@ -537,6 +717,9 @@ def worker(root):
             assert "SYNTHETIC_WINDOW_SECRET" not in (
                 W / "restarted-gui-runtime.log"
             ).read_text(errors="replace")
+            if ACCESSIBILITY is not None:
+                ACCESSIBILITY.close()
+                assert ACCESSIBILITY.process.returncode == 0, "Owned accessibility worker did not close normally"
             proof = {
                 "source": OPTIONS.source,
                 "gui_binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
@@ -579,6 +762,8 @@ def worker(root):
                 "PASS: GUI retained one Rust replica owner while visible/hidden CLI reads stayed fresh; hidden replay, reopen and both drained quit paths completed."
             )
         finally:
+            if ACCESSIBILITY is not None:
+                ACCESSIBILITY.close()
             for child in [gui, daemon]:
                 if child is not None and child.poll() is None:
                     child.terminate()
@@ -587,6 +772,8 @@ def worker(root):
                     except subprocess.TimeoutExpired:
                         child.kill()
                         child.wait(timeout=5)
+            if gui is not None:
+                sample_resources(gui, W / "gui-resources.jsonl", force=True)
 
 
 def main():
@@ -637,7 +824,7 @@ def main():
             ],
             env=env,
             check=True,
-            timeout=720 if OPTIONS.diagnostic_policy is not None else 510,
+            timeout=960 if OPTIONS.diagnostic_export_fixture is not None else (720 if OPTIONS.diagnostic_policy is not None else 510),
         )
 
 

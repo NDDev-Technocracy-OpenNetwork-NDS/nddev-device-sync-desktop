@@ -26,6 +26,9 @@ enum FailureKind {
 /// A local sink is never evidence of remote collection or searchable delivery.
 class LocalDiagnostics {
   final bool sinkInitialized;
+
+  /// Actual local collection state; None means the SDK is unavailable.
+  final bool? collectionEnabled;
   final bool debugEnabled;
   final DebugScope? debugScope;
   final BigInt? rejectedFieldsOrEvents;
@@ -37,6 +40,7 @@ class LocalDiagnostics {
 
   const LocalDiagnostics({
     required this.sinkInitialized,
+    this.collectionEnabled,
     required this.debugEnabled,
     this.debugScope,
     this.rejectedFieldsOrEvents,
@@ -50,6 +54,7 @@ class LocalDiagnostics {
   @override
   int get hashCode =>
       sinkInitialized.hashCode ^
+      collectionEnabled.hashCode ^
       debugEnabled.hashCode ^
       debugScope.hashCode ^
       rejectedFieldsOrEvents.hashCode ^
@@ -65,6 +70,7 @@ class LocalDiagnostics {
       other is LocalDiagnostics &&
           runtimeType == other.runtimeType &&
           sinkInitialized == other.sinkInitialized &&
+          collectionEnabled == other.collectionEnabled &&
           debugEnabled == other.debugEnabled &&
           debugScope == other.debugScope &&
           rejectedFieldsOrEvents == other.rejectedFieldsOrEvents &&

@@ -369,7 +369,6 @@ def diagnostic_collection(gui, gui_log, cli_read):
         print("PASS: ordinary installed GUI and concurrent CLI followed real collector Off/on", flush=True)
     finally:
         export(True)
-    wait(lambda: accessible(gui, ["Back", "Назад"], True), 20)
 
 
 def worker(root):

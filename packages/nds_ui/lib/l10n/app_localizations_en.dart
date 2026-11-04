@@ -432,6 +432,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsIo => 'Local operations';
 
   @override
+  String get diagnosticsCollectionActive =>
+      'Diagnostic collection is active in this app.';
+
+  @override
+  String get diagnosticsCollectionOff =>
+      'Diagnostic collection is off in this app.';
+
+  @override
+  String get diagnosticsCollectionUnknown =>
+      'Diagnostic collection in this app has not been confirmed.';
+
+  @override
   String get devicesTitle => 'Your devices';
 
   @override
@@ -1626,8 +1638,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get collectionOff =>
-      'Diagnostics collection is off: nothing new is collected or sent.';
+  String get collectionOff => 'Diagnostics policy: off.';
 
   @override
   String get ownDiagnostics => 'Show my diagnostics (last hour)';

@@ -16,7 +16,7 @@ class StandardsIdentity(unittest.TestCase):
         self.root = Path(self.directory.name)
         self.package = self.root / "packages/nds_native"
         self.package.mkdir(parents=True)
-        self.lock = self.root / "standarts.lock"
+        self.lock = self.root / "contracts.lock"
         self.owner = patch.object(prepare_native, "PACKAGE", self.package)
         self.owner.start()
         self.addCleanup(self.owner.stop)

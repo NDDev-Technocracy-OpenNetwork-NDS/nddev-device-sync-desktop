@@ -150,7 +150,7 @@ subprocess.run([sys.executable, str(Path(__file__).with_name('check-artifact.py'
 record = {'build_kind':linux[0] if linux is not None else args.build_kind or 'debug',
           'wrapper_version':versions[0], 'app_source':app_source,
           'native_source':native_source,
-          'standards':tomllib.loads((args.app_root/'standarts.lock').read_text()),
+          'standards':tomllib.loads((args.app_root/'contracts.lock').read_text()),
           'toolchains':json.loads((args.native_root/'toolchains.lock.json').read_text()),
           'rust_toolchain':tomllib.loads((args.native_root/'packages/nds_native/rust/rust-toolchain.toml').read_text())['toolchain'],
           'locks_sha256':{'app_pubspec':sha(args.app_root/'pubspec.lock'),

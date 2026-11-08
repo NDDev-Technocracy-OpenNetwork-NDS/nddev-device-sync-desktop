@@ -22,7 +22,7 @@ REMOTE_REPOSITORY = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-
 def standards_release():
     # The native producer belongs to Shared, including when another app uses
     # this package. Never substitute the SDK edition or an ambient variable.
-    value = tomllib.loads((PACKAGE.parents[1] / "standarts.lock").read_text())["source_release"]
+    value = tomllib.loads((PACKAGE.parents[1] / "contracts.lock").read_text())["source_release"]
     if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9_.:-]{1,128}", value):
         raise ValueError("native standards release requires its owning lock identity")
     return value

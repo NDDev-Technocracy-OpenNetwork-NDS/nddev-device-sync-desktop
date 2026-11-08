@@ -396,7 +396,7 @@ def produce(args):
     require(len(github) == 1 and git_source(github[0]['source']) == (GITHUB_MODULE, worker_commit))
     worker_root = [package for package in worker['package'] if package['name'] == 'nddev-device-sync-github' and 'source' not in package]
     require(len(worker_root) == 1 and worker_root[0]['version'] == github[0]['version'])
-    standards_bytes = read_bytes(ROOT / 'standarts.lock')
+    standards_bytes = read_bytes(ROOT / 'contracts.lock')
     design_bytes = read_bytes(ROOT / 'generated/launcher-provenance.json')
     sources = source_graph(commit, shared, worker, tomllib.loads(standards_bytes.decode()),
                            json_object(design_bytes), worker_commit)

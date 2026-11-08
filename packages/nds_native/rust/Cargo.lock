@@ -4081,7 +4081,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-agent"
 version = "0.0.1-alpha.9"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent?rev=b1db3b876a016264b396e3f7f9dd9a4b31665c2f#b1db3b876a016264b396e3f7f9dd9a4b31665c2f"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent?rev=df65a1ed653d1edb3eb6c543a6b08789d6b11b28#df65a1ed653d1edb3eb6c543a6b08789d6b11b28"
 dependencies = [
  "base16ct",
  "nddev-device-sync-adapter-io",
@@ -4284,7 +4284,7 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-sysinfo"
 version = "0.0.1-alpha.1"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-sysinfo?rev=36dc38f1841b517b554083ff9157bddd2d27cf08#36dc38f1841b517b554083ff9157bddd2d27cf08"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-sysinfo?rev=5f60ae493f67cf168b7d8c62505c7263af8fbf63#5f60ae493f67cf168b7d8c62505c7263af8fbf63"
 dependencies = [
  "nddev-device-sync-adapter-io",
  "serde",

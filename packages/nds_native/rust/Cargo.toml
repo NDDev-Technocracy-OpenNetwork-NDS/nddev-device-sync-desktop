@@ -26,8 +26,8 @@ tracing = "0.1"
 serde_json = "1"
 serde = "1"
 uuid = { version="1.27", features=["v4", "v7"] }
-nddev-device-sync-agent = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent", rev = "b1db3b876a016264b396e3f7f9dd9a4b31665c2f" }
-nddev-device-sync-sysinfo = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-sysinfo", rev = "36dc38f1841b517b554083ff9157bddd2d27cf08" }
+nddev-device-sync-agent = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-agent", rev = "df65a1ed653d1edb3eb6c543a6b08789d6b11b28" }
+nddev-device-sync-sysinfo = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-sysinfo", rev = "5f60ae493f67cf168b7d8c62505c7263af8fbf63" }
 nddev-device-sync-clipboard = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-clipboard", rev = "cd0448fb449ac46b3480dc23980fb835206ea383" }
 nddev-device-sync-cleaner = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-cleaner", rev = "5b3f3e92d6ea7b18dfe2c2ab89f1828a0329339f" }
 nddev-device-sync-updater = { git = "https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-updater", rev = "9503dbe004939dc3d3b4c23f452c9f87097896b7" }

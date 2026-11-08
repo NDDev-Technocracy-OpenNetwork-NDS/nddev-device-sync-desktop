@@ -39,7 +39,7 @@ def inputs(root, port):
                 or not re.fullmatch("[a-z0-9_.-]{1,64}", role)):
             raise ValueError("fixture requires canonical immutable public Git sources")
         sources.append({"role": role, "repository": repository, "commit": url.fragment})
-    standards = tomllib.loads((root / "standarts.lock").read_text())
+    standards = tomllib.loads((root / "contracts.lock").read_text())
     sources.append({"role": "standards", "repository": "https://github.com/" + standards["source_repo"],
                     "commit": standards["source_commit"]})
     sources.sort(key=lambda value: value["role"])

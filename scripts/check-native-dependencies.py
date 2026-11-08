@@ -15,6 +15,7 @@ metadata = json.loads(subprocess.check_output(
 for name in (
     'nddev-device-sync-application',
     'nddev-device-sync-adapter-io',
+    'nddev-device-sync-agent',
     'nddev-device-sync-domain',
     'nddev-device-sync-accounts',
     'nddev-device-sync-organizations',
@@ -22,8 +23,9 @@ for name in (
     'nddev-device-sync-vault',
     'nddev-device-sync-github',
     'nddev-device-sync-clipboard',
+    'nddev-device-sync-sysinfo',
 ):
     packages = [package for package in metadata['packages'] if package['name'] == name]
     if len(packages) != 1:
         raise SystemExit(f'Expected one {name} package across all platforms, found {len(packages)}')
-print('Locked native graph has one application, domain, adapter I/O, accounts, telemetry, vault, GitHub module and clipboard package')
+print('Locked native graph has one application, domain, adapter I/O, agent, accounts, telemetry, vault, GitHub module, clipboard and sysinfo package')

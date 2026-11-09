@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
+      - name: Disable external telemetry
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/telemetry@52d8302d2272967a21fd8e3ae594205588648777 # v0.6.28
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
@@ -60,15 +62,14 @@ jobs:
       - run: flutter pub get --enforce-lockfile
         working-directory: packages/nds_native
       - name: Install verified prebuilt Rust quality tools
-        uses: NDDev-Technocracy-Standarts/std-0004-ci-cd-workflows/.github/actions/tools@c192c6adcf22088abf456635de614d42e8fa3f8d # nddev-cicd-v0.6.20
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/hosted-sdk@52d8302d2272967a21fd8e3ae594205588648777 # v0.6.28
         with:
-          # cargo-audit 0.22.2, cargo-deny 0.20.2 and cargo-nextest 0.9.149 from checksummed
-          # releases instead of compiling them with cargo install in every job.
-          capability: rust
-      - run: just generated-check
-      - run: just check
+          tools: cargo-audit@0.22.2,cargo-deny@0.20.2,cargo-nextest@0.9.149
       - run: rustup target add --toolchain 1.99.1 wasm32-unknown-unknown
-      - run: just browser-check
+      - name: Run the complete Flutter and native contract
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/recipe@52d8302d2272967a21fd8e3ae594205588648777 # v0.6.28
+        with:
+          recipe: verify
       - id: design
         shell: bash
         run: |
@@ -88,3 +89,10 @@ jobs:
       - run: python -m pip install --require-hashes -r vendor/design-system/tools/requirements-icons.txt
       - run: bash vendor/design-system/tools/with-renderer-zlib.sh python vendor/design-system/tools/generate_launchers.py --desktop . --check
       - run: python -S vendor/design-system/tools/generate_launchers.py --desktop . --verify
+
+  merge-stops:
+    permissions:
+      contents: read
+    uses: NDDev-Technocracy-OpenNetwork/nddev-ci/.github/workflows/merge-stops.yml@52d8302d2272967a21fd8e3ae594205588648777 # v0.6.28
+    with:
+      hosted-runner: ubuntu-26.04

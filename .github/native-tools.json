@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "assets": [
+    {
+      "repository": "anchore/syft",
+      "asset": 615916330,
+      "size": 30968256,
+      "sha256": "c069905b391cc4c20a5ba65ad5c10be2a7ba074f8ea6ad203e24d14e303dad47",
+      "file": "syft_1.54.1_linux_amd64.tar.gz",
+      "members": [
+        {
+          "path": "syft",
+          "file": "syft",
+          "size": 91779234,
+          "sha256": "dbf75864e7a7ff9e1fbf00552c31483f693188632a9f68f343cd7653dac513d6",
+          "executable": true
+        }
+      ]
+    }
+  ]
+}

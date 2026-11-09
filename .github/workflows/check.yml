@@ -35,7 +35,12 @@ jobs:
         with:
           just-version: '1.59.0'
       - run: python scripts/bootstrap-ci.py
-      - run: rustup toolchain install 1.99.1 --profile minimal --component rustfmt,clippy
+      - name: Prepare the declared Rust SDK
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/hosted-sdk@52d8302d2272967a21fd8e3ae594205588648777 # v0.6.28
+        with:
+          rust-version: '1.99.1'
+          rust-components: rustfmt,clippy
+          tools: cargo-audit@0.22.2,cargo-deny@0.20.2,cargo-nextest@0.9.149
       - name: Restore the Cargo dependency and tool cache
         uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
@@ -61,10 +66,6 @@ jobs:
         working-directory: packages/nds_ui
       - run: flutter pub get --enforce-lockfile
         working-directory: packages/nds_native
-      - name: Install verified prebuilt Rust quality tools
-        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/hosted-sdk@52d8302d2272967a21fd8e3ae594205588648777 # v0.6.28
-        with:
-          tools: cargo-audit@0.22.2,cargo-deny@0.20.2,cargo-nextest@0.9.149
       - run: rustup target add --toolchain 1.99.1 wasm32-unknown-unknown
       - name: Run the complete Flutter and native contract
         uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/recipe@52d8302d2272967a21fd8e3ae594205588648777 # v0.6.28

@@ -59,12 +59,16 @@ jobs:
         working-directory: packages/nds_ui
       - run: flutter pub get --enforce-lockfile
         working-directory: packages/nds_native
-      - name: Install verified prebuilt Rust quality tools
-        uses: NDDev-Technocracy-Standarts/std-0004-ci-cd-workflows/.github/actions/tools@c192c6adcf22088abf456635de614d42e8fa3f8d # nddev-cicd-v0.6.20
+      - name: Prepare the registry's Rust tools
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/hosted-sdk@9fead1382c452a6b791a0a9e464ac6ac66537ac3 # v0.6.51
         with:
-          # cargo-audit 0.22.2, cargo-deny 0.20.2 and cargo-nextest 0.9.149 from checksummed
-          # releases instead of compiling them with cargo install in every job.
-          capability: rust
+          tools: cargo-nextest@0.9.151,cargo-deny@0.20.2
+      - name: Prepare cargo-audit by digest
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/release-assets@9fead1382c452a6b791a0a9e464ac6ac66537ac3 # v0.6.51
+        with:
+          manifest: .github/ci-tools.json
+          directory: ${{ runner.temp }}/ci-tools
+          add-to-path: true
       - run: just generated-check
       - run: just check
       - run: rustup target add --toolchain 1.99.1 wasm32-unknown-unknown

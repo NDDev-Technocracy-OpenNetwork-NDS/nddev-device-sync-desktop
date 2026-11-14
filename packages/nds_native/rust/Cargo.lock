@@ -1311,17 +1311,6 @@ checksum = "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
 
 [[package]]
 name = "fancy-regex"
-version = "0.19.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d301f5bf187b3c295fce6468d3875037a0bccc5f6b151c63cac2f85babf21912"
-dependencies = [
- "bit-set",
- "regex-automata",
- "regex-syntax",
-]
-
-[[package]]
-name = "fancy-regex"
 version = "0.20.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0a2e16b9a584b602f1e0e5e22c30ca0906786088c27500653e432d086def8b53"
@@ -3508,34 +3497,6 @@ dependencies = [
 
 [[package]]
 name = "jsonschema"
-version = "0.58.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f622c574a29fb3034a0a90645afee194dfedc75fc124228801b6e77041075bd1"
-dependencies = [
- "ahash",
- "bytecount",
- "data-encoding",
- "email_address",
- "fancy-regex 0.19.2",
- "fraction",
- "getrandom 0.3.4",
- "itoa",
- "jsonschema-regex 0.58.6",
- "jsonschema-value 0.58.6",
- "num-cmp",
- "num-traits",
- "percent-encoding",
- "referencing 0.58.6",
- "regex",
- "serde",
- "serde_json",
- "strum",
- "unicode-general-category",
- "uuid-simd",
-]
-
-[[package]]
-name = "jsonschema"
 version = "0.61.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e37f27df77c7887edbc5f5a59ecd8e5ec4a669319266ec1b61068667a603183"
@@ -3544,31 +3505,22 @@ dependencies = [
  "bytecount",
  "data-encoding",
  "email_address",
- "fancy-regex 0.20.2",
+ "fancy-regex",
  "fraction",
  "getrandom 0.3.4",
  "itoa",
- "jsonschema-regex 0.61.2",
- "jsonschema-value 0.61.2",
+ "jsonschema-regex",
+ "jsonschema-value",
  "num-cmp",
  "num-traits",
  "percent-encoding",
- "referencing 0.61.2",
+ "referencing",
  "regex",
  "serde",
  "serde_json",
  "strum",
  "unicode-general-category",
  "uuid-simd",
-]
-
-[[package]]
-name = "jsonschema-regex"
-version = "0.58.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a968fffd387b2ab005bf00c1851f5d26e90df05b6f7ad609ed0d620033cca5e7"
-dependencies = [
- "regex-syntax",
 ]
 
 [[package]]
@@ -3578,22 +3530,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7e41151614b6c927e21982be8bef5a26741ae5a0ae6a781eedee2aa930a980e6"
 dependencies = [
  "regex-syntax",
-]
-
-[[package]]
-name = "jsonschema-value"
-version = "0.58.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39b7670345e5ce87371339d13705dbb9276b7e3e934bbe1efa2c6734a1f65a96"
-dependencies = [
- "ahash",
- "bytecount",
- "fraction",
- "getrandom 0.3.4",
- "num-cmp",
- "num-traits",
- "serde_json",
- "zmij",
 ]
 
 [[package]]
@@ -3958,7 +3894,7 @@ dependencies = [
  "nddev-device-sync-application",
  "nddev-device-sync-domain",
  "nddev-device-sync-http-signatures",
- "nddev-device-sync-telemetry 0.0.1-alpha.11 (git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability?rev=c942a9ec95b11824d86e9842d2c0e3be340f3728)",
+ "nddev-device-sync-telemetry",
  "opentelemetry",
  "opentelemetry_sdk",
  "reqwest",
@@ -3975,56 +3911,6 @@ dependencies = [
  "tokio-util",
  "tracing",
  "tsify",
- "url",
- "uuid",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "web-time",
- "windows-native-keyring-store",
- "zeroize",
-]
-
-[[package]]
-name = "nddev-device-sync-accounts"
-version = "0.0.1-alpha.24"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts?rev=95fa88b20e027f8b0fc62b33f8e5a02672dc4a7c#95fa88b20e027f8b0fc62b33f8e5a02672dc4a7c"
-dependencies = [
- "android-native-keyring-store",
- "apple-native-keyring-store",
- "base16ct",
- "base64 0.23.1",
- "ed25519-dalek",
- "futures",
- "gio",
- "glib",
- "gloo-timers 0.4.0",
- "http",
- "jni 0.21.1",
- "jni 0.22.4",
- "js-sys",
- "keyring-core",
- "libc",
- "libsecret",
- "nddev-device-sync-application",
- "nddev-device-sync-domain",
- "nddev-device-sync-http-signatures",
- "nddev-device-sync-telemetry 0.0.1-alpha.11 (git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability?rev=55291f01682fdba5802653225708cac815f04edb)",
- "opentelemetry",
- "opentelemetry_sdk",
- "reqwest",
- "ring",
- "rusqlite",
- "rustls",
- "rustls-platform-verifier",
- "serde",
- "serde_json",
- "sha2",
- "thiserror 2.0.21",
- "time",
- "tokio",
- "tokio-util",
- "tracing",
  "url",
  "uuid",
  "wasm-bindgen",
@@ -4069,7 +3955,7 @@ dependencies = [
  "nddev-device-sync-github",
  "nddev-device-sync-remote",
  "nddev-device-sync-sysinfo",
- "nddev-device-sync-telemetry 0.0.1-alpha.11 (git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability?rev=c942a9ec95b11824d86e9842d2c0e3be340f3728)",
+ "nddev-device-sync-telemetry",
  "nddev-device-sync-updater",
  "serde_json",
  "sha2",
@@ -4094,7 +3980,7 @@ dependencies = [
  "futures-util",
  "getrandom 0.4.3",
  "nddev-device-sync-adapter-io",
- "nddev-device-sync-telemetry 0.0.1-alpha.11 (git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability?rev=c942a9ec95b11824d86e9842d2c0e3be340f3728)",
+ "nddev-device-sync-telemetry",
  "opentelemetry",
  "opentelemetry_sdk",
  "percent-encoding",
@@ -4156,7 +4042,7 @@ dependencies = [
  "arboard",
  "jni 0.21.1",
  "js-sys",
- "nddev-device-sync-accounts 0.0.1-alpha.24 (git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts?rev=1e65cfb2e03459f3ae4cab92f6a036dd53e2f77c)",
+ "nddev-device-sync-accounts",
  "nddev-device-sync-adapter-io",
  "serde",
  "serde_json",
@@ -4187,11 +4073,11 @@ dependencies = [
  "gix",
  "gloo-timers 0.4.0",
  "js-sys",
- "nddev-device-sync-accounts 0.0.1-alpha.24 (git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts?rev=1e65cfb2e03459f3ae4cab92f6a036dd53e2f77c)",
+ "nddev-device-sync-accounts",
  "nddev-device-sync-adapter-io",
  "nddev-device-sync-application",
  "nddev-device-sync-domain",
- "nddev-device-sync-telemetry 0.0.1-alpha.11 (git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability?rev=c942a9ec95b11824d86e9842d2c0e3be340f3728)",
+ "nddev-device-sync-telemetry",
  "nddev-device-sync-vault",
  "reqwest",
  "rustix",
@@ -4226,11 +4112,11 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-organizations"
 version = "0.0.1-alpha.1"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations?rev=65bb5f011e2f9e6444f274d6ea12c7197403d331#65bb5f011e2f9e6444f274d6ea12c7197403d331"
+source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-organizations?rev=fea4404cb922f37e6de0ae063900c74e5a3525b4#fea4404cb922f37e6de0ae063900c74e5a3525b4"
 dependencies = [
- "nddev-device-sync-accounts 0.0.1-alpha.24 (git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts?rev=95fa88b20e027f8b0fc62b33f8e5a02672dc4a7c)",
+ "nddev-device-sync-accounts",
  "nddev-device-sync-domain",
- "nddev-device-sync-telemetry 0.0.1-alpha.11 (git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability?rev=c942a9ec95b11824d86e9842d2c0e3be340f3728)",
+ "nddev-device-sync-telemetry",
  "serde",
  "serde_json",
  "time",
@@ -4278,33 +4164,6 @@ dependencies = [
 [[package]]
 name = "nddev-device-sync-telemetry"
 version = "0.0.1-alpha.11"
-source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability?rev=55291f01682fdba5802653225708cac815f04edb#55291f01682fdba5802653225708cac815f04edb"
-dependencies = [
- "android_log-sys",
- "chrono",
- "futures",
- "gloo-timers 0.4.0",
- "js-sys",
- "jsonschema 0.58.6",
- "opentelemetry",
- "opentelemetry-proto",
- "opentelemetry_sdk",
- "prost",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
- "uuid",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-time",
-]
-
-[[package]]
-name = "nddev-device-sync-telemetry"
-version = "0.0.1-alpha.11"
 source = "git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability?rev=c942a9ec95b11824d86e9842d2c0e3be340f3728#c942a9ec95b11824d86e9842d2c0e3be340f3728"
 dependencies = [
  "android_log-sys",
@@ -4312,7 +4171,7 @@ dependencies = [
  "futures",
  "gloo-timers 0.4.0",
  "js-sys",
- "jsonschema 0.61.2",
+ "jsonschema",
  "opentelemetry",
  "opentelemetry-proto",
  "opentelemetry_sdk",
@@ -4349,10 +4208,10 @@ dependencies = [
  "base64 0.23.1",
  "js-sys",
  "libc",
- "nddev-device-sync-accounts 0.0.1-alpha.24 (git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts?rev=1e65cfb2e03459f3ae4cab92f6a036dd53e2f77c)",
+ "nddev-device-sync-accounts",
  "nddev-device-sync-application",
  "nddev-device-sync-domain",
- "nddev-device-sync-telemetry 0.0.1-alpha.11 (git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability?rev=c942a9ec95b11824d86e9842d2c0e3be340f3728)",
+ "nddev-device-sync-telemetry",
  "ring",
  "rusqlite",
  "serde",
@@ -4386,7 +4245,7 @@ dependencies = [
  "jni 0.21.1",
  "jni 0.22.4",
  "js-sys",
- "nddev-device-sync-accounts 0.0.1-alpha.24 (git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-accounts?rev=1e65cfb2e03459f3ae4cab92f6a036dd53e2f77c)",
+ "nddev-device-sync-accounts",
  "nddev-device-sync-agent",
  "nddev-device-sync-application",
  "nddev-device-sync-cleaner",
@@ -4396,7 +4255,7 @@ dependencies = [
  "nddev-device-sync-organizations",
  "nddev-device-sync-remote",
  "nddev-device-sync-sysinfo",
- "nddev-device-sync-telemetry 0.0.1-alpha.11 (git+https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-observability?rev=c942a9ec95b11824d86e9842d2c0e3be340f3728)",
+ "nddev-device-sync-telemetry",
  "nddev-device-sync-updater",
  "nddev-device-sync-vault",
  "rds-core",
@@ -5710,23 +5569,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.9",
-]
-
-[[package]]
-name = "referencing"
-version = "0.58.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "558f3855529c0a7e78a48e409fa653456e55f1b167eab4109c16a255b7727e3f"
-dependencies = [
- "ahash",
- "fluent-uri",
- "getrandom 0.3.4",
- "hashbrown 0.17.1",
- "itoa",
- "micromap",
- "parking_lot",
- "percent-encoding",
- "serde_json",
 ]
 
 [[package]]

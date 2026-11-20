@@ -230,19 +230,16 @@ def spdx_inventory(document, scan_root):
         require(isinstance(entry, dict))
         name = entry['fileName']
         require(isinstance(name, str))
-        original_name = name
-        if name.startswith('./'):
-            name = name[2:]
-        elif name.startswith('/'):
-            name = name[1:]
-        if name:
-            relative_name(name)
+        if name in ('', '.'):
+            name = ''
         else:
-            require(original_name == '')
+            if name.startswith(('./', '/')):
+                name = name[2:] if name.startswith('./') else name[1:]
+            relative_name(name)
         require(name not in seen)
         seen.add(name)
         if name in directories:
-            # Syft 1.54.1 emits only this sentinel shape for real directories.
+            # Syft emits this sentinel shape for real directories.
             # A regular/unrecognized file without SHA256 is never skipped.
             require(entry.get('fileTypes') == ['OTHER'] and entry.get('checksums') == [
                 {'algorithm': 'SHA1', 'checksumValue': '0' * 40}])

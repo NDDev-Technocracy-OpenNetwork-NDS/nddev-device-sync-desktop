@@ -6,7 +6,10 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tomllib
+# The hosted entry point uses Python isolated mode. Load only the checked-out sibling module.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from native_release_sources import release_sources
 
 

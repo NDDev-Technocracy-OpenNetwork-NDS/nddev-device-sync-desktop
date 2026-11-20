@@ -107,7 +107,6 @@ void main(List<String> args) async {
       input.packageRoot.resolve('rust/Cargo.lock'),
       input.packageRoot.resolve('rust/rust-toolchain.toml'),
       input.packageRoot.resolve('../../contracts.lock'),
-      File('${native['cargo_home']}${Platform.pathSeparator}config.toml').uri,
     ]);
     // The upstream build helper logs its environment at CONFIG level. Never
     // forward those diagnostics; compiler failures still propagate as errors.

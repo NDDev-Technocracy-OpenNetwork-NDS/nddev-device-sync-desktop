@@ -4293,6 +4293,7 @@ dependencies = [
  "rds-net",
  "reqwest",
  "rustls",
+ "rustls-pki-types",
  "serde",
  "serde_json",
  "sha2",

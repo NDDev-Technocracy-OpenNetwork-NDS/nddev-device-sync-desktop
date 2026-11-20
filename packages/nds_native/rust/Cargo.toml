@@ -42,6 +42,8 @@ jni = "0.22.4"
 jni-legacy = { package = "jni", version = "0.21.1" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
+# The agent cache client brings Rustls into the browser bindings.
+rustls-pki-types = { version = "1.15.1", features = ["web"] }
 tsify = { version = "=0.5.8", default-features = false, features = ["js"], optional = true }
 wasm-bindgen="=0.2.130"
 wasm-bindgen-futures="=0.4.80"

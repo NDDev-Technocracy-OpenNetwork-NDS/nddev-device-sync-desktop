@@ -15,7 +15,7 @@ import sys
 import tarfile
 import tomllib
 import traceback
-from urllib.parse import parse_qs, urlsplit
+from native_release_sources import git_source, release_sources
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -191,43 +191,18 @@ def inventory(bundle):
     return result
 
 
-def git_source(source):
-    require(isinstance(source, str) and source.startswith('git+'))
-    url = urlsplit(source[4:])
-    require(url.scheme == 'https' and url.netloc == 'github.com' and hex_value(url.fragment, 40))
-    require(parse_qs(url.query, strict_parsing=True) == {'rev': [url.fragment]})
-    require(url.query == 'rev=' + url.fragment)
-    repository = 'https://github.com' + url.path.removesuffix('.git')
-    require(re.fullmatch(r'https://github\.com/[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}', repository))
-    require(len(repository) <= 222)
-    return repository, url.fragment
-
-
 def source_graph(commit, shared, worker, standards, design, worker_commit):
-    sources = {}
-
-    def add(role, repository, revision):
-        require(re.fullmatch('[a-z0-9_.-]{1,64}', role) and hex_value(revision, 40))
-        require(re.fullmatch(r'https://github\.com/[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}', repository))
-        require(len(repository) <= 222 and role not in sources)
-        sources[role] = {'role': role, 'repository': repository, 'commit': revision}
-
-    add('desktop', DESKTOP, commit)
-    add('worker', GITHUB_MODULE, worker_commit)
-    for lock, prefix in [(shared, 'crate.'), (worker, 'worker.crate.')]:
-        require(isinstance(lock.get('package'), list))
-        for package in lock['package']:
-            require(isinstance(package, dict))
-            source = package.get('source', '')
-            require(isinstance(source, str))
-            if source.startswith('git+'):
-                repository, revision = git_source(source)
-                add(prefix + package['name'], repository, revision)
-    add('standards', 'https://github.com/' + standards['source_repo'], standards['source_commit'])
     require(design['source']['repository'] in (DESIGN_NAME, DESIGN_HISTORY))
-    add('design-system', 'https://github.com/' + DESIGN_NAME, design['source']['commit'])
-    require(len(sources) <= 64)
-    return [sources[key] for key in sorted(sources)]
+    return release_sources(
+        [
+            ('desktop', DESKTOP, commit),
+            ('worker', GITHUB_MODULE, worker_commit),
+            ('standards', 'https://github.com/' + standards['source_repo'], standards['source_commit']),
+            ('design-system', 'https://github.com/' + DESIGN_NAME, design['source']['commit']),
+        ],
+        ('crate.', shared),
+        ('worker.crate.', worker),
+    )
 
 
 def run_logged(command, scratch, name, timeout=180, *, environment=None):

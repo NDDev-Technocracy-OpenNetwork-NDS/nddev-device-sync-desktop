@@ -49,9 +49,9 @@ js-sys="=0.3.107"
 uuid = { version="1.27",features=["js"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-sigstore-verify = { version = "=0.15.1", default-features = false, features = ["aws-lc-rs"] }
-sigstore-types = { version = "=0.15.1" }
-sigstore-trust-root = { version = "=0.15.1", default-features = false }
+sigstore-verify = { version = "=0.16.0", default-features = false, features = ["aws-lc-rs"] }
+sigstore-types = { version = "=0.16.0" }
+sigstore-trust-root = { version = "=0.16.0", default-features = false }
 reqwest = { version = "0.13.3", default-features = false, features = ["rustls-no-provider"] }
 sha2 = "0.11.1"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }

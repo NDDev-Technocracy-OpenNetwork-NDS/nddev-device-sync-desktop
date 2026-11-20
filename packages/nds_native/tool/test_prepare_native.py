@@ -53,7 +53,7 @@ class StandardsIdentity(unittest.TestCase):
 
     def test_build_environment_always_replaces_ambient_identity(self):
         prepared = {"rust_bin": "/fixture/rust", "cargo_home": "/fixture/cargo",
-                    "source_home": "/fixture/source", "cache": "/fixture/cache",
+                    "cache": "/fixture/cache",
                     "standards_release": "v0.0.1-alpha.10"}
         with patch.dict(os.environ, {"PATH": "/usr/bin", "NDS_STANDARDS_RELEASE": "runtime"}, clear=True):
             with patch.object(prepare_native, "prepare", return_value=prepared) as command:

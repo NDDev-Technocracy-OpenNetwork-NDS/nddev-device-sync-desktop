@@ -70,7 +70,7 @@ jobs:
           directory: ${{ runner.temp }}/ci-tools
           add-to-path: true
       - run: just generated-check
-      - run: just check
+      - run: just verify
       - run: rustup target add --toolchain 1.99.1 wasm32-unknown-unknown
       - run: just browser-check
       - id: design

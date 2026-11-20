@@ -6,8 +6,11 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tomllib
-from urllib.parse import urlsplit
+# The hosted entry point uses Python isolated mode. Load only the checked-out sibling module.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from native_release_sources import release_sources
 
 
 REPOSITORY = "NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-desktop"
@@ -26,25 +29,14 @@ def inputs(root, port):
         raise ValueError("tracked source drift")
     lock_bytes = (root / "packages/nds_native/rust/Cargo.lock").read_bytes()
     lock = tomllib.loads(lock_bytes.decode())
-    sources = [{"role": "desktop", "repository": URI, "commit": commit}]
-    for package in lock["package"]:
-        source = package.get("source", "")
-        if not source.startswith("git+"):
-            continue
-        url = urlsplit(source.removeprefix("git+"))
-        repository = "https://github.com" + url.path.removesuffix(".git")
-        role = "crate." + package["name"]
-        if (url.scheme != "https" or url.netloc != "github.com"
-                or not re.fullmatch("[a-f0-9]{40}", url.fragment)
-                or not re.fullmatch("[a-z0-9_.-]{1,64}", role)):
-            raise ValueError("fixture requires canonical immutable public Git sources")
-        sources.append({"role": role, "repository": repository, "commit": url.fragment})
     standards = tomllib.loads((root / "contracts.lock").read_text())
-    sources.append({"role": "standards", "repository": "https://github.com/" + standards["source_repo"],
-                    "commit": standards["source_commit"]})
-    sources.sort(key=lambda value: value["role"])
-    if len(sources) > 64 or len({s["role"] for s in sources}) != len(sources):
-        raise ValueError("ambiguous or oversized fixture source graph")
+    sources = release_sources(
+        [
+            ("desktop", URI, commit),
+            ("standards", "https://github.com/" + standards["source_repo"], standards["source_commit"]),
+        ],
+        ("crate.", lock),
+    )
     seed = hashlib.sha256(lock_bytes + commit.encode()).digest()
     payload = seed * (1024 * 1024 // len(seed))
     origin = f"http://127.0.0.1:{port}"

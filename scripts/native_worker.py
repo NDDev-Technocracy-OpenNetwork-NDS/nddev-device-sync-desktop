@@ -1,7 +1,6 @@
 """The shared Linux worker packaging contract for builds and actual UI acceptance."""
 import hashlib
 import json
-import os
 from pathlib import Path
 import re
 import shutil
@@ -19,11 +18,10 @@ def package_linux_worker(source: Path, staging: Path):
         raise SystemExit('One locked Agent and GitHub module package required')
     # The standalone worker retains its owning graph. Shared's native
     # provider overrides must not rewrite the Agent/GitHub module lockfiles.
-    worker_environment = dict(os.environ, CARGO_HOME=os.environ['NDS_NATIVE_SOURCE_HOME'])
     subprocess.run(
         ['cargo', 'run', '--locked', '--manifest-path', agent[0]['manifest_path'],
          '--bin', 'nds-package-github-worker', '--', '--bundle', str(staging)],
-        cwd=source, env=worker_environment, check=True, timeout=600)
+        cwd=source, check=True, timeout=600)
     receipt_path = staging / 'nds-github-worker.build.json'
     if receipt_path.stat().st_size > 16384:
         raise SystemExit('Worker receipt exceeds its bound')

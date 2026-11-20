@@ -28,8 +28,6 @@ if fixture_identity.get('status') != 'running' or any(urlparse(fixture_identity[
 root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root / 'packages/nds_native/tool'))
 from prepare_native import build_environment
-if 'NDS_NATIVE_SOURCE_HOME' not in os.environ:
-    raise SystemExit('Run module acceptance through prepare_native.py first')
 os.environ.update(build_environment(configured=True))
 helper = root / 'integration_test/fixture_identity.dart'
 if helper.exists(): raise SystemExit('Refuse to overwrite existing fixture helper')

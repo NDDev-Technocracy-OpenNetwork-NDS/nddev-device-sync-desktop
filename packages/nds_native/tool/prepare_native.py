@@ -69,7 +69,7 @@ def prepare(cache, *, configured=False):
 
     channel = tomllib.loads((rust / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
     cache = Path(cache).resolve()
-    cargo_home = cache / revision / "cargo-home"
+    cargo_home = cache / "cargo-home"
     cargo_home.mkdir(mode=0o700, parents=True, exist_ok=True)
     rust_bin = Path(run_command(
         ["rustup", "which", "--toolchain", channel, "cargo"], capture=True,

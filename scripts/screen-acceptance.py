@@ -318,7 +318,7 @@ def qualify(args, fixture):
             env.update(DISPLAY=":" + number, XAUTHORITY=str(auth), XDG_SESSION_TYPE="x11",
                        GDK_BACKEND="x11", LIBGL_ALWAYS_SOFTWARE="1")
             # Build inputs are explicitly verified by prepare_native, not state.
-            for name in ["CARGO_HOME", "CARGO_TARGET_DIR", "NDS_NATIVE_BUILD_HOME", "NDS_NATIVE_BUILD_PREPARED", "NDS_NATIVE_SOURCE_HOME"]:
+            for name in ["CARGO_HOME", "CARGO_TARGET_DIR", "NDS_NATIVE_BUILD_HOME"]:
                 if name in os.environ:
                     env[name] = os.environ[name]
             env.update({k: v for k, v in os.environ.items() if k.startswith("NDS_CACHE_")})

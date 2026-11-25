@@ -60,11 +60,11 @@ jobs:
       - run: flutter pub get --enforce-lockfile
         working-directory: packages/nds_native
       - name: Prepare the registry's Rust tools
-        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/hosted-sdk@b2cb3d17849fe01da3af238332d5c698004d4613 # v0.6.163
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/hosted-sdk@65901e0f87cb8bc931c2f92ff60c319859aec60b # v0.6.164
         with:
           tools: cargo-nextest@0.9.151,cargo-deny@0.20.2
       - name: Prepare cargo-audit by digest
-        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/release-assets@b2cb3d17849fe01da3af238332d5c698004d4613 # v0.6.163
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/release-assets@65901e0f87cb8bc931c2f92ff60c319859aec60b # v0.6.164
         with:
           manifest: .github/ci-tools.json
           directory: ${{ runner.temp }}/ci-tools

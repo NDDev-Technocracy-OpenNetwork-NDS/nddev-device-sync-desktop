@@ -68,11 +68,11 @@ jobs:
       - run: flutter pub get --enforce-lockfile
         working-directory: packages/nds_native
       - name: Prepare the registry's Rust tools
-        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/hosted-sdk@c92818085dff62e5e3aded10dc90efc13d85d3de # v0.6.167
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/hosted-sdk@12e4fad876f0155284944ad53d73fbd03721a484 # v0.6.168
         with:
           tools: cargo-nextest@0.9.151,cargo-deny@0.20.2
       - name: Prepare cargo-audit by digest
-        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/release-assets@c92818085dff62e5e3aded10dc90efc13d85d3de # v0.6.167
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/release-assets@12e4fad876f0155284944ad53d73fbd03721a484 # v0.6.168
         with:
           manifest: .github/ci-tools.json
           directory: ${{ runner.temp }}/ci-tools
@@ -238,7 +238,7 @@ jobs:
           PY
       - name: Prepare Syft, the SPDX tool, by digest
         if: runner.os == 'Linux'
-        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/release-assets@c92818085dff62e5e3aded10dc90efc13d85d3de # v0.6.167
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/release-assets@12e4fad876f0155284944ad53d73fbd03721a484 # v0.6.168
         with:
           manifest: .github/syft-tools.json
           directory: ${{ runner.temp }}/syft

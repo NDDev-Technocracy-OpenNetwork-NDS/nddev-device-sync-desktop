@@ -62,7 +62,7 @@ jobs:
       - name: Prepare the registry's Rust tools
         uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/hosted-sdk@276ebc72582644040950ff13629469e16370d432 # v0.6.169
         with:
-          tools: cargo-nextest@0.9.151,cargo-deny@0.20.2
+          tools: cargo-nextest@0.9.151,cargo-deny@0.22.0
       - name: Prepare cargo-audit by digest
         uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/release-assets@276ebc72582644040950ff13629469e16370d432 # v0.6.169
         with:
